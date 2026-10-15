@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { chromium } from 'playwright';
+
+const base = process.env.TEST_URL || 'http://127.0.0.1:4173';
+const browser = await chromium.launch({headless:true, executablePath:process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+const page = await browser.newPage({viewport:{width:1440,height:1000}});
+const errors=[];
+page.on('pageerror', error=>errors.push(error.message));
+const go=async route=>{await page.goto(base+'/#'+route);await page.locator('#main h1').first().waitFor();};
+const check=(name, condition)=>{assert.ok(condition,name);console.log('PASS '+name);};
+try {
+  await go('/datasets');
+  check('five datasets and real suite first',await page.locator('.resource-dataset-card').count()===5 && (await page.locator('.resource-dataset-card').first().innerText()).includes('127 题'));
+  await page.locator('.resource-dataset-card').first().click();
+  await page.locator('[data-imported-suite]').waitFor();
+  check('real suite overview',await page.locator('#main').innerText().then(t=>t.includes('执行待接入')));
+  const downloadEvent=page.waitForEvent('download');
+  await page.locator('a[download][href$=".zip"]').first().click();
+  check('ZIP download', (await downloadEvent).suggestedFilename()==='public-tasks.zip');
+  await page.locator('nav [data-suite-tab="tasks"]').click();
+  await page.locator('#suite-query').waitFor();
+  check('task pagination',await page.locator('.suite-task-table tbody tr').count()===20);
+  await page.locator('[data-suite-page="2"]').click();
+  check('second task page',await page.locator('.suite-task-table tbody tr td').first().innerText()==='021');
+  await page.locator('#suite-query').fill('127_CBSC-V4-PL-PRESENT64-ZC6-007');
+  check('task search',await page.locator('.suite-task-table tbody tr').count()===1);
+  await page.locator('.suite-task-table tbody a').click();
+  await page.locator('#suite-question').waitFor();
+  check('complete question and attachments',await page.locator('.task-question').innerText().then(t=>t.includes('PRESENT')) && await page.locator('.suite-files a').count()===3);
+  const attachment=await page.locator('.suite-files a[href$="fixed_masks.json"]').getAttribute('href');
+  const response=await page.request.get(base+'/'+attachment);
+  check('public JSON attachment',response.ok() && typeof await response.json()==='object');
+  await page.locator('[data-suite-reset]').click();
+  await page.locator('#suite-cipher').selectOption('PRESENT');
+  check('cipher filter',await page.locator('.suite-task-table tbody tr').count()>0 && await page.locator('.suite-task-table tbody tr td:nth-child(3)').allInnerTexts().then(values=>values.every(v=>v==='PRESENT')));
+  await page.locator('[data-suite-reset]').click();
+  await page.locator('#suite-stress').selectOption('only');
+  check('stress filter',await page.locator('.suite-task-table tbody tr').count()===2);
+  await page.locator('#suite-stress').selectOption('exclude');
+  check('125 ordinary tasks',await page.locator('.suite-list-meta').innerText().then(t=>t.includes('125')));
+  await page.locator('nav [data-suite-tab="scoring"]').click();
+  check('source scoring',await page.locator('#main').innerText().then(t=>t.includes('65%')&&t.includes('35%')&&t.includes('0.99')));
+  await go('/evaluate?dataset=cryptobench-sc-v4&version=4.0.0');
+  check('execution guard',await page.locator('[data-execution-pending]').isVisible() && await page.locator('[data-eval-next]').count()===0);
+  await go('/arena');
+  check('real suite disabled in simulator',await page.locator('option[value="cryptobench-sc-v4@4.0.0"]').isDisabled());
+  await go('/datasets/cryptobench-sc-v4?version=4.0.0&task=127_CBSC-V4-PL-PRESENT64-ZC6-007');
+  await page.locator('#suite-question').waitFor();
+  await mkdir(new URL('../tmp/verification/',import.meta.url),{recursive:true});
+  await page.screenshot({path:'tmp/verification/dataset-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  check('mobile task detail fits',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.screenshot({path:'tmp/verification/dataset-mobile.png',fullPage:true});
+  await page.locator('nav [data-suite-tab="overview"]').click();
+  check('mobile overview fits',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  for(const path of ['/.env','/tmp/gitee-cryptobench-sc/manifest.json','/scripts/import_cryptobench.py','/tests/smoke.mjs','/data/cryptobench-sc-v4/tasks/127_CBSC-V4-PL-PRESENT64-ZC6-007/hidden/oracle.json']){
+    check('private material unavailable '+path,(await page.request.get(base+path)).status()>=400);
+  }
+  check('no browser errors',errors.length===0);
+} finally { await browser.close(); }

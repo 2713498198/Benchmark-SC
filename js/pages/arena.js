@@ -10,7 +10,7 @@ const getDS=()=>[...datasets,...state.customDatasets.filter(d=>d.published)];
 const dataset=(id,version)=>getDS().find(d=>d.id===id&&(!version||d.version===version))||datasets[0];
 const count=(d,scope)=>scope==='sample'?Math.min(8,d.tasks):d.tasks;
 const budgetName=b=>b==='extended'?'扩展 · 600s / 40 次调用':'标准 · 300s / 20 次调用';
-const dsSelect=(id,attr,version)=>'<select aria-label="测评集" '+attr+'>'+getDS().map(d=>opt(d.id+'@'+d.version,d.name+' · v'+d.version,id+'@'+version)).join('')+'</select>';
+const dsSelect=(id,attr,version)=>'<select aria-label="测评集" '+attr+'>'+getDS().map(d=>opt(d.id+'@'+d.version,d.name+' · v'+d.version+(d.executionReady===false?' · 执行待接入':''),id+'@'+version).replace('<option ', '<option '+(d.executionReady===false?'disabled ':''))).join('')+'</select>';
 function stat(label,value,sub=''){return '<div class="card stat-card"><div class="label">'+label+'</div><div class="value">'+value+'</div><small>'+sub+'</small></div>';}
 function conditions(c){const d=dataset(c.datasetId,c.version);return '<dl class="info-list"><div><dt>测评集 / 版本</dt><dd>'+e(d.name)+' · '+e(d.version)+'</dd></div><div><dt>预算</dt><dd>'+budgetName(c.budget)+'</dd></div><div><dt>任务 / 随机种子</dt><dd>'+count(d,c.scope)+' 项 / 42</dd></div><div><dt>验证器 / 工具</dt><dd>demo-v1 / Python、差分验证器</dd></div><div><dt>运行环境</dt><dd>'+(state.environment==='local'?'本地':'云端')+' · 界面演示</dd></div></dl>';}
 function evaluate(){
@@ -44,7 +44,9 @@ function score(model,id,budget,total){let n=0;for(const c of model+id+budget)n=(
 function categories(total,passed){let left=passed;return taskTypes.map((name,i)=>{const n=Math.floor(total/4)+(i<total%4?1:0),p=Math.min(n,left);left-=p;return {name,total:n,passed:p};}).filter(c=>c.total);}
 function begin(kind,config,ctx){
  if(state.activeRun?.status==='running'){ctx.toast('已有实验正在执行，请等待完成或取消');return;}
- const d=dataset(config.datasetId,config.version),total=count(d,config.scope),source=state.environment;
+ const d=dataset(config.datasetId,config.version);
+ if(d.executionReady===false){ctx.toast('该真实题库的执行器尚未接入，请先浏览或下载题目');return;}
+ const total=count(d,config.scope),source=state.environment;
  state.activeRun={id:'demo-'+Date.now().toString(36),kind,status:'running',progress:0,total,source,config:structuredClone(config)};
  if(kind==='evaluation')step=4;
  clearInterval(timer);ctx.render();
@@ -67,12 +69,15 @@ export function render(r,s,previousRoute=lastRoute){
   const query=new URLSearchParams(r.split('?')[1]),environment=query.get('environment'),id=query.get('dataset');
   const d=getDS().find(d=>d.id===id&&(!query.get('version')||d.version===query.get('version')));
   if(r.startsWith('/evaluate')&&state.activeRun?.status!=='running'&&(d||['local','cloud'].includes(environment)||query.has('new'))){
-   if(d){form.datasetId=d.id;form.version=d.version;}
+   if(d&&d.executionReady!==false){form.datasetId=d.id;form.version=d.version;}
    if(['local','cloud'].includes(environment))state.environment=environment;
    state.activeRun=null;step=1;connected=false;
   }
   lastRoute=r;
  }
+ const requested=new URLSearchParams(r.split('?')[1]);
+ const pending=getDS().find(d=>d.id===requested.get('dataset')&&(!requested.get('version')||d.version===requested.get('version'))&&d.executionReady===false);
+ if(pending&&/^\/(evaluate|arena)/.test(r))return '<div class="container page" data-execution-pending><h1>真实测评执行待接入</h1><section class="card card-pad"><h2>'+e(pending.name)+'</h2><p>题库已导入，可浏览完整题干和下载公开附件。真实 Agent 执行与自动评分尚未接入。</p><a class="btn primary" href="#/datasets/'+e(pending.id)+'?version='+e(pending.version)+'">浏览题库与下载</a></section></div>';
  if(r.startsWith('/arena'))return arena();
  if(r.startsWith('/report'))return report();
  return evaluate();

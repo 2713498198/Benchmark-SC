@@ -1,0 +1,31 @@
+{
+  "schema_version": "rectangle_qdt14_instance_v1",
+  "primitive": "RECTANGLE-64 round core with independent 64-bit round keys",
+  "state_convention": {
+    "integer_bit_order": "LSB-first",
+    "sbox_n_uses_state_bits": "4*n through 4*n+3",
+    "round_key_bit": "K_r[j] is integer bit j of the key xor before S-box layer r"
+  },
+  "sbox": [6, 5, 12, 10, 1, 14, 7, 9, 11, 0, 3, 13, 8, 15, 4, 2],
+  "permutation": {
+    "direction": "source_to_target",
+    "formula": "target[4*i]=source[4*i]; target[4*i+1]=source[4*((i-1) mod 16)+1]; target[4*i+2]=source[4*((i-12) mod 16)+2]; target[4*i+3]=source[4*((i-13) mod 16)+3]"
+  },
+  "rounds": [
+    {"round": 0, "sbox_input_difference_hex": "0020000600000000", "sbox_output_difference_hex": "0060000200000000"},
+    {"round": 1, "sbox_input_difference_hex": "0200006000000000", "sbox_output_difference_hex": "0600002000000000"},
+    {"round": 2, "sbox_input_difference_hex": "2000060000000000", "sbox_output_difference_hex": "6000020000000000"},
+    {"round": 3, "sbox_input_difference_hex": "0000600000000002", "sbox_output_difference_hex": "0000200000000006"},
+    {"round": 4, "sbox_input_difference_hex": "0006000000000020", "sbox_output_difference_hex": "0002000000000060"},
+    {"round": 5, "sbox_input_difference_hex": "0060000000000200", "sbox_output_difference_hex": "0020000000000600"},
+    {"round": 6, "sbox_input_difference_hex": "0600000000002000", "sbox_output_difference_hex": "0200000000006000"},
+    {"round": 7, "sbox_input_difference_hex": "6000000000020000", "sbox_output_difference_hex": "2000000000060000"},
+    {"round": 8, "sbox_input_difference_hex": "0000000000200006", "sbox_output_difference_hex": "0000000000600002"},
+    {"round": 9, "sbox_input_difference_hex": "0000000002000060", "sbox_output_difference_hex": "000000000c000020"},
+    {"round": 10, "sbox_input_difference_hex": "0000000000008600", "sbox_output_difference_hex": "0000000000001200"},
+    {"round": 11, "sbox_input_difference_hex": "0000000000003000", "sbox_output_difference_hex": "0000000000008000"},
+    {"round": 12, "sbox_input_difference_hex": "0000000000000008", "sbox_output_difference_hex": "0000000000000001"},
+    {"round": 13, "sbox_input_difference_hex": "0000000000000001", "sbox_output_difference_hex": "0000000000000006"}
+  ],
+  "final_difference_after_round_13_permutation_hex": "0004000000000020"
+}

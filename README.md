@@ -27,7 +27,7 @@ node server.mjs
 
 ## 原型边界
 
-这是前端设计与交互交付。测评集与排行榜为明确标注的示例；执行采用浏览器模拟器，不会连接实际 Agent，不包含密码分析执行器、评分后端、真实云服务或身份认证。输入密码和访问凭证不持久化；已有 `.env` 文件不由前端读取，静态服务器禁止访问点文件。
+这是前端设计与交互交付。已导入 CryptoBench-SC V4 的真实公开题库，其余测评集与排行榜为明确标注的示例；执行采用浏览器模拟器，不会连接实际 Agent，不包含密码分析执行器、评分后端、真实云服务或身份认证。输入密码和访问凭证不持久化；已有 `.env` 文件不由前端读取，静态服务器禁止访问点文件。
 
 演示账号、连接元信息、测评报告和自定义任务包保存在当前浏览器的 localStorage 中。切换浏览器或清除站点数据会移除这些记录。同步与公开均为本地状态演示，不会上传数据。不同演示账号共用当前浏览器的记录，因此不能用作真实账号隔离。
 
@@ -40,7 +40,9 @@ index.html             页面入口
 css/                   基础样式、页面样式、测评资源样式
 js/app.js              路由、页面框架、浏览器状态
 js/core.js             图标、转义、导出等共用功能
-js/data.js             明确标注的示例数据
+js/data.js             测评集注册与演示数据
+data/cryptobench-sc-v4/  真实题库索引、公开题干与下载包
+scripts/import_cryptobench.py  可重复运行的公开题库导入脚本
 js/pages/home.js       首页
 js/pages/resources.js  测评集、工具、下载与文档
 js/pages/arena.js      测评、PK、报告
@@ -51,10 +53,26 @@ tests/scenarios.mjs    异常状态、版本隔离、导出与账号验收
 tests/check.mjs        递归 JavaScript 语法检查
 ```
 
+## 已导入的真实题库
+
+CryptoBench-SC V4（网站版本 4.0.0）：127 道分组密码分析题目、26 个公开附件。支持搜索、按算法 / 难度 / 分析方向筛选、题干详情、附件下载与公开任务 ZIP 下载。两道计算压力题可单独筛选。
+
+访问 `/#/datasets/cryptobench-sc-v4`。来源：https://gitee.com/xiandianzidaxue/cryptobench-sc ，源版本为 `CBSC-V4-CURATED-BLOCK-CIPHER-127-20260722`。
+
+重新导入：
+
+```powershell
+python -B -X utf8 scripts/import_cryptobench.py "D:\Benchmark-题目\cryptobench-sc"
+```
+
+仅导入公开题干、附件与必要元信息；隐藏答案、参考复放、评分器及历史运行成绩不进入公开目录或 ZIP。真实题库的执行器尚未接入，网站禁止为该题库生成模拟成绩。真实运行需要后续接入独立执行与评分服务。静态部署时请包含 `data/` 目录。
+
 ## 验证
 
 ```powershell
 node tests/check.mjs
+python -B -X utf8 tests/verify-import.py
+node tests/imported-dataset.mjs
 node tests/smoke.mjs
 ```
 

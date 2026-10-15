@@ -1,9 +1,10 @@
+import {cryptobenchV4} from './cryptobench-v4.js';
 export const datasets=[
 {id:'mini-spn',name:'Mini-SPN 差分分析',subtitle:'DIFFERENTIAL CRYPTANALYSIS',type:'分组密码',algorithm:'Mini-SPN · 4 轮',tasks:120,version:'1.0.0',difficulty:'入门 → 进阶',tags:['差分分析','S 盒','路径搜索'],description:'从差分分布表到多轮差分路径，系统评估智能体的建模、搜索与验证能力。',icon:'grid',color:'blue',published:true},
 {id:'key-recovery',name:'约化轮密钥恢复',subtitle:'KEY RECOVERY',type:'分组密码',algorithm:'教学 SPN · 3 轮',tasks:80,version:'1.0.0',difficulty:'进阶',tags:['密钥恢复','候选筛选','实验验证'],description:'在给定明密文对与查询预算下，比较子密钥恢复策略及可验证的攻击结果。',icon:'lock',color:'violet',published:true},
 {id:'linear-analysis',name:'线性密码分析',subtitle:'LINEAR CRYPTANALYSIS',type:'分组密码',algorithm:'Mini-SPN · 4 轮',tasks:100,version:'1.0.0',difficulty:'进阶',tags:['线性逼近','偏差估计','统计分析'],description:'构造线性逼近、估计偏差并验证统计结果，衡量分析方法的严谨性。',icon:'activity',color:'teal',published:true},
-{id:'cipher-modeling',name:'密码结构与建模',subtitle:'CIPHER MODELING',type:'分组密码',algorithm:'SPN / Feistel · 教学结构',tasks:60,version:'1.0.0',difficulty:'入门',tags:['结构分析','约束建模','工具调用'],description:'理解轮函数与扩散结构，将分析任务转化为可执行、可复现的计算模型。',icon:'layers',color:'orange',published:true}
-];
+{id:'cipher-modeling',name:'密码结构与建模',subtitle:'CIPHER MODELING',type:'分组密码',algorithm:'SPN / Feistel · 教学结构',tasks:60,version:'1.0.0',difficulty:'入门',tags:['结构分析','约束建模','工具调用'],description:'理解轮函数与扩散结构，将分析任务转化为可执行、可复现的计算模型。',icon:'layers',color:'orange',published:true},
+cryptobenchV4];
 export const agents=[
 {id:'cipher-pilot',name:'CipherPilot',model:'GPT-4.1',provider:'OpenAI',color:'#245bdb',version:'1.2.0'},
 {id:'sbox-sage',name:'S-box Sage',model:'Claude Sonnet 4',provider:'Anthropic',color:'#a66b4b',version:'1.1.0'},
