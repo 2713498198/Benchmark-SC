@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 export async function runScenarios({page,check,go,shot}) {
  const latest=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('cryptobench.v1')).reports[0]);
  const reportCount=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('cryptobench.v1')).reports.length);
- const fresh=async route=>{await go(route);await page.reload();await page.locator('#main h1').first().waitFor();};
+ const fresh=async route=>{await go(route);await page.reload();await page.waitForLoadState('networkidle');await page.locator('#main h1').first().waitFor();};
  const openReport=async()=>{const link=page.locator('a[href^="#/report/"]').first();await link.waitFor();await link.click();await page.locator('[data-report-json]').waitFor();return latest();};
  const ready=async ({scope='full',failure='none',dataset,model='GPT-4.1'}={})=>{
   await fresh('/evaluate');
@@ -27,7 +27,7 @@ export async function runScenarios({page,check,go,shot}) {
  await page.locator('#connection-form [name="name"]').fill('自定义模型 Agent');
  await page.locator('#connection-form [name="url"]').fill('http://127.0.0.1:9000');
  await page.locator('#connection-form [name="model"]').fill('research-local-model');
- await page.locator('#connection-form button[type="submit"]').click();
+ await page.locator('#connection-form button[type="submit"]').click();await page.locator('#modal').waitFor({state:'hidden'});
  check('saved connection',await page.locator('[data-remove-connection]').count()===1);
  await fresh('/evaluate');
  const connectionId=await page.locator('#saved-connection option').nth(1).getAttribute('value');
@@ -53,7 +53,7 @@ export async function runScenarios({page,check,go,shot}) {
  check('JSON report download',json.name===custom.id+'.json'&&JSON.parse(json.text).id===custom.id&&JSON.parse(json.text).demo===true);
  const csv=await downloadText('[data-report-csv]');
  check('CSV report download',csv.name===custom.id+'.csv'&&csv.text.includes('"passed_a","passed_b","total","demo"'));
- await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();
+ await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();await page.locator('#modal').waitFor({state:'hidden'});
  check('sync preserves private visibility',await latest().then(r=>r.synced&&!r.published));
 
  // Identical rules apply to local and cloud sources.
@@ -80,11 +80,11 @@ export async function runScenarios({page,check,go,shot}) {
  await page.locator('#dataset-json').fill(JSON.stringify(pack));await page.locator('[data-validate]').click();
  pack.name='自定义 SPN 新版本';await page.locator('#dataset-json').fill(JSON.stringify(pack));
  check('editing import invalidates preview',await page.locator('[data-publish-dataset]').isDisabled());
- await page.locator('[data-validate]').click();await page.locator('[data-publish-dataset]').click();
+ await page.locator('[data-validate]').click();await page.locator('[data-publish-dataset]').click();await page.locator('[data-publish-dataset]').waitFor({state:'hidden'});
  check('multiple dataset versions persist',await page.evaluate(()=>JSON.parse(localStorage.getItem('cryptobench.v1')).customDatasets.filter(d=>d.id==='custom-spn').length===2));
  await go('/datasets/custom-spn?version=2.0.0');
  check('dataset detail keeps version',await page.locator('.detail-title-meta').innerText().then(t=>t.includes('2.0.0')&&t.includes('2 个任务')));
- await page.locator('[data-detail-tab="conditions"]').click();
+ await page.locator('[data-detail-tab="conditions"]').click();await page.locator('.code-disclosure > summary').click();
  const task=JSON.parse((await downloadText('[data-download-dataset]')).text);
  check('task sample keeps version',task.dataset==='custom-spn'&&task.version==='2.0.0');
  await page.locator('a[href^="#/evaluate?dataset="]').click();
@@ -94,7 +94,7 @@ export async function runScenarios({page,check,go,shot}) {
  check('changing dataset overrides entry query',await page.locator('.info-list').innerText().then(t=>t.includes('Mini-SPN')&&t.includes('120 项')));
  await ready({dataset:'custom-spn@2.0.0'});await start();const versioned=await openReport();
  check('report pins selected task version',versioned.datasetId==='custom-spn'&&versioned.version==='2.0.0'&&versioned.total===2);
- await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();await page.locator('[data-publish-report]').click();await page.locator('#confirm-publish').click();
+ await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();await page.locator('#modal').waitFor({state:'hidden'});await page.locator('[data-publish-report]').click();await page.locator('#confirm-publish').click();await page.locator('#modal').waitFor({state:'hidden'});
  await go('/leaderboard?dataset=custom-spn&version=2.0.0');
  check('leaderboard version entry',await page.locator('[data-rank="version"]').inputValue()==='2.0.0'&&await page.locator('tbody tr').count()===1);
  await page.locator('[data-rank="version"]').selectOption('1.0.0');
@@ -124,10 +124,10 @@ export async function runScenarios({page,check,go,shot}) {
  await go('/datasets/%25');check('encoded percent route handled',await page.locator('#main h1').innerText()==='测评集不存在');
 
  await go('/register');
- await page.locator('[name="name"]').fill('测试研究员');await page.locator('[name="email"]').fill('test@example.com');await page.locator('[name="password"]').fill('test-only-password');await page.locator('#auth-form button[type="submit"]').click();await page.locator('[data-logout]').waitFor();
+ await page.locator('[name="name"]').fill('测试研究员');await page.locator('[name="email"]').fill('test-'+Date.now()+'@example.com');await page.locator('[name="password"]').fill('test-only-password');await page.locator('#auth-form button[type="submit"]').click();await page.locator('[data-logout]').waitFor();
  check('registration interface',await page.locator('#main h1').innerText().then(t=>t.includes('测试研究员')));
  check('password not persisted',await page.evaluate(()=>!localStorage.getItem('cryptobench.v1').includes('test-only-password')));
- await go('/forgot-password');await page.locator('[name="email"]').fill('test@example.com');await page.locator('#auth-form button[type="submit"]').click();await page.getByRole('heading',{name:'欢迎回来',exact:true}).waitFor();
+ await go('/forgot-password');await page.locator('[name="email"]').fill('test-'+Date.now()+'@example.com');await page.locator('#auth-form button[type="submit"]').click();await page.getByRole('heading',{name:'欢迎回来',exact:true}).waitFor();
  check('password reset interface',await page.locator('#main h1').innerText()==='欢迎回来');
- await page.locator('[data-demo-user="admin"]').click();
+ await page.locator('[data-demo-user="admin"]').click();await page.locator('[data-template]').waitFor();
 }

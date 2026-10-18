@@ -26,3 +26,6 @@ tmp/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Runtime account database
+data/runtime/

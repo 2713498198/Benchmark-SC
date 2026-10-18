@@ -1,4 +1,4 @@
-import { escapeHTML, icon } from '../core.js';
+import { escapeHTML, icon, datasetTitle } from '../core.js';
 
 const e = value => escapeHTML(String(value ?? ''));
 const labels = { easy_medium: '入门至中等', medium: '中等', medium_hard: '中等至困难', hard: '困难', very_hard: '高难度', very_hard_compute: '计算压力' };
@@ -32,10 +32,10 @@ function questionHTML(text) {
   }).join('') + (code ? '</code></pre>' : '');
 }
 function downloads(d) {
-  return `<div class="row suite-downloads"><a class="btn primary" href="${e(d.downloadUrl)}" download>${icon('download', 17)} 下载公开任务包 ZIP</a><a class="btn secondary" href="${e(d.catalogUrl)}" download>下载题目索引 JSON</a></div>`;
+  return `<div class="row suite-downloads"><a class="btn secondary" href="${e(d.downloadUrl)}" download>${icon('download', 17)} 下载公开任务包 ZIP</a><a class="btn ghost" href="${e(d.catalogUrl)}" download>下载题目索引 JSON</a></div>`;
 }
 function overview(d) {
-  return `<div class="detail-content-grid"><section class="card detail-section"><span class="section-kicker">PUBLIC BENCHMARK RELEASE</span><h2>127 道可复核的密码分析任务</h2><p>${e(d.description)}</p><div class="suite-stats"><div><strong>105</strong><span>精选旧题</span></div><div><strong>22</strong><span>论文衍生新题</span></div><div><strong>2</strong><span>计算压力题 · 单列统计</span></div></div><h3>从公开题目开始</h3><p>每道题保留原始编号、算法、难度与任务类型，提供完整题干及其公开附件。可按算法、难度与分析方向筛选，并下载全部公开任务。</p><button class="btn secondary" data-suite-tab="tasks">浏览全部题目 ${icon('arrow', 16)}</button>${downloads(d)}<div class="detail-callout">${icon('info', 18)}<span>题库已导入。真实 Agent 执行与自动评分尚未接入，当前可浏览与下载题目。</span></div></section><aside class="card detail-section detail-at-glance"><h3>测评集概览</h3><dl><div><dt>数据状态</dt><dd>${badge('已导入真实题库')}</dd></div><div><dt>密码方向</dt><dd>分组密码分析</dd></div><div><dt>题目数量</dt><dd>${d.tasks} 道</dd></div><div><dt>网站版本</dt><dd>${e(d.version)}</dd></div><div><dt>源发布日期</dt><dd>${e(d.releaseDate)}</dd></div><div><dt>执行状态</dt><dd>待接入执行器</dd></div></dl></aside></div>`;
+  return `<div class="detail-content-grid"><section class="card detail-section"><span class="section-kicker">PUBLIC BENCHMARK RELEASE</span><h2>127 道可复核的密码分析任务</h2><p>${e(d.description)}</p><div class="suite-stats"><div><strong>105</strong><span>精选旧题</span></div><div><strong>22</strong><span>论文衍生新题</span></div><div><strong>2</strong><span>计算压力题 · 单列统计</span></div></div><button class="btn secondary" data-suite-tab="tasks">浏览全部题目 ${icon('arrow', 16)}</button>${downloads(d)}<div class="detail-callout">${icon('info', 18)}<span>题库可浏览与下载；真实执行和自动评分待接入。</span></div></section><aside class="card detail-section detail-at-glance"><h3>测评集概览</h3><dl><div><dt>数据状态</dt><dd>${badge('已导入真实题库')}</dd></div><div><dt>密码方向</dt><dd>分组密码分析</dd></div><div><dt>题目数量</dt><dd>${d.tasks} 道</dd></div><div><dt>网站版本</dt><dd>${e(d.version)}</dd></div><div><dt>源发布日期</dt><dd>${e(d.releaseDate)}</dd></div><div><dt>执行状态</dt><dd>待接入执行器</dd></div></dl></aside></div>`;
 }
 function taskList(d, route) {
   const tasks = catalog.tasks;
@@ -61,7 +61,7 @@ export function renderImportedDataset(d, route) {
   }
   const tabs = [['overview', '概览'], ['tasks', '题目与附件'], ['scoring', '评分规则'], ['version', '版本与来源']];
   let content = ui.tab === 'overview' ? overview(d) : ui.tab === 'scoring' ? scoring() : ui.tab === 'version' ? version(d) : catalog ? taskList(d, route) : `<section class="card detail-section"><h2>题目目录</h2><p role="status">${error ? e(error) : '正在加载公开题目…'}</p>${error ? '<button class="btn secondary" data-suite-retry>重试</button>' : ''}</section>`;
-  return `<div class="container resources-page" data-imported-suite="${d.id}"><a class="resource-back" href="#/datasets">${icon('arrow', 16)} 返回测评集</a><header class="dataset-detail-heading"><div><div class="dataset-meta">${badge('真实题库')}${badge('分组密码')}${badge('执行待接入')}</div><h1>${e(d.name)}</h1><p>${e(d.subtitle)}</p><div class="detail-title-meta"><span>${d.tasks} 道任务</span><span>v${e(d.version)}</span></div></div><div class="dataset-detail-actions"><a class="btn primary" href="${e(d.downloadUrl)}" download>${icon('download', 17)} 下载公开任务包</a></div></header><nav class="tabs resource-tabs" aria-label="测评集详情">${tabs.map(([id, label]) => `<button data-suite-tab="${id}" class="${ui.tab === id ? 'active' : ''}" aria-current="${ui.tab === id ? 'page' : 'false'}">${label}</button>`).join('')}</nav>${content}</div>`;
+  return `<div class="container resources-page" data-imported-suite="${d.id}"><a class="resource-back" href="#/datasets">${icon('arrow', 16)} 返回测评集</a><header class="dataset-detail-heading"><div><div class="dataset-meta">${badge('真实题库')}${badge('分组密码')}${badge('执行待接入')}</div><h1>${e(datasetTitle(d))}</h1><div class="detail-title-meta"><span>${d.tasks} 道任务</span><span>v${e(d.version)}</span></div></div><div class="dataset-detail-actions"><a class="btn primary" href="${e(d.downloadUrl)}" download>${icon('download', 17)} 下载公开任务包</a></div></header><nav class="tabs resource-tabs" aria-label="测评集详情">${tabs.map(([id, label]) => `<button data-suite-tab="${id}" class="${ui.tab === id ? 'active' : ''}" aria-current="${ui.tab === id ? 'page' : 'false'}">${label}</button>`).join('')}</nav>${content}</div>`;
 }
 export function bindImportedDataset(ctx, d) {
   const root = document.querySelector('[data-imported-suite]');

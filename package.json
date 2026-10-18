@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.mjs",
     "check": "node tests/check.mjs",
-    "test": "node tests/smoke.mjs"
+    "test": "node tests/smoke.mjs",
+    "test:design": "node tests/redesign.mjs"
   },
   "engines": {
     "node": ">=20"
