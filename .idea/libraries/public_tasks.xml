@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="public-tasks">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/data/cryptobench-sc-v4/public-tasks.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
