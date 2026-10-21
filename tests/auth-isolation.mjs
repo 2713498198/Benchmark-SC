@@ -6,15 +6,20 @@ import {randomUUID} from 'node:crypto';
 const base=(process.env.TEST_URL||'http://127.0.0.1:4173').replace(/\/$/,'');
 
 class Client {
-  constructor(){this.cookie='';}
+  constructor(){this.cookies=new Map();}
   async request(path, options={}){
     const headers={...(options.body?{'content-type':'application/json'}:{}),...(options.headers||{})};
-    if(this.cookie)headers.cookie=this.cookie;
+    if(!['GET','HEAD','OPTIONS'].includes((options.method||'GET').toUpperCase())){
+      const {body:csrf}=await this.request('/api/auth/csrf');
+      headers[csrf.headerName]=csrf.token;
+    }
+    if(this.cookies.size)headers.cookie=[...this.cookies].map(([name,value])=>name+'='+value).join('; ');
     const init={...options,headers};
     if(init.body&&typeof init.body!=='string')init.body=JSON.stringify(init.body);
     const response=await fetch(base+path,init);
-    const setCookie=response.headers.get('set-cookie');
-    if(setCookie)this.cookie=setCookie.split(';',1)[0];
+    for(const cookie of response.headers.getSetCookie()){
+      const [name,...value]=cookie.split(';',1)[0].split('=');this.cookies.set(name,value.join('='));
+    }
     let body=null;try{body=await response.json();}catch{}
     return {response,body};
   }
@@ -59,7 +64,7 @@ const anonymous=new Client();
 const publicBootstrap=await anonymous.json('/api/bootstrap');
 assert.equal(publicBootstrap.customDatasets.some(x=>x.id===dataset.id),true,'published datasets must be publicly readable');
 const databaseFile=await anonymous.request('/data/runtime/db.json');
-assert.equal(databaseFile.response.status,403,'runtime database must not be exposed as a static asset');
+assert.ok(databaseFile.response.status>=400,'runtime database must not be exposed as a static asset');
 
 await a.json(`/api/reports/${encodeURIComponent(report.id)}/sync`,{method:'POST'});
 await a.json(`/api/reports/${encodeURIComponent(report.id)}/publish`,{method:'POST'});

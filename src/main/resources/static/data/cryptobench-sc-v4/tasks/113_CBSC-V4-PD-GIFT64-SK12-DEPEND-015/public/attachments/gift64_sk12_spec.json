@@ -1,0 +1,60 @@
+{
+  "schema_version": "cbsc_gift64_fixed_characteristic_v1",
+  "primitive": "GIFT-64",
+  "rounds": 12,
+  "state_convention": {
+    "state_size_bits": 64,
+    "state_as_integer": "16 hexadecimal digits; bit 0 is the least-significant bit and nibble 0 is the least-significant hexadecimal digit",
+    "bit_access": "bit_i(x) = (x >> i) & 1",
+    "nibble_access": "nibble_j(x) = (x >> (4*j)) & 0xf"
+  },
+  "sbox": [1, 10, 4, 12, 6, 15, 3, 9, 2, 13, 11, 7, 5, 0, 8, 14],
+  "round_function": ["SubCells", "PermBits", "AddRoundKeyAndConstant"],
+  "perm_bits": {
+    "assignment": "output_bit[P(i)] = input_bit[i]",
+    "formula": "P(i) = 4*floor(i/16) + 16*((3*floor((i mod 16)/4) + (i mod 4)) mod 4) + (i mod 4)",
+    "table": [0, 17, 34, 51, 48, 1, 18, 35, 32, 49, 2, 19, 16, 33, 50, 3, 4, 21, 38, 55, 52, 5, 22, 39, 36, 53, 6, 23, 20, 37, 54, 7, 8, 25, 42, 59, 56, 9, 26, 43, 40, 57, 10, 27, 24, 41, 58, 11, 12, 29, 46, 63, 60, 13, 30, 47, 44, 61, 14, 31, 28, 45, 62, 15]
+  },
+  "master_key_convention": {
+    "size_bits": 128,
+    "integer_words": "K = k7 || k6 || ... || k0, where word k0 occupies master-key bits 0..15 and word k7 occupies bits 112..127",
+    "bit_names": "k_i denotes bit i of the 128-bit master-key integer, with k_0 the least-significant bit"
+  },
+  "round_key": {
+    "current_words": "U = current_word[1], V = current_word[0]",
+    "injection": "for nibble i=0..15, XOR U_i into state bit 4*i+1 and V_i into state bit 4*i",
+    "word_update_after_each_round": "[new_k0,new_k1,new_k2,new_k3,new_k4,new_k5,new_k6,new_k7] = [old_k2,old_k3,old_k4,old_k5,old_k6,old_k7,rotr16(old_k0,12),rotr16(old_k1,2)]"
+  },
+  "round_constants": {
+    "initial_lfsr_state_before_round_0": [0, 0, 0, 0, 0, 0],
+    "update_before_use": "[c0,c1,c2,c3,c4,c5] = [old_c1,old_c2,old_c3,old_c4,old_c5,old_c0 xor old_c1 xor 1]",
+    "injection": "XOR 1 into state bit 63; XOR c0,c1,c2,c3,c4,c5 into state bits 23,19,15,11,7,3 respectively"
+  },
+  "fixed_characteristic": {
+    "state_location": "input of SubCells in each round; item 12 is the state after round 11",
+    "input_differences_hex": [
+      "0000000600000006",
+      "0000000002020000",
+      "0000005000000050",
+      "0000000000000202",
+      "0000000500000005",
+      "0000000002020000",
+      "00a0000000a00000",
+      "1010000000000000",
+      "0000a0000000a000",
+      "0000000001010000",
+      "0000005000000050",
+      "0000000000000202",
+      "0000000500000005"
+    ]
+  },
+  "fixed_master_key_for_exact_count": {
+    "hex": "00000000000000000000000000001000",
+    "meaning": "the 128-bit master-key integer has only bit k_12 set"
+  },
+  "counting_semantics": {
+    "oriented_plaintext": "count x in {0,1}^64 such that x and x xor input_difference follow every listed round difference",
+    "probability": "oriented_plaintext_count / 2^64",
+    "right_key_fraction": "2^(-rank) when the derived affine master-key equations are consistent and independent rank is rank"
+  }
+}

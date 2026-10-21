@@ -1,0 +1,13 @@
+{
+  "primitive": "GIFT-128 relaxed-round-key verification model",
+  "state": "32 nibbles; nibble 0 is the rightmost hexadecimal digit; bit 4*i+b is bit b of nibble i with b=0 the LSB",
+  "sbox": [1, 10, 4, 12, 6, 15, 3, 9, 2, 13, 11, 7, 5, 0, 8, 14],
+  "round_count": 18,
+  "permutation_semantics": "After the S-box layer flatten v as v[4*i+b]. Before key/constant addition set p[j] = v[P128[j]].",
+  "P128": [0, 5, 10, 15, 16, 21, 26, 31, 32, 37, 42, 47, 48, 53, 58, 63, 64, 69, 74, 79, 80, 85, 90, 95, 96, 101, 106, 111, 112, 117, 122, 127, 12, 1, 6, 11, 28, 17, 22, 27, 44, 33, 38, 43, 60, 49, 54, 59, 76, 65, 70, 75, 92, 81, 86, 91, 108, 97, 102, 107, 124, 113, 118, 123, 8, 13, 2, 7, 24, 29, 18, 23, 40, 45, 34, 39, 56, 61, 50, 55, 72, 77, 66, 71, 88, 93, 82, 87, 104, 109, 98, 103, 120, 125, 114, 119, 4, 9, 14, 3, 20, 25, 30, 19, 36, 41, 46, 35, 52, 57, 62, 51, 68, 73, 78, 67, 84, 89, 94, 83, 100, 105, 110, 99, 116, 121, 126, 115],
+  "round_transition": "For r=0..16, next S-box input difference equals p at all bit positions because XOR with a shared key/constant cancels in differences. At bit b=1 or b=2 of each nibble, an independent round-key value bit may affect the two concrete executions but the same bit is used in both; at b=0 and b=3 there is no key addition.",
+  "round_constant_positions": [3, 7, 11, 15, 19, 23, 127],
+  "round_constant_relaxation": "At each round, the value XORed at every listed constant position is an independent free Boolean shared by the two executions. At all other positions no constant is injected.",
+  "relaxation": "Each key-addition bit and each listed constant bit in every round is independent. This is a superset of the real key schedule and fixed constants, so UNSAT remains an authoritative impossibility proof.",
+  "trail_file_format": "Ignoring comments and blank lines, lines 2*r and 2*r+1 are the input and output nibble differences of round r."
+}

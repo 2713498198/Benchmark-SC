@@ -29,3 +29,10 @@ Desktop.ini
 
 # Runtime account database
 data/runtime/
+
+# Java / Maven and local persistent storage
+target/
+.mvn/repository/
+var/
+*.iml
+.idea/

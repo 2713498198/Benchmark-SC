@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {leaderboardModel,leaderboardCsvRows,displayScore} from '../js/leaderboard-model.js';
-import {chartModel,chartAxes} from '../js/leaderboard-chart.js';
+import {leaderboardModel,leaderboardCsvRows,displayScore} from '../src/main/resources/static/js/leaderboard-model.js';
+import {chartModel,chartAxes} from '../src/main/resources/static/js/leaderboard-chart.js';
 
 const filters={dataset:'set',version:'1',budget:'standard',source:'all',type:'demo',sort:'score'};
 const row={datasetId:'set',version:'1',budget:'standard',scope:'full',source:'local',total:100,agent:'Agent',model:'Model'};

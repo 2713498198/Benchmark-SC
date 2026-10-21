@@ -1,102 +1,177 @@
 # CryptoBench
 
-面向密码分析智能体的可交互前端原型。当前以分组密码为核心，预留流密码、后量子密码及更多密码分析方向。
+专用于比较智能体在密码分析任务中通过率、耗时与资源消耗的评测网站。项目采用 Java 21、Spring Boot 3.5.7 和 Vue 3，前后端由同一个 Spring Boot 进程提供服务。
 
-## 运行
+## 快速启动
 
-需要 Node.js 20 或以上版本和项目内的 Vue 3 依赖。Node.js 可以安装在 `D:\develop\Nodejs`；`start.cmd` 会在 PATH 中找不到 Node 时使用该位置。首次启动前在项目目录安装依赖：
+环境要求：JDK 21、Maven 3.6.3 或以上。当前启动脚本兼容 `D:\develop\jdk` 和 `D:\develop\apache-maven-3.9.15`；Maven 依赖缓存保存在项目的 `.mvn/repository/` 中。
 
-```powershell
-cd <项目目录>
-npm install
-node server.mjs
-```
-
-如果 Node.js 未加入 PATH，可在 PowerShell 中直接运行：
+在项目根目录双击 `start.cmd`，或运行：
 
 ```powershell
 cd D:\develop\Benchmark
-& D:\develop\Nodejs\npm.cmd install
-& D:\develop\Nodejs\node.exe server.mjs
+mvn spring-boot:run
 ```
 
-浏览器访问 http://127.0.0.1:4173 。保持终端运行，按 Ctrl+C 停止。也可以双击 `start.cmd`。
+浏览器访问 http://127.0.0.1:4173 。首次运行需要联网下载 Maven 依赖。本地默认使用 H2 文件数据库，启动时自动创建表，无需额外安装数据库；数据保存在 `var/data/cryptobench.mv.db`，重启后保留。
 
-前端使用 Vue 3 浏览器完整版本和原生 ES 模块，由 `server.mjs` 直接提供文件；无需构建步骤。Vue 依赖位于项目的 `node_modules/`，没有安装到系统盘。
+前端 Vue 运行时已随项目放在 `src/main/resources/static/vendor/vue/`，启动网站不需要 Node.js 或 npm。
 
-## 已实现的页面和交互
+## 在 IntelliJ IDEA 中运行
 
-- 首页：占满首屏的平台测评入口与 3D 密码几何体、工具 / 榜单 / PK 三个探索入口。
-- 测评集：搜索、筛选、卡片 / 列表、任务条件、评分规则、版本与任务样例下载。
-- 工具与文档：Agent 接入协议建议、本地部署配置下载、报告与复现说明。
-- 测评：本地接口 / 云端 Agent 模式切换、四步向导、Agent / 模型配置（支持自定义模型标识）、预算与任务范围、完成 / 取消 / 失败 / 超时、报告导出。
-- PK：模型或 Agent 选择、固定赛场条件、客观通过率、平局与双方成绩。
-- 榜单：按条件筛选、复现配置、2–4 项对比、CSV 导出。
-- 账号与工作台：服务端登录 / 注册 / 找回密码请求、体验账号、连接管理、实验记录、私有报告同步与单独公开。
-- 管理：服务端管理员权限校验、JSON 测评集校验、预览、发布固定版本。
-- 响应式布局、移动导航、键盘操作与减少动态效果支持。
+1. 使用 IDEA 打开项目根目录的 `pom.xml`，选择作为 Maven 项目加载；已有项目可在 Maven 面板点击“添加 Maven 项目”并选择该文件。
+2. 在 Project Structure 中将 Project SDK 与语言级别设置为 Java 21；Maven 的 Runner JRE 也选用该 JDK。
+3. 等待 Maven 同步完成，运行 `src/main/java/com/cryptobench/benchmark/CryptoBenchApplication.java` 的 `main` 方法。项目也提供了共享运行配置 `CryptoBench`。
+4. 工作目录使用项目根目录。可在 Run Configuration 的 Environment variables 中设置 `PORT`、`SPRING_PROFILES_ACTIVE` 等参数。
 
-## 当前边界
+默认 profile 是 `local`。不依赖 IDEA 的 Spring 专属插件，普通 Java Application 配置即可启动。
 
-已导入 CryptoBench-SC V4 的真实公开题库，其余测评集与排行榜为明确标注的示例；执行采用浏览器模拟器，不会连接实际 Agent，不包含密码分析执行器、评分后端或真实云服务。输入密码和访问凭证不持久化；已有 `.env` 文件不由前端读取，静态服务器禁止访问点文件。
+## 打包部署
 
-账号、会话、连接元信息、测评报告和自定义任务包由 `server.mjs` 的 JSON API 写入 `data/runtime/db.json`。密码使用 Node `scrypt` 哈希，登录状态使用 HttpOnly 会话 Cookie；连接、私有报告和实验记录按用户隔离，公开报告与已发布测评集才会进入公共读取范围。浏览器 localStorage 只保留兼容缓存，不能作为身份或权限来源。
+```powershell
+mvn clean verify
+java -jar target/cryptobench-1.0.0-SNAPSHOT.jar
+```
 
-当前仍是可本地运行的演示后端：Agent 执行、真实评分、邮件找回密码、云端部署和正式入榜流程需要接入生产服务。接入文档提供建议协议，而非已上线的第三方执行 API。
+可执行 JAR 包含前端、公开题库和后端。启动工作目录决定本地数据库相对路径，请固定工作目录；关闭程序后再备份 H2 数据文件。健康检查地址为 `/actuator/health`。
 
-## 项目结构
+## MySQL 配置
+
+`prod` profile 使用 MySQL 8 或以上版本。先在 MySQL 中创建数据库，并为应用创建具有该数据库建表、迁移和读写权限的独立账号：
+
+```sql
+CREATE DATABASE cryptobench CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+在 PowerShell 中设置环境变量后启动：
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE = 'prod'
+$env:DB_URL = 'jdbc:mysql://127.0.0.1:3306/cryptobench?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC'
+$env:DB_USERNAME = 'cryptobench'
+$env:DB_PASSWORD = '<应用数据库账号密码>'
+java -jar target/cryptobench-1.0.0-SNAPSHOT.jar
+```
+
+Flyway 在启动时执行 `src/main/resources/db/migration/` 中的版本化迁移。后续变更应新增 `V2__...sql` 等迁移文件，不修改已经执行的迁移。
+
+生产环境默认关闭体验账号，并使用 Secure Cookie，需通过 HTTPS 访问。服务器对外监听时设置 `SERVER_ADDRESS=0.0.0.0`，使用反向代理提供 HTTPS。仅在本机通过 HTTP 验证 MySQL 配置时，可临时设置 `SECURE_COOKIE=false`。
+
+`.env.example` 仅作为参数参考，Spring Boot 不会自动加载 `.env`；请在系统环境、PowerShell 或 IDEA 运行配置中设置。
+
+## 目录与开发约定
 
 ```text
-index.html             页面入口
-css/                   基础样式、页面样式、测评资源样式
-js/app.js              Vue 应用入口、路由、页面框架、浏览器状态
-js/vue/                首页、资源、测评、榜单、账号等 Vue 组件
-js/core.js             图标、转义、导出等共用功能
-js/data.js             测评集注册与演示数据
-data/cryptobench-sc-v4/  真实题库索引、公开题干与下载包
-scripts/import_cryptobench.py  可重复运行的公开题库导入脚本
-js/pages/             迁移前页面渲染实现，保留作为对照参考；当前入口不加载
-server.mjs             本地静态预览服务
-tests/smoke.mjs        浏览器流程验收
-tests/scenarios.mjs    异常状态、版本隔离、导出与账号验收
-tests/auth-isolation.mjs 服务端账号、权限与多用户隔离验收
-tests/redesign.mjs     五种屏宽、桌面 / 移动截图、键盘与视觉验收
-tests/check.mjs        递归 JavaScript 语法检查
-tests/vue-templates.mjs Vue 模板编译检查
+pom.xml                                  Maven 构建与依赖
+.mvn/maven.config                        项目级 Maven 配置
+.run/CryptoBench.run.xml                 IDEA 共享启动配置
+src/
+  main/
+    java/com/cryptobench/benchmark/
+      CryptoBenchApplication.java        Spring Boot 启动入口
+      auth/                              账号、会话与认证
+      connection/                        智能体连接元数据
+      report/                            报告存储、同步与公开
+      dataset/                           自定义测评集版本发布
+      workspace/                         工作台聚合接口
+      common/                            异常处理与 JSON 工具
+      config/                            安全、请求限制及配置
+      migration/                         旧版 JSON 数据迁移
+    resources/
+      application.yml                    公共配置
+      application-local.yml              本地 H2 配置
+      application-prod.yml               MySQL 配置
+      db/migration/                      Flyway 数据库迁移
+      static/
+        index.html                       Vue 页面入口
+        js/app.js                        Vue 应用与路由
+        js/vue/                          页面组件
+        css/                             页面样式
+        assets/                          图片、字体
+        vendor/vue/                      Vue 浏览器运行时及许可证
+        data/cryptobench-sc-v4/           公开题库和下载包
+  test/java/                             Java 集成测试
+  test/resources/                        隔离测试数据库配置
+scripts/                                 题库导入与前端依赖同步
+tests/                                  前端与端到端验收脚本
+docs/archive/                           旧页面实现及历史设计说明
+var/                                     本地运行数据，不提交 Git
+target/                                 编译和打包产物，不提交 Git
 ```
 
-## 已导入的真实题库
+代码按业务模块组织，各模块内部使用 `controller`、`service`、`repository`、`dto`、`model` 分层。Controller 处理 HTTP 和参数校验，Service 承担业务规则与事务，Repository 使用 Spring JDBC 访问数据库。类名采用大驼峰，包名采用小写，SQL 表名与字段使用下划线。
 
-CryptoBench-SC V4（网站版本 4.0.0）：127 道分组密码分析题目、26 个公开附件。支持搜索、按算法 / 难度 / 分析方向筛选、题干详情、附件下载与公开任务 ZIP 下载。两道计算压力题可单独筛选。
+前端样式、页面布局、标题动画和 Vue 组件继续沿用。前端通过同源 `/api` 调用后端，页面使用 hash 路由，不需要额外配置前端开发服务器。旧静态服务器 `server.mjs` 已由 Spring Boot 替换。
 
-访问 `/#/datasets/cryptobench-sc-v4`。来源：https://gitee.com/xiandianzidaxue/cryptobench-sc ，源版本为 `CBSC-V4-CURATED-BLOCK-CIPHER-127-20260722`。
+## 业务接口与安全
 
-重新导入：
+已迁移注册、登录、退出、工作台、连接管理、私有报告、报告同步与公开、自定义测评集发布。会话使用 HttpOnly / SameSite Cookie，数据库只保存会话令牌摘要；新密码使用 PBKDF2。私有资源按用户隔离，发布报告后不可修改，自定义测评集的同一 ID 与版本不可覆盖。
+
+修改数据的请求需要 CSRF 校验：先调用 `GET /api/auth/csrf`，携带返回的 Cookie，并将响应中的 `token` 作为 `headerName` 对应的请求头。现有前端已处理该流程。
+
+主要接口：
+
+| 接口 | 用途 |
+| --- | --- |
+| `GET /api/auth/me` | 当前账号 |
+| `GET /api/auth/csrf` | CSRF 令牌 |
+| `POST /api/auth/register`、`login`、`logout` | 注册、登录、退出 |
+| `POST /api/auth/demo` | 本地体验账号，仅 local 默认启用 |
+| `GET /api/bootstrap` | 工作台与公开数据 |
+| `GET/POST /api/connections` | 连接列表和新增 |
+| `DELETE /api/connections/{id}` | 删除自己的连接 |
+| `GET/POST /api/reports` | 报告列表和保存 |
+| `GET /api/reports/{id}` | 自己的报告或已公开报告 |
+| `POST /api/reports/{id}/sync`、`publish` | 同步、公开自己的报告 |
+| `POST /api/datasets/custom` | 管理员发布测评集版本 |
+
+注册接口只创建研究者，不能通过客户端指定管理员角色。本地体验入口可创建管理员体验账号；生产管理员需要通过受控的数据初始化或账号管理流程设置。
+
+## 旧版本数据迁移
+
+如果旧 Node 服务存在 `data/runtime/db.json`，可在全新的目标数据库上进行一次性导入：
 
 ```powershell
-python -B -X utf8 scripts/import_cryptobench.py "D:\Benchmark-题目\cryptobench-sc"
+$env:LEGACY_IMPORT_ENABLED = 'true'
+$env:CRYPTOBENCH_DB_FILE = 'D:/develop/Benchmark/data/runtime/db.json'
+mvn spring-boot:run
 ```
 
-仅导入公开题干、附件与必要元信息；隐藏答案、参考复放、评分器及历史运行成绩不进入公开目录或 ZIP。真实题库的执行器尚未接入，网站禁止为该题库生成模拟成绩。真实运行需要后续接入独立执行与评分服务。静态部署时请包含 `data/` 目录。
+导入用户、连接、报告和已发布测评集，保留旧版 scrypt 密码兼容；原文件不修改，旧会话不导入，用户重新登录。目标数据库已有用户时拒绝导入。完成后必须移除 `LEGACY_IMPORT_ENABLED` 或将其设为 `false`，再正常启动。请先备份源文件；H2 切换 MySQL 不会自动迁移已有数据。
 
-## 验证
+## 前端开发与验证
+
+仅修改现有 HTML、CSS、JS 时，直接编辑 `src/main/resources/static/`。需要升级 Vue 或运行浏览器验收时再安装 Node.js 20+ 与 npm 依赖：
 
 ```powershell
-node tests/check.mjs
+npm install
+npm run vendor:vue
+npm run check
+node tests/leaderboard-model.mjs
+node tests/leaderboard-chart-model.mjs
 python -B -X utf8 tests/verify-import.py
-node tests/imported-dataset.mjs
-# 先在另一个终端运行 node server.mjs，再执行服务端账号隔离验收
-node tests/auth-isolation.mjs
-node tests/smoke.mjs
-node tests/redesign.mjs
+mvn verify
 ```
 
-浏览器验收需要 Playwright 以及 Chrome / Edge。可安装开发依赖 `npm install --no-save playwright`，流程与改版验收也支持通过 `PLAYWRIGHT_MODULE` 指定 Playwright 的 `index.mjs` 绝对路径，通过 `CHROME_PATH` 指定浏览器。
+浏览器验收需要 npm 安装的 Playwright 与本机 Chrome。先启动一个隔离的测试服务，设置 `TEST_URL`，再依次运行：
 
-流程、账号和改版验收会创建测试账号、连接与测评集，请在独立项目副本启动服务，不复制 `data/runtime/`，再通过 `TEST_URL` 指定地址（默认 4173 端口）。题库与流程验收需要未发布自定义测评集的初始数据库，应先运行题库验收，再运行流程验收，最后运行账号与改版验收。流程截图默认保存在 `tests/artifacts/`；改版截图默认保存在 `tmp/verification/redesign/`，可用 `TEST_ARTIFACT_DIR` 自定义。改版验收覆盖 1440、1024、768、390、360px，保存桌面和移动截图及 JSON 结果。
+```powershell
+$env:TEST_URL = 'http://127.0.0.1:4189'
+node tests/imported-dataset.mjs
+node tests/auth-isolation.mjs
+node tests/spring-boot-browser.mjs
+```
 
-## 设计取舍
+题库验收应首先在空数据库执行，其余脚本会写入测试账号及数据。启动隔离服务时可传入 `--server.port=4189` 和 `--spring.datasource.url=jdbc:h2:file:./target/test-data/cryptobench;MODE=MySQL;DATABASE_TO_LOWER=TRUE`（PowerShell 中请给整个 URL 参数加引号），避免使用日常开发数据库。
 
-采用黑白主色、清晰的文字层级与简洁留白。首页为首屏与探索平台两个区块，标题、平台说明和测评入口居中展示，首屏高度随可视区域适配。入口为“开始测评”和“浏览测评榜单”，真实题库与公开任务包通过测评集页面访问。完整题干、评分规则、下载和操作提示保留在相关功能页，长代码与复现配置按需展开。
+## 题库与当前功能边界
 
-针对密码分析任务，固定数据版本与预算，以验证器判定的任务通过率为主要比较指标；不使用主观投票，也不把不同密码类型混成一个总分。模型 PK 固定 Agent 模板与工具，Agent PK 记录各自的模型与工具条件。本地与云端共用规则，报告默认私有，主动同步后再单独决定是否公开。
+已导入 CryptoBench-SC V4：127 道公开分组密码分析题目、26 个公开附件。可搜索、筛选、查看题干、下载附件和公开任务 ZIP。来源：https://gitee.com/xiandianzidaxue/cryptobench-sc 。重新导入：
+
+```powershell
+python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
+```
+
+只公开题干、附件及必要元数据；隐藏答案、参考解法和评分器不进入静态目录或 ZIP。
+
+本次实现了 Spring Boot 业务后端及数据库持久化。真实 Agent 调度、隔离执行、服务端评分和邮件找回密码仍待接入；其余示例题库和示例榜单延续已有标注。报告指标仍来自现有前端流程，不能视为服务端认证成绩；真实题库继续禁止生成模拟成绩。

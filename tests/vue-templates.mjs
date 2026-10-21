@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {compile} from '@vue/compiler-dom';
 
-const files=['js/app.js',...fs.readdirSync('js/vue').filter(name=>name.endsWith('.js')).map(name=>'js/vue/'+name)];
+const root='src/main/resources/static/js';
+const files=[root+'/app.js',...fs.readdirSync(root+'/vue').filter(name=>name.endsWith('.js')).map(name=>root+'/vue/'+name)];
 let count=0;
 for(const file of files){
  const source=fs.readFileSync(file,'utf8');

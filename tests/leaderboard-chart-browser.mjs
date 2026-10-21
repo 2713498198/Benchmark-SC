@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {chromium} from 'playwright';
-import {datasets} from '../js/data.js';
+import {datasets} from '../src/main/resources/static/js/data.js';
 
 // Read-only browser acceptance. Bootstrap fixtures exist only in this browser;
 // registration, publication and account tests run separately on an isolated site.

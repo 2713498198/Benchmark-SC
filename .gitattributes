@@ -1,0 +1,4 @@
+# Public download metadata contains byte lengths and SHA-256 hashes.
+src/main/resources/static/data/** -text
+src/main/resources/static/data/**/catalog.json text eol=lf
+*.cmd text eol=crlf

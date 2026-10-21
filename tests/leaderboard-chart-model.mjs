@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {chartModel,chartAxes,renderRankChart} from '../js/leaderboard-chart.js';
-import {rankings} from '../js/data.js';
+import {chartModel,chartAxes,renderRankChart} from '../src/main/resources/static/js/leaderboard-chart.js';
+import {rankings} from '../src/main/resources/static/js/data.js';
 
 const demo=chartModel(rankings);
 assert.equal(demo.included,4);

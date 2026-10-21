@@ -1,0 +1,173 @@
+package com.cryptobench.benchmark;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class BenchmarkApiIntegrationTest {
+    @Autowired MockMvc mvc;
+    @Autowired ObjectMapper mapper;
+    @Autowired JdbcTemplate jdbc;
+
+    @Test
+    void servesVueAndPublicDatasetWithoutExposingProjectOrRuntimeFiles() throws Exception {
+        Client client = new Client();
+        assertThat(client.send("GET", "/", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.send("GET", "/index.html", null).getResponse().getContentAsString()).contains("id=\"app\"");
+        assertThat(client.send("GET", "/js/app.js", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.send("GET", "/vendor/vue/vue.esm-browser.prod.js", null).getResponse().getStatus()).isEqualTo(200);
+        JsonNode catalog = client.json(client.send("GET", "/data/cryptobench-sc-v4/catalog.json", null));
+        assertThat(catalog.path("tasks").size()).isEqualTo(127);
+        assertThat(client.send("GET", "/data/cryptobench-sc-v4/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(200);
+        for (String path : new String[]{"/.env", "/pom.xml", "/data/runtime/db.json", "/var/data/cryptobench.mv.db",
+                "/scripts/import_cryptobench.py", "/db/migration/V1__create_benchmark_schema.sql"}) {
+            assertThat(client.send("GET", path, null).getResponse().getStatus()).isGreaterThanOrEqualTo(400);
+        }
+    }
+
+    @Test
+    void validatesRegistrationAndPersistsHashedPasswordsAndRevocableSessions() throws Exception {
+        Client client = new Client();
+        assertThat(client.send("GET", "/api/connections", null).getResponse().getStatus()).isEqualTo(401);
+        assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", "bad", "password", "123"))
+                .getResponse().getStatus()).isEqualTo(400);
+        String email = "auth-" + UUID.randomUUID() + "@example.com";
+        MvcResult registration = client.send("POST", "/api/auth/register",
+                Map.of("name", "研究者", "email", email, "password", "test-password", "role", "admin"));
+        assertThat(registration.getResponse().getStatus()).isEqualTo(201);
+        assertThat(client.json(registration).path("user").path("role").asText()).isEqualTo("researcher");
+        assertThat(registration.getResponse().getContentAsString()).doesNotContain("password");
+        assertThat(registration.getResponse().getHeaders("Set-Cookie").toString()).contains("HttpOnly", "SameSite=Lax");
+        String passwordHash = jdbc.queryForObject("SELECT password_hash FROM benchmark_users WHERE email = ?", String.class, email);
+        assertThat(passwordHash).startsWith("{pbkdf2}").doesNotContain("test-password");
+        String token = client.cookies.get("cb_session").getValue();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_sessions WHERE token_hash = ?", Long.class, token)).isZero();
+        assertThat(client.json(client.send("GET", "/api/auth/me", null)).path("user").path("email").asText()).isEqualTo(email);
+        assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", email, "password", "test-password"))
+                .getResponse().getStatus()).isEqualTo(409);
+        client.send("POST", "/api/auth/logout", null);
+        assertThat(client.send("GET", "/api/connections", null).getResponse().getStatus()).isEqualTo(401);
+        assertThat(client.send("POST", "/api/auth/login", Map.of("email", email, "password", "wrong"))
+                .getResponse().getStatus()).isEqualTo(401);
+        assertThat(client.send("POST", "/api/auth/login", Map.of("email", email, "password", "test-password"))
+                .getResponse().getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void isolatesConnectionsAndReportsAndProtectsPublicationState() throws Exception {
+        Client a = registeredClient();
+        Client b = registeredClient();
+        Client anonymous = new Client();
+        MvcResult connection = a.send("POST", "/api/connections",
+                Map.of("name", "Agent", "url", "http://127.0.0.1:9000", "model", "test"));
+        assertThat(connection.getResponse().getStatus()).isEqualTo(201);
+        String connectionId = a.json(connection).path("id").asText();
+        assertThat(b.json(b.send("GET", "/api/connections", null)).size()).isZero();
+        assertThat(b.send("DELETE", "/api/connections/" + connectionId, null).getResponse().getStatus()).isEqualTo(404);
+        String id = "report-" + UUID.randomUUID();
+        JsonNode report = a.json(a.send("POST", "/api/reports", Map.of("id", id, "scope", "full", "kind", "evaluation",
+                "synced", true, "published", true, "ownerId", "fake")));
+        assertThat(report.path("synced").asBoolean()).isFalse();
+        assertThat(report.path("published").asBoolean()).isFalse();
+        assertThat(report.has("ownerId")).isFalse();
+        assertThat(b.json(b.send("GET", "/api/bootstrap", null)).path("reports").size()).isZero();
+        assertThat(b.send("GET", "/api/reports/" + id, null).getResponse().getStatus()).isEqualTo(404);
+        assertThat(b.send("POST", "/api/reports", Map.of("id", id)).getResponse().getStatus()).isEqualTo(409);
+        assertThat(b.send("POST", "/api/reports/" + id + "/sync", null).getResponse().getStatus()).isEqualTo(404);
+        assertThat(a.send("POST", "/api/reports/" + id + "/publish", null).getResponse().getStatus()).isEqualTo(400);
+        a.send("POST", "/api/reports/" + id + "/sync", null);
+        assertThat(a.send("POST", "/api/reports/" + id + "/publish", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(anonymous.json(anonymous.send("GET", "/api/reports/" + id, null)).path("published").asBoolean()).isTrue();
+        assertThat(a.send("POST", "/api/reports", Map.of("id", id)).getResponse().getStatus()).isEqualTo(409);
+        assertThat(a.send("DELETE", "/api/connections/" + connectionId, null).getResponse().getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void onlyAdminsCanPublishImmutableDatasetVersions() throws Exception {
+        Client researcher = registeredClient();
+        Client admin = new Client();
+        String id = "suite-" + UUID.randomUUID();
+        Map<String, Object> dataset = Map.of("id", id, "version", "1.0.0", "tasks", new Object[]{Map.of("id", "task-1")});
+        assertThat(researcher.send("POST", "/api/datasets/custom", dataset).getResponse().getStatus()).isEqualTo(403);
+        assertThat(admin.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
+        MvcResult published = admin.send("POST", "/api/datasets/custom", dataset);
+        assertThat(published.getResponse().getStatus()).isEqualTo(201);
+        assertThat(admin.json(published).path("tasks").asInt()).isEqualTo(1);
+        assertThat(admin.json(published).path("taskPackage").size()).isEqualTo(1);
+        assertThat(admin.send("POST", "/api/datasets/custom", dataset).getResponse().getStatus()).isEqualTo(409);
+        assertThat(new Client().json(new Client().send("GET", "/api/bootstrap", null)).path("customDatasets").toString()).contains(id);
+    }
+
+    @Test
+    void rejectsPkAndPartialReportPublication() throws Exception {
+        Client client = registeredClient();
+        for (String kind : new String[]{"pk", "sample"}) {
+            String id = "restricted-" + UUID.randomUUID();
+            client.send("POST", "/api/reports", Map.of("id", id, "kind", kind.equals("pk") ? "pk" : "evaluation",
+                    "scope", kind.equals("sample") ? "sample" : "full"));
+            client.send("POST", "/api/reports/" + id + "/sync", null);
+            assertThat(client.send("POST", "/api/reports/" + id + "/publish", null).getResponse().getStatus()).isEqualTo(400);
+        }
+    }
+
+    @Test
+    void rejectsWritesWithoutCsrfAndOversizedRequests() throws Exception {
+        assertThat(mvc.perform(MockMvcRequestBuilders.post("/api/auth/register")
+                .contentType("application/json").content("{}" )).andReturn().getResponse().getStatus()).isEqualTo(403);
+        assertThat(mvc.perform(MockMvcRequestBuilders.post("/api/auth/register")
+                .contentType("application/json").content("x".repeat(5_000_001)))
+                .andReturn().getResponse().getStatus()).isEqualTo(413);
+    }
+
+    private Client registeredClient() throws Exception {
+        Client client = new Client();
+        assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", UUID.randomUUID() + "@example.com",
+                "password", "test-password")).getResponse().getStatus()).isEqualTo(201);
+        return client;
+    }
+
+    private class Client {
+        private final Map<String, Cookie> cookies = new HashMap<>();
+
+        MvcResult send(String method, String path, Object body) throws Exception {
+            var request = MockMvcRequestBuilders.request(HttpMethod.valueOf(method), path);
+            if (!"GET".equals(method)) {
+                JsonNode csrf = json(send("GET", "/api/auth/csrf", null));
+                request.header(csrf.path("headerName").asText(), csrf.path("token").asText());
+            }
+            if (!cookies.isEmpty()) {
+                request.cookie(cookies.values().toArray(Cookie[]::new));
+            }
+            if (body != null) {
+                request.contentType("application/json").content(mapper.writeValueAsBytes(body));
+            }
+            MvcResult result = mvc.perform(request).andReturn();
+            for (Cookie cookie : result.getResponse().getCookies()) {
+                cookies.put(cookie.getName(), cookie);
+            }
+            return result;
+        }
+
+        JsonNode json(MvcResult result) throws Exception {
+            return mapper.readTree(result.getResponse().getContentAsByteArray());
+        }
+    }
+}

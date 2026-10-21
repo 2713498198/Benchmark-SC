@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-SITE = Path(__file__).resolve().parents[1]
+SITE = Path(__file__).resolve().parents[1] / 'src' / 'main' / 'resources' / 'static'
 DATASET_ID = 'cryptobench-sc-v4'
 FIELDS = ('task_id', 'source_task_id', 'question_number', 'title', 'cipher',
           'difficulty', 'budget_class', 'task_family', 'attack_type', 'is_aggregate_stress')

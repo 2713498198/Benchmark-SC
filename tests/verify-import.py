@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from zipfile import ZipFile
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[1] / 'src' / 'main' / 'resources' / 'static'
 release = root / 'data' / 'cryptobench-sc-v4'
 catalog_bytes = (release / 'catalog.json').read_bytes()
 catalog = json.loads(catalog_bytes)

@@ -1,0 +1,42 @@
+{
+  "schema_version": "alzette_monomial_instance_v1",
+  "state": {
+    "size_bits": 64,
+    "word_size_bits": 32,
+    "bit_order": "state indices 0..31 are x MSB-to-LSB; 32..63 are y MSB-to-LSB"
+  },
+  "cores": [
+    {"round": 0, "ror_add": 31, "ror_xor": 24},
+    {"round": 1, "ror_add": 17, "ror_xor": 17},
+    {"round": 2, "ror_add": 0, "ror_xor": 31},
+    {"round": 3, "ror_add": 24, "ror_xor": 16}
+  ],
+  "constant_hex": "b7e15162",
+  "core_equations": [
+    "s = x + ROR_a(y) mod 2^32",
+    "x_next = s xor constant",
+    "y_next = y xor ROR_b(s)"
+  ],
+  "target_output_state_bit": 31,
+  "candidate_input_exponents": {
+    "zero_indices": [20],
+    "one_indices": "all state indices other than 20",
+    "degree": 63
+  },
+  "monomial_prediction_rules": {
+    "copy": {
+      "input_0_outputs": [[0, 0]],
+      "input_1_outputs": [[0, 1], [1, 0], [1, 1]]
+    },
+    "xor": {
+      "valid_input_output_tuples": [[0, 0, 0], [0, 1, 1], [1, 0, 1]]
+    },
+    "xor_public_constant_bit_0": "input exponent equals output exponent",
+    "xor_public_constant_bit_1": {
+      "valid_input_output_pairs": [[0, 0], [0, 1], [1, 1]]
+    },
+    "modular_addition": "pi_u(x) pi_v(y) reaches pi_w(x+y mod 2^32) iff unsigned integer u+v=w with no overflow",
+    "bit_model": "u_i + v_i + ell_(i+1) - w_i - 2*ell_i = 0, with ell_0=ell_32=0 when indices are written LSB-first",
+    "anf_coefficient": "the coefficient is the number of complete monomial trails modulo 2"
+  }
+}

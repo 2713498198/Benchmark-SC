@@ -1,0 +1,22 @@
+{
+  "schema_version": "skinny64_fixed_sbox_trail_v1",
+  "rounds": 3,
+  "encoding": "Each 16-hex-digit string lists the 16 row-major nibble differences.",
+  "rounds_detail": [
+    {
+      "round": 0,
+      "sbox_input_difference": "0040444444404400",
+      "sbox_output_difference": "0020222222202200"
+    },
+    {
+      "round": 1,
+      "sbox_input_difference": "0000002002002002",
+      "sbox_output_difference": "0000001001001001"
+    },
+    {
+      "round": 2,
+      "sbox_input_difference": "0010000000000001",
+      "sbox_output_difference": "0080000000000008"
+    }
+  ]
+}

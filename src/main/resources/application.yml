@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: cryptobench
+  profiles:
+    default: local
+  jackson:
+    time-zone: UTC
+  flyway:
+    enabled: true
+  mvc:
+    problemdetails:
+      enabled: false
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${PORT:4173}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+  tomcat:
+    max-http-form-post-size: 5MB
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+benchmark:
+  demo-enabled: false
+  secure-cookie: ${SECURE_COOKIE:false}
+  legacy-import-enabled: ${LEGACY_IMPORT_ENABLED:false}
+  legacy-db-file: ${CRYPTOBENCH_DB_FILE:data/runtime/db.json}
