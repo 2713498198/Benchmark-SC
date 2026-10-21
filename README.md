@@ -4,14 +4,25 @@
 
 ## 运行
 
-需要 Node.js 20 或以上版本，无需安装生产依赖。
+需要 Node.js 20 或以上版本和项目内的 Vue 3 依赖。Node.js 可以安装在 `D:\develop\Nodejs`；`start.cmd` 会在 PATH 中找不到 Node 时使用该位置。首次启动前在项目目录安装依赖：
 
 ```powershell
-cd D:\Benchmark-SC
+cd <项目目录>
+npm install
 node server.mjs
 ```
 
+如果 Node.js 未加入 PATH，可在 PowerShell 中直接运行：
+
+```powershell
+cd D:\develop\Benchmark
+& D:\develop\Nodejs\npm.cmd install
+& D:\develop\Nodejs\node.exe server.mjs
+```
+
 浏览器访问 http://127.0.0.1:4173 。保持终端运行，按 Ctrl+C 停止。也可以双击 `start.cmd`。
+
+前端使用 Vue 3 浏览器完整版本和原生 ES 模块，由 `server.mjs` 直接提供文件；无需构建步骤。Vue 依赖位于项目的 `node_modules/`，没有安装到系统盘。
 
 ## 已实现的页面和交互
 
@@ -38,21 +49,20 @@ node server.mjs
 ```text
 index.html             页面入口
 css/                   基础样式、页面样式、测评资源样式
-js/app.js              路由、页面框架、浏览器状态
+js/app.js              Vue 应用入口、路由、页面框架、浏览器状态
+js/vue/                首页、资源、测评、榜单、账号等 Vue 组件
 js/core.js             图标、转义、导出等共用功能
 js/data.js             测评集注册与演示数据
 data/cryptobench-sc-v4/  真实题库索引、公开题干与下载包
 scripts/import_cryptobench.py  可重复运行的公开题库导入脚本
-js/pages/home.js       首页
-js/pages/resources.js  测评集、工具、下载与文档
-js/pages/arena.js      测评、PK、报告
-js/pages/community.js  榜单、账号、工作台、管理
+js/pages/             迁移前页面渲染实现，保留作为对照参考；当前入口不加载
 server.mjs             本地静态预览服务
 tests/smoke.mjs        浏览器流程验收
 tests/scenarios.mjs    异常状态、版本隔离、导出与账号验收
 tests/auth-isolation.mjs 服务端账号、权限与多用户隔离验收
 tests/redesign.mjs     五种屏宽、桌面 / 移动截图、键盘与视觉验收
 tests/check.mjs        递归 JavaScript 语法检查
+tests/vue-templates.mjs Vue 模板编译检查
 ```
 
 ## 已导入的真实题库
@@ -87,6 +97,6 @@ node tests/redesign.mjs
 
 ## 设计取舍
 
-采用与 OpenCompass 司南一致的深蓝主色（#1B3882）、白底和浅灰分区，保持大标题与简洁留白。首页为全屏首屏与探索平台两个区块：桌面端左侧介绍与入口，右侧大型 3D 密码几何体，移动端上下排列；首屏高度随可视区域适配。入口为“开始测评”和“浏览测评榜单”，真实题库与公开任务包通过测评集页面访问。密码几何体由本地 SVG 与 CSS 3D 构建，采用多轴旋转、轻微悬浮、鼠标响应与拖动惯性；点击图形或按空格 / 回车暂停与继续，方向键手动旋转、Home 复位，不再显示独立操作区。离开视口或页面后停止动画，系统开启减少动态效果时只响应手动旋转。完整题干、评分规则、下载和操作提示保留在相关功能页，长代码与复现配置按需展开。
+采用黑白主色、清晰的文字层级与简洁留白。首页为首屏与探索平台两个区块，标题、平台说明和测评入口居中展示，首屏高度随可视区域适配。入口为“开始测评”和“浏览测评榜单”，真实题库与公开任务包通过测评集页面访问。完整题干、评分规则、下载和操作提示保留在相关功能页，长代码与复现配置按需展开。
 
 针对密码分析任务，固定数据版本与预算，以验证器判定的任务通过率为主要比较指标；不使用主观投票，也不把不同密码类型混成一个总分。模型 PK 固定 Agent 模板与工具，Agent PK 记录各自的模型与工具条件。本地与云端共用规则，报告默认私有，主动同步后再单独决定是否公开。

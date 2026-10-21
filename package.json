@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node tests/check.mjs",
+    "check": "node tests/check.mjs && node tests/vue-templates.mjs",
     "test": "node tests/smoke.mjs",
     "test:design": "node tests/redesign.mjs"
+  },
+  "dependencies": {
+    "vue": "3.5.22"
   },
   "engines": {
     "node": ">=20"

@@ -1,6 +1,6 @@
-/* A data-first ranking view; shared controls retain the platform's blue palette. */
+/* A data-first ranking view with shared monochrome controls. */
 .leaderboard-page .filters{background:var(--surface);border-color:transparent;margin-bottom:24px}
-.rank-chart{position:relative;padding:28px 28px 20px;margin-bottom:38px;border-color:#e1e8f2;border-radius:16px}
+.rank-chart{position:relative;padding:28px 28px 20px;margin-bottom:38px;border-color:#dedee2;border-radius:16px}
 .rank-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .rank-chart-heading h2{font-size:24px;letter-spacing:-.5px}
 .rank-chart-heading p{font-size:13px;margin-top:9px}
@@ -10,21 +10,21 @@
 .rank-chart-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:27px;font-size:12px;color:var(--muted)}
 .rank-chart-legend{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
 .rank-chart-legend>span{display:inline-flex;gap:8px;align-items:center}
-.rank-legend-frontier{display:inline-block;width:26px;border-top:2px dashed #2864dc}
-.rank-legend-point{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7b879a}
+.rank-legend-frontier{display:inline-block;width:26px;border-top:2px dashed #111111}
+.rank-legend-point{display:inline-block;width:8px;height:8px;border-radius:50%;background:#86868b}
 .rank-chart-stage{position:relative;width:100%;height:420px;margin-top:16px;isolation:isolate}
 .rank-chart-stage canvas{display:block;width:100%;height:100%}
 .rank-chart-point{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:transparent;z-index:2;outline-offset:1px;padding:0;touch-action:manipulation}
-.rank-chart-point:hover,.rank-chart-point.is-active{box-shadow:0 0 0 1px #2864dc66;background:#2864dc0a}
+.rank-chart-point:hover,.rank-chart-point.is-active{box-shadow:0 0 0 1px #11111166;background:#1111110a}
 .rank-chart-point:focus-visible{outline:2px solid var(--blue)}
-.rank-chart-label{position:absolute;max-width:190px;pointer-events:none;line-height:1.4;color:#606b7b;padding:5px 8px;background:#ffffffeb;border-radius:6px}
+.rank-chart-label{position:absolute;max-width:190px;pointer-events:none;line-height:1.4;color:#6e6e73;padding:5px 8px;background:#ffffffeb;border-radius:6px}
 .rank-chart-label strong{font-size:13px;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-chart-label small{display:block;font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rank-chart-label.is-frontier{color:var(--blue);box-shadow:0 3px 14px #1b38820a}
+.rank-chart-label.is-frontier{color:var(--blue);box-shadow:0 3px 14px #1111110a}
 .rank-chart-label.is-frontier strong{font-weight:600}
 .rank-chart-label small{color:var(--muted)}
 .rank-chart-label strong span{font-size:12px;font-weight:400}
-.rank-chart-tooltip{position:absolute;z-index:5;width:250px;max-width:calc(100% - 24px);max-height:300px;overflow:auto;padding:16px 18px;background:#fff;border:1px solid #cbd7ec;border-radius:12px;box-shadow:0 10px 40px #1b38821c;font-size:13px}
+.rank-chart-tooltip{position:absolute;z-index:5;width:250px;max-width:calc(100% - 24px);max-height:300px;overflow:auto;padding:16px 18px;background:#fff;border:1px solid #d2d2d7;border-radius:12px;box-shadow:0 10px 40px #1111111c;font-size:13px}
 .rank-tooltip-status{color:var(--blue);font-size:12px;margin-bottom:10px}
 .rank-tooltip-record+ .rank-tooltip-record{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
 .rank-tooltip-record>strong{display:block;font-size:15px;overflow-wrap:anywhere}
@@ -74,22 +74,22 @@
 /* Research leaderboard: conclusions first, with analysis one tab away. */
 .rank-context{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
 .rank-context-main{min-width:0;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
-.rank-context-main strong{font-size:16px;font-weight:600;color:#243b60;overflow-wrap:anywhere}
+.rank-context-main strong{font-size:16px;font-weight:600;color:#424245;overflow-wrap:anywhere}
 .rank-context-main>span{font-size:12px;color:var(--muted)}
-.rank-type{flex-shrink:0}.rank-type select{color:var(--blue);font-size:13px;background:#f1f5fc;border:1px solid #dce5f3;border-radius:6px;padding:7px 10px;min-height:36px;max-width:100%}
+.rank-type{flex-shrink:0}.rank-type select{color:var(--blue);font-size:13px;background:#f5f5f7;border:1px solid #dedee2;border-radius:6px;padding:7px 10px;min-height:36px;max-width:100%}
 .rank-filter-disclosure{border-bottom:1px solid var(--line);padding-bottom:14px}
 .rank-filter-disclosure>summary{display:none}
 .rank-filter-disclosure:not([open])::details-content{display:block;content-visibility:visible}
 .rank-filter-disclosure:not([open])>.rank-filters{display:grid}
 .rank-filters{display:grid;grid-template-columns:1.4fr .65fr .8fr 1.3fr;gap:14px}
-.rank-filter{display:grid;gap:6px;min-width:0}.rank-filter>span{font-size:12px;color:#50627e}
-.rank-filter select{width:100%;min-width:0;border:1px solid #d7e0ee;border-radius:6px;padding:8px 10px;font-size:14px;color:#26354d;background:#fff;min-height:40px}
+.rank-filter{display:grid;gap:6px;min-width:0}.rank-filter>span{font-size:12px;color:#6e6e73}
+.rank-filter select{width:100%;min-width:0;border:1px solid #d2d2d7;border-radius:6px;padding:8px 10px;font-size:14px;color:#424245;background:#fff;min-height:40px}
 .rank-summary{display:grid;grid-template-columns:1.65fr 1fr 1fr;padding:18px 0 16px;gap:24px}
 .rank-summary>div{min-width:0;border-left:1px solid var(--line);padding-left:32px;display:flex;flex-direction:column}
 .rank-summary>div:first-child{border:0;padding-left:0}
-.rank-summary span{font-size:12px;color:#52617b}
-.rank-summary strong{font-size:32px;line-height:1.2;letter-spacing:-1px;font-weight:600;font-variant-numeric:tabular-nums;margin:6px 0;color:#17366c}
-.rank-summary strong small{font-size:16px;letter-spacing:0;font-weight:400;color:#606b7b}
+.rank-summary span{font-size:12px;color:#6e6e73}
+.rank-summary strong{font-size:32px;line-height:1.2;letter-spacing:-1px;font-weight:600;font-variant-numeric:tabular-nums;margin:6px 0;color:#1d1d1f}
+.rank-summary strong small{font-size:16px;letter-spacing:0;font-weight:400;color:#6e6e73}
 .rank-summary>div>small{font-size:12px;color:var(--muted);display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 .leaderboard-page .rank-trust-note{padding:0;margin:0 0 8px;border:0;font-size:12px;line-height:1.6}
 .rank-trust-note svg{margin-top:2px}
@@ -97,25 +97,25 @@
 .rank-tabs{display:flex;gap:28px}.rank-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:13px 0 12px;font-size:14px}
 .rank-tabs button[aria-selected="true"]{color:var(--blue);border-bottom-color:var(--blue)}
 .rank-rules-link{font-size:12px}
-.rank-toolbar{display:flex;align-items:center;gap:12px;padding:12px 0}
+.rank-toolbar{display:flex;align-items:center;gap:12px;padding:8px 0}
 .rank-search{position:relative;min-width:160px;max-width:280px;flex:1}
 .rank-search svg{position:absolute;top:13px;left:11px;color:var(--muted)}
-.rank-search input{width:100%;min-height:40px;border:1px solid #d7e0ee;border-radius:6px;padding:8px 12px 8px 35px;font-size:14px;background:#fff;color:var(--ink)}
+.rank-search input{width:100%;min-height:40px;border:1px solid #d2d2d7;border-radius:6px;padding:8px 12px 8px 35px;font-size:14px;background:#fff;color:var(--ink)}
 .rank-result-count{color:var(--muted);font-size:12px;white-space:nowrap;flex:1}
 .rank-toolbar .input{width:auto;max-width:180px;min-height:40px;font-size:13px;padding:8px 10px}
 .rank-toolbar .btn{min-height:40px}
-.leaderboard-page .rank-table-wrap{border-radius:8px;border-color:#dfe6f1}
+.leaderboard-page .rank-table-wrap{border-radius:8px;border-color:#dedee2}
 .leaderboard-page .leaderboard-table{min-width:940px;width:100%;table-layout:fixed}
 .leaderboard-page .leaderboard-table col:nth-child(1){width:40px}.leaderboard-page .leaderboard-table col:nth-child(2){width:46px}
 .leaderboard-page .leaderboard-table col:nth-child(3){width:215px}.leaderboard-page .leaderboard-table col:nth-child(4){width:112px}
 .leaderboard-page .leaderboard-table col:nth-child(5){width:108px}.leaderboard-page .leaderboard-table col:nth-child(6){width:100px}
 .leaderboard-page .leaderboard-table col:nth-child(7){width:90px}.leaderboard-page .leaderboard-table col:nth-child(8){width:75px}.leaderboard-page .leaderboard-table col:nth-child(9){width:110px}
-.leaderboard-page .leaderboard-table th{padding:12px 12px;font-size:12px;background:#f4f7fc;color:#536480}
+.leaderboard-page .leaderboard-table th{padding:12px 12px;font-size:12px;background:#f5f5f7;color:#6e6e73}
 .leaderboard-page .leaderboard-table td{padding:11px 12px;height:63px}
-.leaderboard-page .leaderboard-table .rank-number{font-size:17px;letter-spacing:-.4px;color:#69768b}
+.leaderboard-page .leaderboard-table .rank-number{font-size:17px;letter-spacing:-.4px;color:#6e6e73}
 .leaderboard-page .leaderboard-table .rank-number.top{color:var(--blue);font-weight:600}
 .leaderboard-page .leaderboard-table .score{font-size:22px;letter-spacing:-.6px}
-.rank-identity{min-width:0}.rank-name{background:none;color:#1c2f4d;font-weight:600;font-size:14px;text-align:left;padding:0;line-height:1.5;overflow-wrap:anywhere;max-width:100%;white-space:normal}
+.rank-identity{min-width:0}.rank-name{background:none;color:#1d1d1f;font-weight:600;font-size:14px;text-align:left;padding:0;line-height:1.5;overflow-wrap:anywhere;max-width:100%;white-space:normal}
 .rank-name:hover{color:var(--blue);text-decoration:underline;text-underline-offset:3px}
 .rank-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .rank-compare-check{display:flex;align-items:center;justify-content:center;min-height:44px;min-width:24px;cursor:pointer}
@@ -124,9 +124,9 @@
 .rank-identity small{display:block;color:var(--muted);font-size:12px;line-height:1.5;overflow-wrap:anywhere;white-space:normal}
 .rank-identity small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .rank-origin{color:var(--muted);font-size:12px}
-.leaderboard-page [data-rank-record]:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#f1f6ff}
+.leaderboard-page [data-rank-record]:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#f5f5f7}
 .rank-ranking-note{font-size:12px;line-height:1.8;margin-top:14px;color:var(--muted)}
-.leaderboard-page .leaderboard-details>td{height:auto;padding:24px;background:#f7f9fd;white-space:normal}
+.leaderboard-page .leaderboard-details>td{height:auto;padding:24px;background:#f5f5f7;white-space:normal}
 .rank-evidence-heading{display:flex;align-items:start;justify-content:space-between;gap:24px;margin-bottom:24px}
 .rank-evidence-heading p{font-size:12px;margin-top:7px}
 .rank-evidence-heading .btn{flex-shrink:0}
@@ -135,20 +135,21 @@
 .rank-evidence .info-list>div{gap:18px}.rank-evidence .info-list dd{font-variant-numeric:tabular-nums}
 .rank-mobile-metrics{display:none}
 .rank-evidence-data{margin-top:22px}.rank-evidence-data summary{font-size:13px;color:var(--blue)}
-.rank-evidence-data .code-block{margin:12px 0 0;background:#edf2fa;max-height:300px}
+.rank-evidence-data .code-block{margin:12px 0 0;background:#f5f5f7;max-height:300px}
 .rank-compare-dialog{max-width:1000px}
 .rank-comparison{margin-top:20px}.rank-comparison table{table-layout:fixed;min-width:620px}
 .rank-comparison th,.rank-comparison td{white-space:normal;overflow-wrap:anywhere;min-width:140px;padding:14px}
-.rank-comparison th:first-child{width:120px;position:sticky;left:0;background:#f4f7fc;color:#536480;z-index:1}
+.rank-comparison th:first-child{width:120px;position:sticky;left:0;background:#f5f5f7;color:#6e6e73;z-index:1}
 .rank-comparison td{font-variant-numeric:tabular-nums}.rank-comparison tbody tr:first-child td{font-size:23px;color:var(--blue);font-weight:600}
 .rank-chart-controls{display:flex;align-items:center;gap:20px}.rank-chart-zoom{font-size:12px;color:var(--muted);display:flex;gap:7px;align-items:center;white-space:nowrap;min-height:40px;cursor:pointer}
-.rank-chart-controls .checkbox{margin:0}.rank-axis-note{color:#36588a;font-weight:500}
+.rank-chart-controls .checkbox{margin:0}.rank-axis-note{color:#424245;font-weight:500}
 .rank-tooltip-record .text-link{display:block;border:0;background:none;padding:8px 0 0;font-size:12px;min-height:36px;text-align:left}
 .rank-chart{margin-bottom:0}.rank-chart-tooltip{max-height:360px}
 .rank-empty-actions{display:flex;justify-content:center;margin:16px 0}
 .leaderboard-page [role="tabpanel"]:focus-visible{outline-offset:4px}
 @media(max-width:1050px){.rank-summary>div{padding-left:24px}.rank-context-main{gap:5px 12px}}
 @media(max-width:640px){
+ .leaderboard-page .page-header{margin-bottom:12px;gap:12px}
  .leaderboard-page .header-actions{gap:12px;align-items:center;justify-content:space-between}
  .leaderboard-page .header-actions .btn{min-height:36px;font-size:12px;padding:7px 12px}
  .leaderboard-page .header-actions .rank-method-link{border:0;padding-left:0;color:var(--blue)}
@@ -157,7 +158,7 @@
  .rank-context-main>span{display:block;font-size:12px;line-height:1.7;margin-top:3px}
  .rank-type{max-width:133px}.rank-type select{font-size:12px;padding:5px 4px;min-height:34px}
  .rank-filter-disclosure{padding-bottom:0}
- .rank-filter-disclosure>summary{display:flex;justify-content:space-between;align-items:center;color:#536480;font-size:12px;font-weight:400;min-height:36px}
+ .rank-filter-disclosure>summary{display:flex;justify-content:space-between;align-items:center;color:#6e6e73;font-size:12px;font-weight:400;min-height:36px}
  .rank-filter-hint{display:flex;gap:6px;align-items:center;color:var(--blue)}
  .rank-filter-disclosure[open]>summary{margin-bottom:10px}
  .rank-filter-disclosure:not([open])::details-content{display:none;content-visibility:hidden}
@@ -172,7 +173,7 @@
  .rank-trust-note svg{width:13px;margin-top:3px}
  .rank-tabs{gap:24px}.rank-tabs button{padding:12px 0 10px;min-height:44px}
  .rank-rules-link{font-size:12px;gap:4px}.rank-rules-link svg{width:12px}
- .rank-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 134px 58px;gap:8px;padding:12px 0}
+ .rank-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 134px 58px;gap:8px;padding:8px 0}
  .rank-search{grid-column:1/-1;max-width:none}.rank-search input{font-size:16px;min-height:40px}
  .rank-result-count{font-size:12px}.rank-toolbar .input{max-width:100%;font-size:12px;padding:7px;min-height:36px}
  .rank-toolbar .btn{font-size:12px;min-height:36px;padding:6px;gap:4px}.rank-toolbar .btn svg{width:13px}

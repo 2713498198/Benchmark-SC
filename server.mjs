@@ -5,9 +5,9 @@ import {fileURLToPath} from 'node:url';
 import {randomBytes, randomUUID, scryptSync, timingSafeEqual} from 'node:crypto';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
-const dbFile = resolve(root, 'data/runtime/db.json');
+const dbFile = process.env.CRYPTOBENCH_DB_FILE ? resolve(process.env.CRYPTOBENCH_DB_FILE) : resolve(root, 'data/runtime/db.json');
 const emptyDb = {users: [], sessions: [], connections: [], reports: [], customDatasets: []};
-const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.json':'application/json; charset=utf-8','.png':'image/png','.md':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8','.zip':'application/zip'};
+const mime = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.json':'application/json; charset=utf-8','.png':'image/png','.woff2':'font/woff2','.md':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8','.zip':'application/zip'};
 let db = emptyDb;
 try { db = {...emptyDb, ...JSON.parse(await readFile(dbFile, 'utf8'))}; } catch {}
 let writeChain = Promise.resolve();
@@ -45,6 +45,6 @@ async function route(req,res){
    return send(res,404,{error:'API not found'});
   } catch (err) { console.error(err); return send(res,400,{error:err.message||'请求失败'}); }
  }
- try { const pathname=decodeURIComponent(path), file=resolve(root,'.'+(pathname==='/'?'/index.html':pathname)); const runtimePath=pathname==='/data/runtime'||pathname.startsWith('/data/runtime/'); const publicPath=!runtimePath&&(pathname==='/'||pathname==='/index.html'||/^\/(assets|css|js|data)\//.test(pathname)); if(!publicPath||!file.startsWith(root)||pathname.includes('\\')||pathname.split('/').some(p=>p.startsWith('.'))||!mime[extname(file)])return send(res,403,'Forbidden'); const body=await readFile(file); return send(res,200,body,{'Content-Type':mime[extname(file)]}); } catch { return send(res,404,'Not found'); }
+ try { const pathname=decodeURIComponent(path), file=resolve(root,'.'+(pathname==='/'?'/index.html':pathname)); const runtimePath=pathname==='/data/runtime'||pathname.startsWith('/data/runtime/'); const publicPath=!runtimePath&&(pathname==='/'||pathname==='/index.html'||pathname==='/node_modules/vue/dist/vue.esm-browser.prod.js'||/^\/(assets|css|js|data)\//.test(pathname)); if(!publicPath||!file.startsWith(root)||pathname.includes('\\')||pathname.split('/').some(p=>p.startsWith('.'))||!mime[extname(file)])return send(res,403,'Forbidden'); const body=await readFile(file); return send(res,200,body,{'Content-Type':mime[extname(file)]}); } catch { return send(res,404,'Not found'); }
 }
 http.createServer((req,res)=>route(req,res)).listen(Number(process.env.PORT||4173),'127.0.0.1',()=>console.log('CryptoBench: http://127.0.0.1:'+(process.env.PORT||4173)));

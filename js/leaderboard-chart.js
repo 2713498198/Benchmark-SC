@@ -121,15 +121,15 @@ export function bindRankChart(root,rows,metric,onMetric,{zoom=false,onZoom=()=>{
   const dpr=Math.min(window.devicePixelRatio||1,3);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);ctx.font='12px '+getComputedStyle(root).fontFamily;ctx.lineWidth=1;
   // Grid, bounded to the plot. The fill only covers the observed frontier span.
-  ctx.strokeStyle='#e8edf4';
+  ctx.strokeStyle='#dedee2';
   for(const tick of axes.yTicks){ctx.beginPath();ctx.moveTo(pad.left,y(tick));ctx.lineTo(w-pad.right,y(tick));ctx.stroke();}
   for(const tick of axes.xTicks){ctx.beginPath();ctx.moveTo(x(tick),pad.top);ctx.lineTo(x(tick),h-pad.bottom);ctx.stroke();}
   if(model.frontier.length>1){
    const frontier=model.frontier;
-   ctx.beginPath();ctx.moveTo(x(frontier[0].x),h-pad.bottom);for(const p of frontier)ctx.lineTo(x(p.x),y(p.y));ctx.lineTo(x(frontier.at(-1).x),h-pad.bottom);ctx.closePath();ctx.fillStyle='#2864dc0d';ctx.fill();
-   ctx.beginPath();for(const [i,p] of frontier.entries())i?ctx.lineTo(x(p.x),y(p.y)):ctx.moveTo(x(p.x),y(p.y));ctx.strokeStyle='#2864dc';ctx.lineWidth=2.2;ctx.setLineDash([6,6]);ctx.stroke();ctx.setLineDash([]);
+   ctx.beginPath();ctx.moveTo(x(frontier[0].x),h-pad.bottom);for(const p of frontier)ctx.lineTo(x(p.x),y(p.y));ctx.lineTo(x(frontier.at(-1).x),h-pad.bottom);ctx.closePath();ctx.fillStyle='#1111110d';ctx.fill();
+   ctx.beginPath();for(const [i,p] of frontier.entries())i?ctx.lineTo(x(p.x),y(p.y)):ctx.moveTo(x(p.x),y(p.y));ctx.strokeStyle='#111111';ctx.lineWidth=2.2;ctx.setLineDash([6,6]);ctx.stroke();ctx.setLineDash([]);
   }
-  ctx.fillStyle='#606b7b';ctx.textAlign='right';ctx.textBaseline='middle';
+  ctx.fillStyle='#6e6e73';ctx.textAlign='right';ctx.textBaseline='middle';
   for(const tick of axes.yTicks)ctx.fillText(tick+'%',pad.left-12,y(tick));
   ctx.textAlign='center';ctx.textBaseline='top';
   for(const tick of axes.xTicks)ctx.fillText(number(tick),x(tick),h-pad.bottom+14);
@@ -137,7 +137,7 @@ export function bindRankChart(root,rows,metric,onMetric,{zoom=false,onZoom=()=>{
   ctx.textAlign='right';ctx.fillText(metrics[metric].name+' ('+metrics[metric].unit+')',w-pad.right,h-18);
   positions=model.points.map(point=>({x:x(point.x),y:y(point.y)}));
   for(const [i,point] of model.points.entries()){
-   const pos=positions[i];ctx.beginPath();ctx.arc(pos.x,pos.y,small?6:7,0,Math.PI*2);ctx.fillStyle=point.frontier?'#2864dc':'#7b879a';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+   const pos=positions[i];ctx.beginPath();ctx.arc(pos.x,pos.y,small?6:7,0,Math.PI*2);ctx.fillStyle=point.frontier?'#111111':'#86868b';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
    buttons[i].style.left=pos.x+'px';buttons[i].style.top=pos.y+'px';
    let polygon=[[-16,-16],[16,-16],[16,16],[-16,16]];
    for(const [j,other] of positions.entries()){
@@ -175,7 +175,7 @@ export function bindRankChart(root,rows,metric,onMetric,{zoom=false,onZoom=()=>{
     label.style.left=place.x+'px';label.style.top=place.y+'px';occupied.push(place);
     const nearX=Math.max(place.x,Math.min(place.x+place.w,p.x)),nearY=Math.max(place.y,Math.min(place.y+place.h,p.y));
     const distance=Math.hypot(nearX-p.x,nearY-p.y);
-    if(distance>24){ctx.beginPath();ctx.moveTo(p.x+(nearX-p.x)*9/distance,p.y+(nearY-p.y)*9/distance);ctx.lineTo(nearX,nearY);ctx.lineWidth=1;ctx.strokeStyle='#a6b5ce';ctx.stroke();}
+    if(distance>24){ctx.beginPath();ctx.moveTo(p.x+(nearX-p.x)*9/distance,p.y+(nearY-p.y)*9/distance);ctx.lineTo(nearX,nearY);ctx.lineWidth=1;ctx.strokeStyle='#a1a1a6';ctx.stroke();}
    }else label.hidden=true;
   }
   positionTooltip();

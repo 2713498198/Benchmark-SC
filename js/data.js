@@ -6,11 +6,11 @@ export const datasets=[
 {id:'cipher-modeling',name:'密码结构与建模',subtitle:'CIPHER MODELING',type:'分组密码',algorithm:'SPN / Feistel · 教学结构',tasks:60,version:'1.0.0',difficulty:'入门',tags:['结构分析','约束建模','工具调用'],description:'理解轮函数与扩散结构，将分析任务转化为可执行、可复现的计算模型。',icon:'layers',color:'orange',published:true},
 cryptobenchV4];
 export const agents=[
-{id:'cipher-pilot',name:'CipherPilot',model:'GPT-4.1',provider:'OpenAI',color:'#245bdb',version:'1.2.0'},
-{id:'sbox-sage',name:'S-box Sage',model:'Claude Sonnet 4',provider:'Anthropic',color:'#a66b4b',version:'1.1.0'},
-{id:'diff-hunter',name:'DiffHunter',model:'DeepSeek V3',provider:'DeepSeek',color:'#6073e6',version:'1.0.0'},
-{id:'round-key',name:'RoundKey',model:'Qwen3',provider:'Qwen',color:'#8b5bd5',version:'1.0.0'},
-{id:'linear-lab',name:'LinearLab',model:'Gemini 2.5 Pro',provider:'Google',color:'#389a83',version:'0.9.0'}
+{id:'cipher-pilot',name:'CipherPilot',model:'GPT-4.1',provider:'OpenAI',color:'#111111',version:'1.2.0'},
+{id:'sbox-sage',name:'S-box Sage',model:'Claude Sonnet 4',provider:'Anthropic',color:'#3a3a3c',version:'1.1.0'},
+{id:'diff-hunter',name:'DiffHunter',model:'DeepSeek V3',provider:'DeepSeek',color:'#555555',version:'1.0.0'},
+{id:'round-key',name:'RoundKey',model:'Qwen3',provider:'Qwen',color:'#6e6e73',version:'1.0.0'},
+{id:'linear-lab',name:'LinearLab',model:'Gemini 2.5 Pro',provider:'Google',color:'#86868b',version:'0.9.0'}
 ];
 export const rankings=agents.map((a,i)=>({...a,id:'rank-'+a.id,rank:i+1,agent:a.name,score:[91.7,88.3,85.8,81.7,77.5][i],passed:[110,106,103,98,93][i],total:120,time:[38.6,42.1,35.4,31.8,46.2][i],cost:[2.84,3.16,0.76,0.62,null][i],source:i%2?'local':'cloud',datasetId:'mini-spn',version:'1.0.0',budget:'standard',trend:[2,0,1,-1,0][i]}));
 export const models=agents.map(a=>a.model);

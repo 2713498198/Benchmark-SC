@@ -8,7 +8,7 @@ const icon = (name, size = 20) => {
   if (name === 'arrow-up-right') return sharedIcon('arrow', size).replace('<svg ', '<svg style="transform:rotate(-45deg)" ');
   return sharedIcon(iconAliases[name] || name, size);
 };
-const palette = { blue: '#1b3882', violet: '#1b3882', teal: '#1b3882', orange: '#1b3882' };
+const palette = { blue: '#111', violet: '#3a3a3c', teal: '#555', orange: '#6e6e73' };
 let catalogDatasets = datasets;
 let detailVersion = null;
 const ui = { query: '', algorithm: 'all', difficulty: 'all', view: 'grid', detailTab: 'overview', downloadTab: 'desktop', docsTab: 'local' };
@@ -18,7 +18,7 @@ const chip = (text, kind = '') => `<span class="badge ${kind}">${e(text)}</span>
 const routeName = route => String(route || '/datasets').split('?')[0].replace(/^\//, '');
 const heading = (eyebrow, title, description, action = '') => `<header class="page-header resource-heading"><div><h1>${title}</h1><p>${description}</p></div>${action}</header>`;
 const options = (values, selected) => values.map(v => `<option value="${e(v)}" ${v === selected ? 'selected' : ''}>${e(v)}</option>`).join('');
-const datasetIcon = d => `<span class="dataset-symbol" style="--dataset-color:${/^#[0-9a-f]{3,8}$/i.test(d.color || '') ? d.color : palette[d.color] || '#245BDB'}">${icon(d.icon || 'layers', 25)}</span>`;
+const datasetIcon = d => `<span class="dataset-symbol" style="--dataset-color:${/^#[0-9a-f]{3,8}$/i.test(d.color || '') ? d.color : palette[d.color] || '#111'}">${icon(d.icon || 'layers', 25)}</span>`;
 const demoNote = `<span class="resource-demo">${icon('info', 14)} 真实 / 示例按标识区分</span>`;
 const count = value => Array.isArray(value) ? value.length : value;
 const taskCount = d => Number(count(d.tasks)) || 0;

@@ -73,10 +73,14 @@ try{
    const layout=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));
    check(`${name} fits ${width}px`,layout.scroll<=layout.viewport+1);
    check(`${name} has one title at ${width}px`,await page.locator('#main h1').count()===1);
+   if(name==='home')check(`home title and buttons centered at ${width}px`,await page.evaluate(()=>{
+    const title=document.querySelector('.hero-copy h1'),buttons=[...document.querySelectorAll('.hero-actions .btn')];
+    const bounds=buttons.map(button=>button.getBoundingClientRect());
+    return getComputedStyle(title).textAlign==='center'&&Math.abs(title.getBoundingClientRect().x+title.getBoundingClientRect().width/2-innerWidth/2)<1&&Math.abs((Math.min(...bounds.map(b=>b.left))+Math.max(...bounds.map(b=>b.right)))/2-innerWidth/2)<1;
+   }));
    layouts.push({name,width,...layout});
    if(width===1440){const contrast=await textContrast(page);contrasts.push({name,...contrast});check(`${name} text contrast: ${JSON.stringify(contrast.failures)}`,contrast.failures.length===0);}
    if(width===1440||width===390){
-    if(name==='home'){await page.locator('.cipher-viewport').focus();await page.keyboard.press('Home');await page.locator('.cipher-viewport').evaluate(el=>el.blur());}
     await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
     await page.evaluate(()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done))));
     await page.screenshot({path:resolve(out,`${name}-${width}.png`),fullPage:true,animations:'disabled',style:'#toast{display:none!important}'});
@@ -94,33 +98,11 @@ try{
  check('home no longer shows the dataset release module',await guest.locator('.release-band').count()===0);
  const homeText=await guest.locator('#main').innerText();
  check('home copy reduced by at least half',homeText.replace(/\s/g,'').length<=700);
- check('geometry contains no text labels',await guest.locator('.cipher-sculpture text').count()===0);
- check('geometry has no separate controls block',await guest.locator('.cipher-controls,[data-cipher-motion]').count()===0);
+ check('home has no animated cube',await guest.locator('.cipher-sculpture,.cipher-viewport').count()===0);
  const leaderboardLink=guest.getByRole('link',{name:'浏览测评榜单',exact:true});
  check('hero links to leaderboard',await leaderboardLink.getAttribute('href')==='#/leaderboard');
  await leaderboardLink.click();await guest.waitForFunction(()=>document.querySelector('#main').dataset.route==='/leaderboard');
  check('hero opens leaderboard',await guest.locator('#main h1').innerText()==='测评榜单');
- await go(guest,'/');
- const geometry=guest.locator('.cipher-object'),stage=guest.locator('.cipher-viewport');
- const transform=()=>geometry.evaluate(el=>getComputedStyle(el).transform);
- const rotating=await transform();await guest.waitForTimeout(160);
- check('geometry rotates in three dimensions',await transform()!==rotating&&(await transform()).startsWith('matrix3d'));
- await stage.click();const stopped=await transform();await guest.waitForTimeout(120);
- check('pause stops rotation',await transform()===stopped&&await stage.getAttribute('aria-pressed')==='true');
- await stage.focus();await guest.keyboard.press('ArrowRight');
- check('keyboard rotates geometry',await transform()!==stopped);
- const beforeDrag=await transform(),bounds=await stage.boundingBox();
- await guest.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
- await guest.mouse.down();await guest.mouse.move(bounds.x+bounds.width/2+80,bounds.y+bounds.height/2-20,{steps:5});await guest.mouse.up();
- check('drag rotates geometry',await transform()!==beforeDrag);
- await stage.press('Space');
- // The shorter homepage needs a compact viewport to scroll the full scene out of view.
- await guest.setViewportSize({width:390,height:600});
- await guest.evaluate(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'instant'}));
- await guest.waitForFunction(()=>document.querySelector('.cipher-viewport').getBoundingClientRect().bottom<0);
- await guest.waitForTimeout(100);const offscreen=await transform();await guest.waitForTimeout(120);
- check('offscreen geometry stops animating',await transform()===offscreen);
- await guest.setViewportSize({width:1440,height:1000});
  // Start a new document so Chromium does not restore the last focused control.
  await guest.goto('about:blank');await go(guest,'/');
  await guest.keyboard.press('Tab');
@@ -130,8 +112,6 @@ try{
  await guest.emulateMedia({reducedMotion:'reduce'});
  check('reduced motion disables smooth scrolling',await guest.evaluate(()=>getComputedStyle(document.documentElement).scrollBehavior==='auto'));
  check('reduced motion disables button transitions',await guest.locator('.hero-actions .btn').first().evaluate(el=>getComputedStyle(el).transitionDuration==='0s'));
- await guest.waitForTimeout(50);const reduced=await transform();await guest.waitForTimeout(120);
- check('reduced motion stops geometry',await transform()===reduced&&await stage.getAttribute('aria-pressed')==='true');
  await guest.setViewportSize({width:390,height:844});await go(guest,'/');
  await guest.locator('.menu-toggle').click();
  check('mobile menu announces expanded state',await guest.locator('.menu-toggle').getAttribute('aria-expanded')==='true');
