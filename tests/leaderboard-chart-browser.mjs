@@ -3,6 +3,7 @@ import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {chromium} from 'playwright';
 import {datasets} from '../src/main/resources/static/js/data.js';
+import {labelsClearOfFrontier} from './chart-label-layout.mjs';
 
 // Read-only browser acceptance. Bootstrap fixtures exist only in this browser;
 // registration, publication and account tests run separately on an isolated site.
@@ -55,6 +56,10 @@ try{
    });
    check(`${width} ${metric} no page overflow`,layout.noOverflow);
    check(`${width} ${metric} model names fit without overlap`,layout.allNames&&layout.inBounds&&!layout.collision);
+   check(`${width} ${metric} labels leave the frontier unobstructed`,await page.evaluate(labelsClearOfFrontier));
+   await page.locator('[data-chart-zoom]').check();await settle();
+   check(`${width} ${metric} zoomed labels leave the frontier unobstructed`,await page.evaluate(labelsClearOfFrontier));
+   await page.locator('[data-chart-zoom]').uncheck();await settle();
    check(`${width} ${metric} one active resize observer`,layout.observers===1);
    await shot(`final-${metric}-${width}`);
    if(width===1440||width===360)await shot(`plot-${metric}-${width}`,page.locator('.rank-chart-stage'));
@@ -73,13 +78,13 @@ try{
  await point.click();await page.mouse.move(0,0);check('Click pins point details',await page.locator('.rank-chart-tooltip').isVisible());
  await page.locator('h1').click();check('Outside click dismisses details',await page.locator('.rank-chart-tooltip').isHidden());
  await page.locator('[data-rank="source"]').selectOption('local');
- check('Source filter updates chart',await page.locator('[data-chart-point]').count()===2);await view('ranking');check('Source filter updates table',await page.locator('[data-compare]').count()===2);await view('analysis');
+ check('Local source retains all valid local demo chart points',await page.locator('[data-chart-point]').count()===4);await view('ranking');check('Local source retains all five local demo records',await page.locator('[data-compare]').count()===5);await view('analysis');
  const before=await page.locator('[data-chart-point]').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-label')));
  await page.locator('[data-rank="sort"]').selectOption('cost');
  check('Table sort does not change frontier',JSON.stringify(before)===JSON.stringify(await page.locator('[data-chart-point]').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-label')))));
  const download=page.waitForEvent('download');await page.locator('[data-export-rank]').click();
  const csv=await readFile(await (await download).path(),'utf8');
- check('CSV preserves filtered records and schema',csv.includes('pass_rate')&&csv.includes('S-box Sage')&&csv.includes('RoundKey')&&!csv.includes('CipherPilot'));
+ check('CSV preserves filtered records, local sources and schema',csv.includes('pass_rate')&&csv.includes('S-box Sage')&&csv.includes('RoundKey')&&csv.includes('CipherPilot')&&!csv.includes('"cloud"'));
  await view('ranking');await page.locator('[data-compare]').nth(0).check();await page.locator('[data-compare]').nth(1).check();await page.locator('[data-open-compare]').click();
  check('Comparison works after returning to ranking',await page.locator('#modal').isVisible());await page.locator('[data-close-modal]').click();
  await page.locator('[data-expand]').first().click();check('Record evidence expands',await page.locator('.leaderboard-details').isVisible());

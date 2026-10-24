@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 账号业务服务：负责注册、密码验证与受配置开关控制的体验账号创建。
+ */
 @Service
 public class AuthService {
     private final UserRepository users;
@@ -25,18 +28,25 @@ public class AuthService {
         this.properties = properties;
     }
 
+    /**
+     * 在事务中注册研究者；统一邮箱格式并拒绝重复邮箱，角色不接受客户端指定。
+     */
     @Transactional
     public BenchmarkUser register(RegisterRequest input) {
         String email = input.email().trim().toLowerCase(Locale.ROOT);
         if (users.findByEmail(email).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "该邮箱已注册");
         }
+        // 用户 ID、角色、密码哈希与创建时间均由服务端生成。
         BenchmarkUser user = new BenchmarkUser("user_" + UUID.randomUUID(), email, input.name().trim(),
                 "researcher", passwords.encode(input.password()), null, Instant.now().toString());
         users.insert(user);
         return user;
     }
 
+    /**
+     * 按规范化邮箱验证密码；账号不存在和密码错误使用相同提示。
+     */
     public BenchmarkUser login(LoginRequest input) {
         BenchmarkUser user = users.findByEmail(input.email().trim().toLowerCase(Locale.ROOT)).orElse(null);
         if (user == null || !passwords.matches(input.password(), user)) {
@@ -45,11 +55,15 @@ public class AuthService {
         return user;
     }
 
+    /**
+     * 仅在启用体验入口的环境中复用或创建固定角色账号；生产环境默认关闭。
+     */
     @Transactional
     public BenchmarkUser demo(String requestedRole) {
         if (!properties.demoEnabled()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "当前环境未启用体验账号");
         }
+        // 只识别明确的 admin 请求，其余角色输入统一使用 researcher。
         String role = "admin".equals(requestedRole) ? "admin" : "researcher";
         String email = role + "@cryptobench.local";
         return users.findByEmail(email).orElseGet(() -> {

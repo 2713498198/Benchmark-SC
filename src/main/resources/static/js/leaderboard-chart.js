@@ -1,9 +1,26 @@
 import {escapeHTML as e} from './core.js';
+import {executionSourceLabel} from './execution-sources.js';
 
 const metrics={cost:{name:'费用',unit:'USD'},time:{name:'平均耗时',unit:'s'}};
 const numeric=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 const number=value=>value!==0&&(Math.abs(value)<.001||Math.abs(value)>=1e6)?value.toExponential(1):Number(value.toFixed(3)).toLocaleString('en-US',{maximumFractionDigits:3});
 const metricText=(row,metric)=>numeric(row[metric])?(metric==='cost'?'$':'')+number(row[metric])+(metric==='time'?' s':''):'未提供';
+
+// Clip the full segment against the label box, including a gap for the stroke.
+// Testing only the endpoints misses long lines crossing a label's background.
+function lineIntersectsLabel(start,end,box){
+ let enter=0,leave=1;
+ for(const [axis,size] of [['x','w'],['y','h']]){
+  const low=box[axis]-6,high=box[axis]+box[size]+6,delta=end[axis]-start[axis];
+  if(Math.abs(delta)<1e-9){if(start[axis]<low||start[axis]>high)return false;}
+  else{
+   const a=(low-start[axis])/delta,b=(high-start[axis])/delta;
+   enter=Math.max(enter,Math.min(a,b));leave=Math.min(leave,Math.max(a,b));
+   if(enter>leave)return false;
+  }
+ }
+ return true;
+}
 
 // Minimize resource use and maximize pass rate. Equal coordinates share one
 // point; equal-cost, lower-scoring records and equal-score, costlier ones do not
@@ -83,7 +100,7 @@ export function bindRankChart(root,rows,metric,onMetric,{zoom=false,onZoom=()=>{
  function show(index){
   active=index;const point=model.points[index];
   buttons.forEach((b,i)=>{b.classList.toggle('is-active',i===index);b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-expanded',String(i===index));if(i===index)b.setAttribute('aria-describedby',tooltip.id);else b.removeAttribute('aria-describedby');});
-  tooltip.innerHTML='<div class="rank-tooltip-status">'+(point.frontier?'帕累托前沿':'测评成绩')+(point.rows.length>1?' · '+point.rows.length+' 项重合':'')+'</div>'+point.rows.map(r=>'<div class="rank-tooltip-record"><strong>'+e(r.agent)+'</strong><p>'+e(r.model)+'</p><dl><div><dt>通过率</dt><dd>'+r.score.toFixed(1)+'%</dd></div><div><dt>费用</dt><dd>'+metricText(r,'cost')+'</dd></div><div><dt>平均耗时</dt><dd>'+metricText(r,'time')+'</dd></div></dl><small>'+(r.source==='local'?'本地':r.source==='cloud'?'云端':'来源未提供')+' · '+(r.demo===true?'示例成绩':'公开记录 · 未核验')+'</small>'+(onLocate?'<button class="text-link" data-chart-locate="'+e(r.id)+'">在排行榜中定位</button>':'')+'</div>').join('');
+  tooltip.innerHTML='<div class="rank-tooltip-status">'+(point.frontier?'帕累托前沿':'测评成绩')+(point.rows.length>1?' · '+point.rows.length+' 项重合':'')+'</div>'+point.rows.map(r=>'<div class="rank-tooltip-record"><strong>'+e(r.agent)+'</strong><p>'+e(r.model)+'</p><dl><div><dt>通过率</dt><dd>'+r.score.toFixed(1)+'%</dd></div><div><dt>费用</dt><dd>'+metricText(r,'cost')+'</dd></div><div><dt>平均耗时</dt><dd>'+metricText(r,'time')+'</dd></div></dl><small>'+e(executionSourceLabel(r.source))+' · '+(r.demo===true?'示例成绩':'公开记录 · 未核验')+'</small>'+(onLocate?'<button class="text-link" data-chart-locate="'+e(r.id)+'">在排行榜中定位</button>':'')+'</div>').join('');
   tooltip.querySelectorAll('[data-chart-locate]').forEach(button=>button.onclick=()=>onLocate(button.dataset.chartLocate));
   tooltip.hidden=false;positionTooltip();
  }
@@ -121,12 +138,12 @@ export function bindRankChart(root,rows,metric,onMetric,{zoom=false,onZoom=()=>{
   const dpr=Math.min(window.devicePixelRatio||1,3);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);ctx.font='12px '+getComputedStyle(root).fontFamily;ctx.lineWidth=1;
   // Grid, bounded to the plot. The fill only covers the observed frontier span.
-  ctx.strokeStyle='#dedee2';
+  ctx.strokeStyle='#e9e9ed';
   for(const tick of axes.yTicks){ctx.beginPath();ctx.moveTo(pad.left,y(tick));ctx.lineTo(w-pad.right,y(tick));ctx.stroke();}
   for(const tick of axes.xTicks){ctx.beginPath();ctx.moveTo(x(tick),pad.top);ctx.lineTo(x(tick),h-pad.bottom);ctx.stroke();}
   if(model.frontier.length>1){
    const frontier=model.frontier;
-   ctx.beginPath();ctx.moveTo(x(frontier[0].x),h-pad.bottom);for(const p of frontier)ctx.lineTo(x(p.x),y(p.y));ctx.lineTo(x(frontier.at(-1).x),h-pad.bottom);ctx.closePath();ctx.fillStyle='#1111110d';ctx.fill();
+   ctx.beginPath();ctx.moveTo(x(frontier[0].x),h-pad.bottom);for(const p of frontier)ctx.lineTo(x(p.x),y(p.y));ctx.lineTo(x(frontier.at(-1).x),h-pad.bottom);ctx.closePath();ctx.fillStyle='#11111105';ctx.fill();
    ctx.beginPath();for(const [i,p] of frontier.entries())i?ctx.lineTo(x(p.x),y(p.y)):ctx.moveTo(x(p.x),y(p.y));ctx.strokeStyle='#111111';ctx.lineWidth=2.2;ctx.setLineDash([6,6]);ctx.stroke();ctx.setLineDash([]);
   }
   ctx.fillStyle='#6e6e73';ctx.textAlign='right';ctx.textBaseline='middle';
@@ -153,15 +170,17 @@ export function bindRankChart(root,rows,metric,onMetric,{zoom=false,onZoom=()=>{
    }
    buttons[i].style.clipPath='polygon('+polygon.map(([px,py])=>(px+16)+'px '+(py+16)+'px').join(',')+')';
   }
-  // Prefer open space beside each point, then try rows above and below. Labels
-  // never shift the measurements; dense plots defer excess names to tooltips.
+  // Reserve the entire frontier, not just its points, before placing labels.
+  // Prefer nearby open space; dense plots defer excess names to tooltips.
   const occupied=[],pointRects=positions.map(p=>({x:p.x-9,y:p.y-9,w:18,h:18}));
+  const frontier=model.points.flatMap((point,i)=>point.frontier?[positions[i]]:[]);
+  const segments=frontier.slice(1).map((end,i)=>({start:frontier[i],end}));
   const order=model.points.map((p,i)=>i).sort((a,b)=>model.points[b].y-model.points[a].y||Number(model.points[b].frontier)-Number(model.points[a].frontier));
   for(const i of order){
    const label=labels[i],p=positions[i];label.hidden=false;
    const lw=label.offsetWidth,lh=label.offsetHeight;
    const candidates=[[p.x+15,p.y-lh-8],[p.x-lw-15,p.y-lh-8],[p.x+15,p.y+10],[p.x-lw-15,p.y+10],[p.x-lw/2,p.y-lh-18],[p.x-lw/2,p.y+18],[p.x-lw/2,p.y+38],[p.x-lw/2,p.y-lh-38],[p.x-lw/2,p.y+58]];
-   const available=box=>box.y>=pad.top-16&&box.y+box.h<=h-pad.bottom-6&&!occupied.some(other=>intersect(box,other))&&!pointRects.some(other=>intersect(box,other));
+   const available=box=>box.y>=pad.top-16&&box.y+box.h<=h-pad.bottom-6&&!occupied.some(other=>intersect(box,other))&&!pointRects.some(other=>intersect(box,other))&&!segments.some(({start,end})=>lineIntersectsLabel(start,end,box));
    let place=candidates.map(([lx,ly])=>({x:Math.max(pad.left,Math.min(w-pad.right-lw,lx)),y:ly,w:lw,h:lh})).find(available);
    if(!place&&occupied.length<20){
     const spaces=[];

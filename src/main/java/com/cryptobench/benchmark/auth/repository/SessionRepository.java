@@ -5,6 +5,9 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 数据库会话存储：只保存令牌摘要、用户 ID 和过期时间，不保存原始 Cookie 令牌。
+ */
 @Repository
 public class SessionRepository {
     private final JdbcTemplate jdbc;
@@ -15,18 +18,27 @@ public class SessionRepository {
         this.users = users;
     }
 
+    /**
+     * 仅匹配尚未过期的令牌摘要，再查询关联用户；不存在或已过期都视为未登录。
+     */
     public Optional<BenchmarkUser> findUser(String tokenHash) {
         return jdbc.query("SELECT user_id FROM benchmark_sessions WHERE token_hash = ? AND expires_at > ?",
                 (row, index) -> row.getString(1), tokenHash, System.currentTimeMillis())
                 .stream().findFirst().flatMap(users::findById);
     }
 
+    /**
+     * 创建会话前顺便清理过期记录；expiresAt 使用 Unix 毫秒时间戳。
+     */
     public void insert(String tokenHash, String userId, long expiresAt) {
         jdbc.update("DELETE FROM benchmark_sessions WHERE expires_at <= ?", System.currentTimeMillis());
         jdbc.update("INSERT INTO benchmark_sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
                 tokenHash, userId, expiresAt);
     }
 
+    /**
+     * 按令牌摘要撤销单个会话；记录已不存在时也可安全调用。
+     */
     public void delete(String tokenHash) {
         jdbc.update("DELETE FROM benchmark_sessions WHERE token_hash = ?", tokenHash);
     }

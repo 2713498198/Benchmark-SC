@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 登录用户的 Agent 连接管理接口；归属用户始终取自认证信息，不接受客户端指定。
+ */
 @RestController
 @RequestMapping("/api/connections")
 public class ConnectionController {
@@ -27,11 +30,17 @@ public class ConnectionController {
         this.connections = connections;
     }
 
+    /**
+     * 只返回当前用户自己的连接元数据。
+     */
     @GetMapping
     public List<ConnectionResponse> list(@AuthenticationPrincipal BenchmarkUser user) {
         return connections.list(user.id());
     }
 
+    /**
+     * 校验连接请求并保存，成功返回 201；不发起远程连接或执行模型调用。
+     */
     @PostMapping(consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public ConnectionResponse create(@AuthenticationPrincipal BenchmarkUser user,
@@ -39,6 +48,9 @@ public class ConnectionController {
         return connections.create(user.id(), input);
     }
 
+    /**
+     * 删除当前用户名下的指定连接，成功返回统一确认结构。
+     */
     @DeleteMapping("/{id}")
     public Map<String, Boolean> delete(@AuthenticationPrincipal BenchmarkUser user, @PathVariable String id) {
         connections.delete(user.id(), id);

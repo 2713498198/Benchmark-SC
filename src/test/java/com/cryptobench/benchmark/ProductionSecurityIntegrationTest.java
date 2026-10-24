@@ -11,6 +11,9 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * 加载 prod profile 检查生产开关，但将数据源覆盖为内存 H2，避免访问真实 MySQL。
+ */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:cryptobench-production-test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa", "spring.datasource.password=test"
@@ -20,6 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProductionSecurityIntegrationTest {
     @Autowired MockMvc mvc;
 
+    /**
+     * 使用有效 CSRF 排除令牌问题，确认生产环境本身禁止管理员体验登录。
+     */
     @Test
     void productionRejectsAdminDemoLoginEvenWithValidCsrf() throws Exception {
         mvc.perform(post("/api/auth/demo").with(csrf()).contentType("application/json")

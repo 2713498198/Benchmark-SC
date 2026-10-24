@@ -20,7 +20,10 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Explicit, transactional import. The source file is never changed; sessions must sign in again. */
+/**
+ * 由显式配置开关启用的启动导入器，将旧 Node 服务的 JSON 数据导入关系数据库。
+ * 源文件只读；不迁移旧会话，用户必须重新登录。
+ */
 @Component
 public class LegacyDataImporter implements ApplicationRunner {
     private static final Logger LOG = LoggerFactory.getLogger(LegacyDataImporter.class);
@@ -41,6 +44,9 @@ public class LegacyDataImporter implements ApplicationRunner {
         this.datasets = datasets;
     }
 
+    /**
+     * 启动时检查开关、源文件及目标用户表；数据写入处于同一事务，运行时异常会触发回滚。
+     */
     @Override
     @Transactional
     public void run(ApplicationArguments args) throws Exception {
@@ -51,6 +57,7 @@ public class LegacyDataImporter implements ApplicationRunner {
         if (!Files.isRegularFile(source)) {
             throw new IllegalStateException("Legacy database file does not exist: " + source);
         }
+        // 要求目标用户表为空，避免重复导入或与已有账号混合。
         if (users.count() != 0) {
             throw new IllegalStateException("Legacy import requires an empty target database; disable LEGACY_IMPORT_ENABLED");
         }
@@ -58,6 +65,7 @@ public class LegacyDataImporter implements ApplicationRunner {
         if (!database.path("users").isArray()) {
             throw new IllegalStateException("Invalid legacy database: users array is missing");
         }
+        // 先导入用户再导入关联资源，满足外键依赖；保留旧密码哈希和盐供兼容验证。
         for (JsonNode user : database.path("users")) {
             users.insert(new BenchmarkUser(user.path("id").asText(), user.path("email").asText(),
                     user.path("name").asText(), user.path("role").asText(), user.path("passwordHash").asText(),
@@ -68,12 +76,14 @@ public class LegacyDataImporter implements ApplicationRunner {
                     input.path("name").asText(), input.path("url").asText(), input.path("model").asText(),
                     input.path("createdAt").asText()));
         }
+        // 归属存入独立数据库列，响应文档中移除 ownerId。
         for (JsonNode input : database.path("reports")) {
             ObjectNode payload = ((ObjectNode) input).deepCopy();
             payload.remove("ownerId");
             reports.insert(new BenchmarkReport(input.path("id").asText(), input.path("ownerId").asText(),
                     input.path("published").asBoolean(), payload));
         }
+        // 只迁移已发布的自定义测评集，跳过旧版未发布草稿。
         for (JsonNode input : database.path("customDatasets")) {
             if (input.path("published").asBoolean()) {
                 ObjectNode payload = ((ObjectNode) input).deepCopy();

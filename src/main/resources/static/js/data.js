@@ -12,7 +12,7 @@ export const agents=[
 {id:'round-key',name:'RoundKey',model:'Qwen3',provider:'Qwen',color:'#6e6e73',version:'1.0.0'},
 {id:'linear-lab',name:'LinearLab',model:'Gemini 2.5 Pro',provider:'Google',color:'#86868b',version:'0.9.0'}
 ];
-export const rankings=agents.map((a,i)=>({...a,id:'rank-'+a.id,rank:i+1,agent:a.name,score:[91.7,88.3,85.8,81.7,77.5][i],passed:[110,106,103,98,93][i],total:120,time:[38.6,42.1,35.4,31.8,46.2][i],cost:[2.84,3.16,0.76,0.62,null][i],source:i%2?'local':'cloud',datasetId:'mini-spn',version:'1.0.0',budget:'standard',trend:[2,0,1,-1,0][i]}));
+export const rankings=agents.map((a,i)=>({...a,id:'rank-'+a.id,rank:i+1,agent:a.name,score:[91.7,88.3,85.8,81.7,77.5][i],passed:[110,106,103,98,93][i],total:120,time:[38.6,42.1,35.4,31.8,46.2][i],cost:[2.84,3.16,0.76,0.62,null][i],source:'local',datasetId:'mini-spn',version:'1.0.0',budget:'standard',trend:[2,0,1,-1,0][i]}));
 export const models=agents.map(a=>a.model);
 export const taskTypes=['差分分布表构造','多轮差分路径搜索','候选密钥验证','分析产物复现'];
 

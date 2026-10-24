@@ -19,6 +19,10 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 通过 MockMvc 和 test profile 验证真实 Spring 过滤器链、业务接口及数据库持久化。
+ * 每个 Client 独立维护 Cookie，模拟不同浏览器账号，使用随机 ID 避免测试间数据冲突。
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -27,6 +31,9 @@ class BenchmarkApiIntegrationTest {
     @Autowired ObjectMapper mapper;
     @Autowired JdbcTemplate jdbc;
 
+    /**
+     * 验证页面与 127 题公开目录可访问，同时禁止读取项目源码、运行数据及环境文件。
+     */
     @Test
     void servesVueAndPublicDatasetWithoutExposingProjectOrRuntimeFiles() throws Exception {
         Client client = new Client();
@@ -43,6 +50,9 @@ class BenchmarkApiIntegrationTest {
         }
     }
 
+    /**
+     * 验证注册参数、固定研究者角色、密码哈希、会话摘要，以及退出后原会话不可继续使用。
+     */
     @Test
     void validatesRegistrationAndPersistsHashedPasswordsAndRevocableSessions() throws Exception {
         Client client = new Client();
@@ -59,6 +69,7 @@ class BenchmarkApiIntegrationTest {
         String passwordHash = jdbc.queryForObject("SELECT password_hash FROM benchmark_users WHERE email = ?", String.class, email);
         assertThat(passwordHash).startsWith("{pbkdf2}").doesNotContain("test-password");
         String token = client.cookies.get("cb_session").getValue();
+        // 原始令牌不能直接匹配数据库摘要列，确认数据库没有保存可直接使用的 Cookie 值。
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_sessions WHERE token_hash = ?", Long.class, token)).isZero();
         assertThat(client.json(client.send("GET", "/api/auth/me", null)).path("user").path("email").asText()).isEqualTo(email);
         assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", email, "password", "test-password"))
@@ -71,6 +82,9 @@ class BenchmarkApiIntegrationTest {
                 .getResponse().getStatus()).isEqualTo(200);
     }
 
+    /**
+     * 用两个用户和一个游客验证归属隔离、服务端状态控制、同步后公开及公开后不可改写。
+     */
     @Test
     void isolatesConnectionsAndReportsAndProtectsPublicationState() throws Exception {
         Client a = registeredClient();
@@ -85,6 +99,7 @@ class BenchmarkApiIntegrationTest {
         String id = "report-" + UUID.randomUUID();
         JsonNode report = a.json(a.send("POST", "/api/reports", Map.of("id", id, "scope", "full", "kind", "evaluation",
                 "synced", true, "published", true, "ownerId", "fake")));
+        // 客户端伪造的归属、同步和公开字段均不应成为服务端认可的状态。
         assertThat(report.path("synced").asBoolean()).isFalse();
         assertThat(report.path("published").asBoolean()).isFalse();
         assertThat(report.has("ownerId")).isFalse();
@@ -101,6 +116,34 @@ class BenchmarkApiIntegrationTest {
     }
 
     @Test
+    void publicReportFeedReturnsOnlyPublishedReportsForEveryIdentity() throws Exception {
+        Client owner = registeredClient();
+        Client other = registeredClient();
+        String publicId = "public-feed-" + UUID.randomUUID();
+        String privateId = "private-feed-" + UUID.randomUUID();
+        owner.send("POST", "/api/reports", Map.of("id", publicId, "kind", "evaluation", "scope", "full"));
+        owner.send("POST", "/api/reports", Map.of("id", privateId, "kind", "evaluation", "scope", "full"));
+        owner.send("POST", "/api/reports/" + publicId + "/sync", null);
+        assertThat(owner.send("POST", "/api/reports/" + publicId + "/publish", null)
+                .getResponse().getStatus()).isEqualTo(200);
+        for (Client client : new Client[]{new Client(), owner, other}) {
+            MvcResult response = client.send("GET", "/api/reports/public", null);
+            assertThat(response.getResponse().getStatus()).isEqualTo(200);
+            JsonNode feed = client.json(response);
+            assertThat(feed.isArray()).isTrue();
+            assertThat(feed.toString()).contains(publicId).doesNotContain(privateId);
+            for (JsonNode record : feed) {
+                assertThat(record.path("published").asBoolean()).isTrue();
+                assertThat(record.has("ownerId")).isFalse();
+            }
+        }
+        assertThat(other.json(other.send("GET", "/api/reports", null)).size()).isZero();
+    }
+
+    /**
+     * 验证普通用户不能发布，管理员可发布，重复 ID 与版本被拒绝，公开目录能读取新版本。
+     */
+    @Test
     void onlyAdminsCanPublishImmutableDatasetVersions() throws Exception {
         Client researcher = registeredClient();
         Client admin = new Client();
@@ -116,6 +159,9 @@ class BenchmarkApiIntegrationTest {
         assertThat(new Client().json(new Client().send("GET", "/api/bootstrap", null)).path("customDatasets").toString()).contains(id);
     }
 
+    /**
+     * 即使报告已同步，PK 报告和抽样测评仍不允许公开。
+     */
     @Test
     void rejectsPkAndPartialReportPublication() throws Exception {
         Client client = registeredClient();
@@ -128,6 +174,9 @@ class BenchmarkApiIntegrationTest {
         }
     }
 
+    /**
+     * 直接构造请求验证缺少 CSRF 时返回 403、请求体超过 5,000,000 字节时返回 413。
+     */
     @Test
     void rejectsWritesWithoutCsrfAndOversizedRequests() throws Exception {
         assertThat(mvc.perform(MockMvcRequestBuilders.post("/api/auth/register")
@@ -137,6 +186,9 @@ class BenchmarkApiIntegrationTest {
                 .andReturn().getResponse().getStatus()).isEqualTo(413);
     }
 
+    /**
+     * 创建随机邮箱的研究者并保留登录 Cookie，供需要身份认证的测试复用。
+     */
     private Client registeredClient() throws Exception {
         Client client = new Client();
         assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", UUID.randomUUID() + "@example.com",
@@ -144,9 +196,11 @@ class BenchmarkApiIntegrationTest {
         return client;
     }
 
+    // 轻量测试客户端：每个实例有独立 Cookie 存储，避免不同用户的会话混用。
     private class Client {
         private final Map<String, Cookie> cookies = new HashMap<>();
 
+        // 模拟浏览器发送 JSON；非 GET 请求先获取 CSRF 令牌，并接收响应中的新 Cookie。
         MvcResult send(String method, String path, Object body) throws Exception {
             var request = MockMvcRequestBuilders.request(HttpMethod.valueOf(method), path);
             if (!"GET".equals(method)) {
@@ -166,6 +220,7 @@ class BenchmarkApiIntegrationTest {
             return result;
         }
 
+        // 从响应字节解析 JSON，避免中文内容受默认字符集影响。
         JsonNode json(MvcResult result) throws Exception {
             return mapper.readTree(result.getResponse().getContentAsByteArray());
         }

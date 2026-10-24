@@ -17,10 +17,10 @@ export async function runScenarios({page,check,go,shot}) {
  };
  const start=()=>page.locator('[data-eval-next]').click();
  const downloadText=async selector=>{const event=page.waitForEvent('download');await page.locator(selector).click();const d=await event,s=await d.createReadStream(),chunks=[];for await(const chunk of s)chunks.push(chunk);return {name:d.suggestedFilename(),text:Buffer.concat(chunks).toString('utf8').replace(/^\uFEFF/,'')};};
- const environment=async value=>{await page.locator('[data-environment]').click();await page.locator('[data-env="'+value+'"]').click();};
 
- await go('/evaluate?environment=local');check('direct local interface',await page.locator('[data-eval-source="local"]').getAttribute('class')==='active'&&await page.locator('[data-form="endpoint"]').isVisible());
- await page.locator('[data-eval-source="cloud"]').click();check('evaluation source switch',await page.locator('[data-eval-source="cloud"]').getAttribute('class')==='active');
+ await go('/evaluate?environment=cloud');
+ check('legacy cloud link opens local interface',await page.locator('[data-form="endpoint"]').isVisible());
+ check('environment controls removed',await page.locator('[data-environment], [data-env], [data-eval-source]').count()===0);
  // Saved connections can name models outside the example catalog.
  await go('/workspace?tab=connections');
  await page.locator('[data-add-connection]').click();
@@ -56,10 +56,11 @@ export async function runScenarios({page,check,go,shot}) {
  await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();await page.locator('#modal').waitFor({state:'hidden'});
  check('sync preserves private visibility',await latest().then(r=>r.synced&&!r.published));
 
- // Identical rules apply to local and cloud sources.
- await environment('cloud');await ready();await start();const cloud=await openReport();
- await environment('local');await ready();await start();const local=await openReport();
- check('local and cloud use same scoring',cloud.source==='cloud'&&local.source==='local'&&cloud.passed===local.passed&&cloud.total===local.total&&cloud.version===local.version);
+ // Old browser preferences cannot select the removed cloud executor.
+ await page.evaluate(()=>{const saved=JSON.parse(localStorage.getItem('cryptobench.v1'));saved.environment='cloud';localStorage.setItem('cryptobench.v1',JSON.stringify(saved));});
+ await ready();await start();const local=await openReport();
+ check('evaluation always uses local source',local.source==='local');
+ check('environment preference removed',await page.evaluate(()=>!Object.hasOwn(JSON.parse(localStorage.getItem('cryptobench.v1')),'environment')));
  await ready({scope:'sample'});await start();const sample=await openReport();
  check('sample accounting',sample.total===8&&sample.categories.reduce((n,c)=>n+c.total,0)===8&&sample.categories.reduce((n,c)=>n+c.passed,0)===sample.passed);
  check('sample cannot enter leaderboard',await page.locator('[data-publish-report]').isDisabled());

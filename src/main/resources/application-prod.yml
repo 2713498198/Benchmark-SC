@@ -1,11 +1,16 @@
+# 生产环境使用 MySQL，凭证通过环境变量提供。
 spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/cryptobench?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}
     username: ${DB_USERNAME:cryptobench}
+    # 密码没有默认值，部署时必须设置 DB_PASSWORD。
     password: ${DB_PASSWORD}
     hikari:
+      # 控制连接池规模，避免单个实例无限占用数据库连接。
       maximum-pool-size: 10
       minimum-idle: 2
 benchmark:
+  # 生产环境关闭无密码体验登录，管理员需通过受控方式初始化。
   demo-enabled: false
+  # 默认要求 HTTPS；仅本机 HTTP 联调时按需覆盖环境变量。
   secure-cookie: ${SECURE_COOKIE:true}

@@ -1,6 +1,6 @@
 /* A data-first ranking view with shared monochrome controls. */
 .leaderboard-page .filters{background:var(--surface);border-color:transparent;margin-bottom:24px}
-.rank-chart{position:relative;padding:28px 28px 20px;margin-bottom:38px;border-color:#dedee2;border-radius:16px}
+.rank-chart{position:relative;padding:28px 0 0;margin-bottom:38px;border:0;border-radius:0}
 .rank-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .rank-chart-heading h2{font-size:24px;letter-spacing:-.5px}
 .rank-chart-heading p{font-size:13px;margin-top:9px}
@@ -20,7 +20,7 @@
 .rank-chart-label{position:absolute;max-width:190px;pointer-events:none;line-height:1.4;color:#6e6e73;padding:5px 8px;background:#ffffffeb;border-radius:6px}
 .rank-chart-label strong{font-size:13px;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-chart-label small{display:block;font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rank-chart-label.is-frontier{color:var(--blue);box-shadow:0 3px 14px #1111110a}
+.rank-chart-label.is-frontier{color:var(--blue)}
 .rank-chart-label.is-frontier strong{font-weight:600}
 .rank-chart-label small{color:var(--muted)}
 .rank-chart-label strong span{font-size:12px;font-weight:400}
@@ -45,13 +45,13 @@
 .leaderboard-table-heading h2{font-size:22px;display:flex;gap:10px;align-items:center}
 .leaderboard-table-heading h2>span{font-size:13px;letter-spacing:0;color:var(--muted);font-weight:400}
 .leaderboard-table-heading p{font-size:12px;margin-top:8px}
-@media(max-width:900px){.rank-chart{padding:24px 20px 18px}.rank-chart-stage{height:400px}}
+@media(max-width:900px){.rank-chart{padding:24px 0 0}.rank-chart-stage{height:400px}}
 @media(max-width:640px){
  .leaderboard-page .filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:14px;gap:12px}.leaderboard-page .filters .field{min-width:0}
  .leaderboard-page .filters .field:first-child,.leaderboard-page .filters .field:nth-child(4){grid-column:1/-1}
  .leaderboard-page .filters .field select{font-size:16px;padding:10px}
  .leaderboard-page .filters .field label{font-size:12px}
- .rank-chart{padding:20px 12px 16px;margin-bottom:30px;border-radius:12px}
+ .rank-chart{padding:20px 0 0;margin-bottom:30px;border-radius:0}
  .rank-chart-heading{align-items:start;gap:16px;flex-direction:column;padding:0 4px}
  .rank-chart-heading h2{font-size:21px}.rank-chart-heading p{font-size:12px;margin-top:7px}
  .rank-chart-heading .pill-switch{align-self:stretch;display:flex}
@@ -61,7 +61,7 @@
  .rank-chart-stage{height:360px;margin-top:12px}
  .rank-chart-label{max-width:128px;padding:4px 6px}
  .rank-chart-label strong,.rank-chart-label small{font-size:12px}
- .rank-chart-label small{display:none}
+ .rank-chart-label small{display:block}
  .rank-chart-foot{padding:12px 4px 0;gap:8px}
  .rank-chart-foot summary{text-align:left;min-height:32px;display:list-item}
  .rank-chart-empty{min-height:240px}
@@ -198,4 +198,85 @@
  .rank-mobile-metrics>div{display:flex;justify-content:space-between;gap:16px}.rank-mobile-metrics dt{color:var(--muted)}.rank-mobile-metrics dd{margin:0}
  .rank-chart-controls{width:100%;gap:8px;flex-direction:column-reverse;align-items:start}.rank-chart-controls .pill-switch{width:100%}
  .rank-chart-zoom{min-height:36px}.rank-comparison th,.rank-comparison td{padding:12px}
+}
+
+/* Minimal presentation shared by the homepage chart and the ranking page. */
+.rank-chart-heading h2{font-size:24px;font-weight:600;letter-spacing:-.7px}
+.rank-chart-meta{margin-top:24px}
+.rank-chart-foot{border:0;padding-top:10px;margin-top:0}
+.rank-chart-foot summary{min-height:36px;line-height:36px}
+.rank-chart-label{background:#fffffff5}
+.rank-chart-compact{padding-top:0}
+.rank-chart-compact .rank-chart-heading{position:absolute;right:0;top:-8px;padding:0}
+.rank-chart-compact .rank-chart-meta{margin-top:0;padding-right:130px;min-height:32px}
+.rank-chart-compact .rank-chart-controls{width:auto;flex-direction:row}
+.leaderboard-page{padding-top:48px;padding-bottom:88px}
+.leaderboard-page .page-header{margin-bottom:28px}
+.leaderboard-page .page-header h1{font-size:40px;letter-spacing:-1.5px;font-weight:600}
+.leaderboard-page .header-actions{align-items:center;gap:24px}
+.leaderboard-page .btn{border-radius:999px;box-shadow:none}
+.leaderboard-page .rank-method-link{font-size:14px;min-height:44px}
+.rank-context{border-top:0;padding:0 0 20px}
+.rank-type select{min-height:44px;border:1px solid transparent;border-radius:10px;padding:10px 12px;background:var(--surface);font-size:14px}
+.rank-filter-disclosure{padding-bottom:24px}
+.rank-filters{grid-template-columns:1.5fr .65fr .9fr 1.4fr 1.1fr;gap:14px}
+.rank-filter{gap:8px}
+.rank-filter select{min-height:44px;border:1px solid transparent;border-radius:10px;padding:10px 12px;background:var(--surface);font-size:14px;color:var(--ink)}
+.rank-summary{padding:24px 0 20px;gap:32px}
+.rank-summary>div{border:0;padding-left:0}
+.rank-summary strong{font-size:40px;letter-spacing:-1.5px;font-weight:500;margin:8px 0}
+.leaderboard-page .rank-trust-note{margin-bottom:12px}
+.rank-viewbar{gap:16px}
+.rank-tabs{gap:32px}
+.rank-tabs button{padding-top:14px;padding-bottom:14px}
+.rank-toolbar{padding:12px 0;gap:16px}
+.rank-search{max-width:300px}
+.rank-search input{min-height:44px;border:1px solid transparent;background:var(--surface);border-radius:10px;padding-top:10px;padding-bottom:10px}
+.rank-search svg{top:15px}
+.rank-toolbar .input{min-height:44px;font-size:14px;border-color:transparent;background:var(--surface);border-radius:10px}
+.rank-toolbar .btn{min-height:44px;background:var(--surface);border-color:transparent;border-radius:10px;font-size:14px}
+.leaderboard-page .rank-table-wrap{border:0;border-radius:0}
+.leaderboard-page .leaderboard-table th{background:#fff;padding-top:14px;padding-bottom:14px}
+.leaderboard-page .leaderboard-table td{height:68px;border-color:#e9e9ed}
+.leaderboard-page .leaderboard-table tbody tr:hover{background:#fafafa}
+.rank-name{font-weight:500}
+.rank-ranking-note{margin-top:20px}
+.rank-ranking-note summary{font-size:12px;min-height:36px;line-height:36px}
+.rank-ranking-note[open]>summary{margin-bottom:4px}
+.rank-ranking-note p{max-width:760px}
+@media(max-width:640px){
+ .leaderboard-page{padding-top:36px;padding-bottom:56px}
+ .leaderboard-page .page-header{flex-direction:row;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:28px}
+ .leaderboard-page .page-header h1{font-size:32px;letter-spacing:-1px}
+ .leaderboard-page .header-actions{gap:16px;justify-content:start}
+ .leaderboard-page .header-actions .btn{min-height:44px;font-size:14px;padding:10px 16px}
+ .leaderboard-page .header-actions .btn svg{display:none}
+ .leaderboard-page .rank-method-link{font-size:12px;padding:0}
+ .rank-context{align-items:center;gap:10px;padding-bottom:8px}
+ .rank-type{max-width:134px}.rank-type select{min-height:44px;font-size:12px;padding:10px 6px}
+ .rank-filter-disclosure{padding-bottom:8px}
+ .rank-filter-disclosure>summary{min-height:44px}
+ .rank-filters{grid-template-columns:1fr 1fr;gap:12px;padding-bottom:16px}
+ .rank-filter select{font-size:16px}
+ .rank-summary{padding:14px 0;gap:12px}
+ .rank-summary>div{padding-left:0}
+ .rank-summary strong{font-size:30px;letter-spacing:-1px;margin:8px 0}
+ .leaderboard-page .rank-trust-note{margin-bottom:14px;font-size:12px}
+ .rank-toolbar{padding:12px 0;gap:10px}
+ .rank-toolbar .input,.rank-toolbar .btn{min-height:44px;font-size:12px}
+ .rank-search{max-width:none}.rank-search input{font-size:16px}
+ .rank-tabs{gap:28px}
+ .leaderboard-page .leaderboard-table td{height:68px}
+ .leaderboard-page .leaderboard-table th{padding:12px 4px}
+ .leaderboard-page .leaderboard-table .score{font-size:20px}
+ .rank-chart-heading{padding:0}
+ .rank-chart-heading h2{font-size:22px}
+ .rank-chart-meta{padding:0;gap:8px}
+ .rank-chart-compact .rank-chart-meta{padding-right:110px;min-height:44px}
+ .rank-chart-compact .rank-chart-meta>span{white-space:nowrap}
+ .rank-chart-compact .rank-chart-legend{gap:12px;font-size:11px;white-space:nowrap}
+ .rank-chart-compact .rank-chart-legend>span{gap:6px}
+ .rank-chart-compact .rank-chart-heading{top:-5px}
+ .rank-chart-zoom{font-size:12px;min-height:44px}
+ .rank-chart-foot{padding-left:0;padding-right:0}
 }

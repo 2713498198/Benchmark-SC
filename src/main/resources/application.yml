@@ -1,25 +1,32 @@
+# 各环境共用配置；application-local/prod.yml 会按激活的 profile 覆盖对应项。
 spring:
   application:
     name: cryptobench
   profiles:
+    # 未显式设置 SPRING_PROFILES_ACTIVE 时使用本地 H2 环境。
     default: local
   jackson:
     time-zone: UTC
   flyway:
+    # 启动时执行 db/migration 下的版本化 SQL；已执行版本应保持不变。
     enabled: true
   mvc:
     problemdetails:
       enabled: false
+# 默认仅监听本机；部署时可通过环境变量设置监听地址和端口。
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${PORT:4173}
   shutdown: graceful
   error:
+    # 错误响应不暴露内部消息和堆栈；业务错误由 ApiExceptionHandler 统一处理。
     include-message: never
     include-stacktrace: never
   tomcat:
+    # 表单大小限制；API JSON 请求体另由 RequestSizeFilter 按实际字节数限制。
     max-http-form-post-size: 5MB
 management:
+  # 只暴露健康检查，不向外显示组件细节。
   endpoints:
     web:
       exposure:
@@ -28,7 +35,10 @@ management:
     health:
       show-details: never
 benchmark:
+  # 公共默认关闭体验账号，由 local profile 单独开放。
   demo-enabled: false
+  # prod 默认启用 Secure Cookie，本地 HTTP 开发默认关闭。
   secure-cookie: ${SECURE_COOKIE:false}
+  # 旧数据导入必须显式启用；相对源路径以应用工作目录为基准。
   legacy-import-enabled: ${LEGACY_IMPORT_ENABLED:false}
   legacy-db-file: ${CRYPTOBENCH_DB_FILE:data/runtime/db.json}

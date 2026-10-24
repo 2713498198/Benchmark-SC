@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {leaderboardModel,leaderboardCsvRows,displayScore} from '../src/main/resources/static/js/leaderboard-model.js';
 import {chartModel,chartAxes} from '../src/main/resources/static/js/leaderboard-chart.js';
+import {executionSourceOptions,executionSourceLabel} from '../src/main/resources/static/js/execution-sources.js';
+import {rankings} from '../src/main/resources/static/js/data.js';
 
 const filters={dataset:'set',version:'1',budget:'standard',source:'all',type:'demo',sort:'score'};
 const row={datasetId:'set',version:'1',budget:'standard',scope:'full',source:'local',total:100,agent:'Agent',model:'Model'};
@@ -30,6 +32,16 @@ const actual=leaderboardModel(builtins,publicRows,own,{...filters,type:'public'}
 assert.deepEqual(actual.cohort.map(e=>[e.record.id,e.place]),[['public',1],['unknown',2]]);
 assert.deepEqual(chartModel(actual.visible.map(e=>e.record)).frontier.map(p=>p.rows[0].id),['public']);
 assert.deepEqual(leaderboardModel(builtins,publicRows,own,{...filters,source:'cloud'}).cohort,[]);
+assert.ok(rankings.every(r=>r.source==='local'),'Built-in demos use the implemented local execution path');
+assert.deepEqual(executionSourceOptions(rankings),[{value:'all',label:'全部来源'},{value:'local',label:'本地执行'}]);
+const declared=[sample('local-source',80),sample('cloud-source',80,{source:'cloud'}),sample('missing-source',80,{source:null}),sample('other-source',80,{source:'external-runner'})];
+assert.deepEqual(executionSourceOptions(declared).map(o=>o.value),['all','local','cloud','unreported','external-runner']);
+assert.equal(executionSourceLabel('cloud'),'云端（报告声明）');
+assert.equal(executionSourceLabel(null),'未提供来源');
+for(const [key,id] of [['local','local-source'],['cloud','cloud-source'],['unreported','missing-source'],['external-runner','other-source']]){
+ assert.deepEqual(leaderboardModel([],declared,[],{...filters,source:key}).cohort.map(e=>e.record.id),[id]);
+}
+assert.equal(declared[2].source,null,'Missing execution sources are never rewritten as local');
 assert.deepEqual(leaderboardCsvRows(actual.visible).map(r=>r[0]),['demo',false,'']);
 assert.deepEqual(leaderboardCsvRows(data.visible).slice(1).map(r=>r[0]),[true,true,true,true]);
 assert.equal(leaderboardCsvRows(data.visible)[0].length,12);

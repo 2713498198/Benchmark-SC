@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 连接业务服务：创建服务端 ID 和时间，转换响应，并处理删除失败；不保存凭证。
+ */
 @Service
 public class ConnectionService {
     private final ConnectionRepository connections;
@@ -20,10 +23,16 @@ public class ConnectionService {
         this.connections = connections;
     }
 
+    /**
+     * 取得指定用户的连接，并统一转换为不包含归属字段的响应。
+     */
     public List<ConnectionResponse> list(String ownerId) {
         return connections.findByOwner(ownerId).stream().map(AgentConnection::toResponse).toList();
     }
 
+    /**
+     * 在事务中保存元数据，名称和模型去除首尾空白；不验证远程端点连通性。
+     */
     @Transactional
     public ConnectionResponse create(String ownerId, ConnectionRequest input) {
         var connection = new AgentConnection("conn_" + UUID.randomUUID(), ownerId,
@@ -32,6 +41,9 @@ public class ConnectionService {
         return connection.toResponse();
     }
 
+    /**
+     * 仅删除本人的连接；不存在和属于其他用户都返回 404。
+     */
     @Transactional
     public void delete(String ownerId, String id) {
         if (!connections.delete(id, ownerId)) {

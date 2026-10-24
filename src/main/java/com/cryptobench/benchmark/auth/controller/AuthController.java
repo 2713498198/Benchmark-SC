@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 账号 HTTP 接口：校验请求参数，委托业务服务，并在登录成功后设置会话 Cookie。
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -31,16 +34,25 @@ public class AuthController {
         this.sessions = sessions;
     }
 
+    /**
+     * 返回写请求需要提交的 CSRF 令牌及请求头名称；访问令牌会触发其生成。
+     */
     @GetMapping("/csrf")
     public Map<String, String> csrf(CsrfToken csrf) {
         return Map.of("token", csrf.getToken(), "headerName", csrf.getHeaderName());
     }
 
+    /**
+     * 返回当前用户的公开字段；游客的 user 为 null，不返回密码信息。
+     */
     @GetMapping("/me")
     public Map<String, Object> me(@AuthenticationPrincipal BenchmarkUser user) {
         return Collections.singletonMap("user", user == null ? null : user.toResponse());
     }
 
+    /**
+     * 通过 Bean Validation 校验注册字段；创建研究者账号后直接登录，响应状态为 201。
+     */
     @PostMapping(value = "/register", consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public Map<String, Object> register(@Valid @RequestBody RegisterRequest input,
@@ -48,30 +60,45 @@ public class AuthController {
         return signIn(auth.register(input), request, response);
     }
 
+    /**
+     * 验证邮箱和密码，并用新会话替换当前请求携带的旧会话。
+     */
     @PostMapping(value = "/login", consumes = "application/json")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest input,
                                    HttpServletRequest request, HttpServletResponse response) {
         return signIn(auth.login(input), request, response);
     }
 
+    /**
+     * 进入体验账号；是否开放该入口由服务端环境配置决定。
+     */
     @PostMapping(value = "/demo", consumes = "application/json")
     public Map<String, Object> demo(@RequestBody Map<String, String> input,
                                   HttpServletRequest request, HttpServletResponse response) {
         return signIn(auth.demo(input.get("role")), request, response);
     }
 
+    /**
+     * 撤销数据库中的当前会话，同时让浏览器删除会话 Cookie。
+     */
     @PostMapping("/logout")
     public Map<String, Boolean> logout(HttpServletRequest request, HttpServletResponse response) {
         sessions.signOut(request, response);
         return Map.of("ok", true);
     }
 
+    /**
+     * 找回密码的兼容占位接口：仅返回接收成功，尚未发送重置邮件或修改密码。
+     */
     @PostMapping(value = "/forgot", consumes = "application/json")
     public Map<String, Boolean> forgot(@RequestBody Map<String, Object> input) {
-        // Compatibility endpoint; sending reset emails is not implemented yet.
+        // 保持现有前端调用协议，邮件重置流程需后续接入。
         return Map.of("ok", true);
     }
 
+    /**
+     * 统一建立登录会话，并只返回允许前端展示的用户字段。
+     */
     private Map<String, Object> signIn(BenchmarkUser user, HttpServletRequest request, HttpServletResponse response) {
         sessions.signIn(user, request, response);
         return Map.of("user", user.toResponse());

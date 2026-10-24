@@ -5,6 +5,9 @@ import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 连接表的数据访问层；按归属查询和删除，所有业务参数通过 SQL 占位符绑定。
+ */
 @Repository
 public class ConnectionRepository {
     private final JdbcTemplate jdbc;
@@ -13,6 +16,9 @@ public class ConnectionRepository {
         this.jdbc = jdbc;
     }
 
+    /**
+     * 按用户列出连接，使用创建时间和 ID 保持确定的显示顺序。
+     */
     public List<AgentConnection> findByOwner(String ownerId) {
         return jdbc.query("SELECT * FROM benchmark_connections WHERE owner_id = ? ORDER BY created_at, id",
                 (row, index) -> new AgentConnection(row.getString("id"), row.getString("owner_id"),
@@ -20,6 +26,9 @@ public class ConnectionRepository {
                         row.getString("model_id"), row.getString("created_at")), ownerId);
     }
 
+    /**
+     * 写入服务层生成的连接模型，数据库外键约束归属用户必须存在。
+     */
     public void insert(AgentConnection connection) {
         jdbc.update("""
                 INSERT INTO benchmark_connections (id, owner_id, display_name, endpoint_url, model_id, created_at)
@@ -28,6 +37,9 @@ public class ConnectionRepository {
                 connection.model(), connection.createdAt());
     }
 
+    /**
+     * 同时匹配连接 ID 和归属用户；返回是否实际删除，防止跨用户操作。
+     */
     public boolean delete(String id, String ownerId) {
         return jdbc.update("DELETE FROM benchmark_connections WHERE id = ? AND owner_id = ?", id, ownerId) > 0;
     }

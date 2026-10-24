@@ -33,6 +33,11 @@ data/runtime/
 # Java / Maven and local persistent storage
 target/
 .mvn/repository/
+# Local Java image used by the Oracle Java language server and debugger
+.tools/
 var/
 *.iml
 .idea/
+
+# Generated screenshots and design comparison output
+output/

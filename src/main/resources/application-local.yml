@@ -1,7 +1,10 @@
+# 本地开发使用 H2 文件库，数据在重启后保留，无需单独安装数据库。
 spring:
   datasource:
+    # 文件路径相对于应用工作目录；MySQL 模式便于共用建表与查询语句。
     url: ${DB_URL:jdbc:h2:file:./var/data/cryptobench;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE}
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
 benchmark:
+  # 研究者和管理员体验入口仅供本地使用。
   demo-enabled: true

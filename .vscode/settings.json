@@ -1,3 +1,15 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "jdk.jdkhome": "${workspaceFolder}/.tools/jdk-21",
+    "jdk.project.jdkhome": "${workspaceFolder}/.tools/jdk-21",
+    "java.jdt.ls.java.home": "C:/Users/ASUS/.vscode/extensions/redhat.java-1.58.0/jre/25.0.4.1-win32-x86_64",
+    "java.configuration.maven.userSettings": "${workspaceFolder}/.mvn/vscode-settings.xml",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "${workspaceFolder}/.tools/jdk-21",
+            "default": true
+        }
+    ],
+    "jdk.runConfig.cwd": "${workspaceFolder}"
 }

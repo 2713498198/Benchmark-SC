@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 旧 JSON 数据导入的集成测试，使用独立内存数据库；测试事务结束后回滚数据库写入。
+ */
 @SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:legacy-import-test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1")
 @ActiveProfiles("test")
 @Transactional
@@ -34,8 +37,12 @@ class LegacyDataImportIntegrationTest {
     @Autowired AuthService auth;
     @Autowired JdbcTemplate jdbc;
 
+    /**
+     * 验证旧账号密码可用、关联数据完整、旧会话不导入、源文件不变，以及重复导入被拒绝。
+     */
     @Test
     void importsLegacyDataAndPasswordsWithoutChangingSourceOrReusingSessions() throws Exception {
+        // 在构建输出目录创建旧版数据样本，不接触开发环境真实数据。
         Path source = Files.createTempDirectory(Path.of("target"), "legacy-import-").resolve("db.json");
         String fixture = """
                 {
@@ -49,6 +56,7 @@ class LegacyDataImportIntegrationTest {
                 }
                 """;
         Files.writeString(source, fixture);
+        // 手动构造启用开关的导入器；此处直接调用，数据库事务由测试类上的 @Transactional 提供。
         var importer = new LegacyDataImporter(new BenchmarkProperties(false, false, true, source.toString()),
                 mapper, users, connections, reports, datasets);
         importer.run(new DefaultApplicationArguments());
@@ -58,6 +66,7 @@ class LegacyDataImportIntegrationTest {
         assertThat(reports.findPublished()).hasSize(1);
         assertThat(reports.findPublished().getFirst().toResponse().has("ownerId")).isFalse();
         assertThat(datasets.findPublished()).hasSize(1);
+        // 旧令牌不延续到新系统，迁移后的用户必须重新登录。
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_sessions", Long.class)).isZero();
         assertThat(Files.readString(source)).isEqualTo(fixture);
         assertThatThrownBy(() -> importer.run(new DefaultApplicationArguments())).isInstanceOf(IllegalStateException.class);

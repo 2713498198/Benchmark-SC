@@ -1,3 +1,5 @@
+import {executionSourceKey} from './execution-sources.js';
+
 export const validNumber=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 export const displayScore=record=>validNumber(record.score)&&record.score<=100?Number(record.score.toFixed(1)):null;
 const stable=(a,b)=>String(a.record.id).localeCompare(String(b.record.id),'en');
@@ -13,7 +15,7 @@ export function leaderboardModel(builtins,publicReports,ownReports,filters,query
  const cohort=all.filter(entry=>{
   const r=entry.record;if(seen.has(r.id))return false;seen.add(r.id);
   return r.kind!=='pk'&&r.scope==='full'&&r.datasetId===filters.dataset&&r.version===filters.version&&r.budget===filters.budget&&
-   (filters.source==='all'||r.source===filters.source)&&(filters.type==='public'?r.demo!==true:r.demo===true);
+   (filters.source==='all'||executionSourceKey(r.source)===filters.source)&&(filters.type==='public'?r.demo!==true:r.demo===true);
  }).sort((a,b)=>scoreValue(b)-scoreValue(a)||stable(a,b));
  let previous=null,place=0;
  for(const [index,entry] of cohort.entries()){

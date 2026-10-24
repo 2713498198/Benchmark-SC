@@ -2,9 +2,11 @@
 
 专用于比较智能体在密码分析任务中通过率、耗时与资源消耗的评测网站。项目采用 Java 21、Spring Boot 3.5.7 和 Vue 3，前后端由同一个 Spring Boot 进程提供服务。
 
+首次阅读代码可参考 [项目阅读顺序与建议](docs/reading-guide.md)，按启动入口、请求链路、业务模块和前端题库逐步理解。
+
 ## 快速启动
 
-环境要求：JDK 21、Maven 3.6.3 或以上。当前启动脚本兼容 `D:\develop\jdk` 和 `D:\develop\apache-maven-3.9.15`；Maven 依赖缓存保存在项目的 `.mvn/repository/` 中。
+环境要求：JDK 21、Maven 3.6.3 或以上。启动脚本依次从系统 `PATH`、`MAVEN_HOME`、`M2_HOME`、项目 `.tools/apache-maven-*`、`D:\develop\apache-maven-*` 和 VS Code 的 Oracle Java 扩展中查找 Maven，不再依赖固定版本的安装路径；仍兼容 `D:\develop\jdk`。Maven 依赖缓存保存在项目的 `.mvn/repository/` 中。
 
 在项目根目录双击 `start.cmd`，或运行：
 
@@ -25,6 +27,14 @@ mvn spring-boot:run
 4. 工作目录使用项目根目录。可在 Run Configuration 的 Environment variables 中设置 `PORT`、`SPRING_PROFILES_ACTIVE` 等参数。
 
 默认 profile 是 `local`。不依赖 IDEA 的 Spring 专属插件，普通 Java Application 配置即可启动。
+
+## 在 VS Code 中运行
+
+安装 `Language Support for Java(TM) by Red Hat`（`redhat.java`）和 `Debugger for Java`（`vscjava.vscode-java-debug`），并在本工作区禁用 Oracle Java 扩展，避免两个 Java 语言服务同时处理项目。项目提供配套的 `.vscode/launch.json`，在“运行和调试”中选择 `CryptoBench (Spring Boot)`，按 F5 调试或 Ctrl+F5 运行。当前工作区和项目目录分别提供配置，支持打开 `Benchmark-SC2` 或其下的 `Benchmark-SC`。
+
+本机项目运行环境使用 `.tools/jdk-21`，该目录由现有 JDK 21 的全部模块生成，不提交 Git；语言服务通过 `java.jdt.ls.java.home` 显式使用 Red Hat 扩展 Windows 平台版本自带的 Java 25，项目编译和运行仍使用 `java.configuration.runtimes` 中的 Java 21。若提示“Java 25 or more recent is required”，检查 `java.jdt.ls.java.home` 是否指向可用的 Java 25 或更新版本，并执行 `Developer: Reload Window`；扩展升级后如自带运行时路径改变，也需更新该设置。Maven 依赖通过 `.mvn/vscode-settings.xml` 复用现有 `.mvn/repository` 缓存。若移动到其他机器，请更新上述 Java 路径，以及该 Maven 设置文件中的 `localRepository` 绝对路径。
+
+本机 Oracle Java 27.0.0 曾出现 Maven 模块加载异常，导致 `Cannot find run action!`，并将 Spring Boot 导入误报为“程序包不存在”；命令行 Maven 编译仍可成功。切换扩展后执行 `Developer: Reload Window`，等待 Maven 项目导入完成再运行。若仍显示旧诊断，执行 `Java: Clean Java Language Server Workspace` 并重启语言服务。
 
 ## 打包部署
 
@@ -122,6 +132,7 @@ target/                                 编译和打包产物，不提交 Git
 | `DELETE /api/connections/{id}` | 删除自己的连接 |
 | `GET/POST /api/reports` | 报告列表和保存 |
 | `GET /api/reports/{id}` | 自己的报告或已公开报告 |
+| `GET /api/reports/public` | 所有公开报告，登录身份不影响返回范围；供首页成本效果图自动刷新 |
 | `POST /api/reports/{id}/sync`、`publish` | 同步、公开自己的报告 |
 | `POST /api/datasets/custom` | 管理员发布测评集版本 |
 
