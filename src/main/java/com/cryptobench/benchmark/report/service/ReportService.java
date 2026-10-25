@@ -74,6 +74,8 @@ public class ReportService {
         payload.remove("ownerId");
         payload.put("synced", existing != null && existing.payload().path("synced").asBoolean());
         payload.put("published", false);
+        payload.put("verified", false);
+        payload.put("verificationStatus", "unverified");
         // 首次保存使用服务端时间，更新保留原创建时间。
         payload.put("createdAt", existing == null ? Instant.now().toString()
                 : existing.payload().path("createdAt").asText());
@@ -84,6 +86,27 @@ public class ReportService {
             reports.update(report);
         }
         return report.toResponse();
+    }
+
+    /** 仅供服务端 Run 完成后创建可信报告，客户端不能调用此路径伪造成绩。 */
+    @Transactional
+    public String createVerified(String ownerId, String runId, ObjectNode input) {
+        ObjectNode payload = input.deepCopy();
+        String id = JsonDocuments.requireIdentifier(payload, "id", 128);
+        payload.put("runId", runId);
+        payload.put("ownerId", ownerId);
+        payload.put("published", false);
+        payload.put("synced", false);
+        // This path is only called after server-side evaluation; normalize trust fields here
+        // so an internal caller cannot accidentally create a contradictory status.
+        payload.put("verified", true);
+        payload.put("verificationStatus", "verified");
+        BenchmarkReport report = new BenchmarkReport(id, ownerId, false, payload);
+        if (reports.findById(id, true).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "运行报告 ID 已存在");
+        }
+        reports.insert(report);
+        return id;
     }
 
     /**
@@ -105,7 +128,13 @@ public class ReportService {
         BenchmarkReport report = ownedForUpdate(user, id);
         ObjectNode payload = report.payload();
         // 发布必须已同步、scope=full 且 kind 不是 pk；这些条件不等同于执行或评分认证。
-        if (!payload.path("synced").asBoolean() || !"full".equals(payload.path("scope").asText())
+        // Compatibility is limited to explicitly labelled legacy examples; a client
+        // cannot omit runId and thereby publish an unverified real-looking score.
+        boolean legacyExample = !payload.hasNonNull("runId") && payload.path("demo").asBoolean(false);
+        if (!payload.path("synced").asBoolean()
+                || (!legacyExample && (!payload.path("verified").asBoolean(false)
+                || !"verified".equals(payload.path("verificationStatus").asText())))
+                || !"full".equals(payload.path("scope").asText())
                 || "pk".equals(payload.path("kind").asText())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "报告必须先同步且为完整测评");
         }

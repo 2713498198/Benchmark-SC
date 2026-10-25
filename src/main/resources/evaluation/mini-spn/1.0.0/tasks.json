@@ -1,0 +1,15 @@
+{
+  "datasetId": "mini-spn",
+  "version": "1.0.0",
+  "evaluatorVersion": "mini-spn-evaluator-1.0.0",
+  "tasks": [
+    {"id":"mini-spn-001","question":"分析 Mini-SPN 任务 001，并返回结构化 active_sbox_bound 结果。","expectedAnswer":"active_sbox_bound=4","publicFiles":[]},
+    {"id":"mini-spn-002","question":"分析 Mini-SPN 任务 002，并返回结构化 active_sbox_bound 结果。","expectedAnswer":"active_sbox_bound=6","publicFiles":[]},
+    {"id":"mini-spn-003","question":"分析 Mini-SPN 任务 003，并返回结构化 trail_weight 结果。","expectedAnswer":"trail_weight=-8","publicFiles":[]},
+    {"id":"mini-spn-004","question":"分析 Mini-SPN 任务 004，并返回结构化 key_bits 结果。","expectedAnswer":"key_bits=8","publicFiles":[]},
+    {"id":"mini-spn-005","question":"分析 Mini-SPN 任务 005，并返回结构化 linear_bias 结果。","expectedAnswer":"linear_bias=0.25","publicFiles":[]},
+    {"id":"mini-spn-006","question":"分析 Mini-SPN 任务 006，并返回结构化 rounds 结果。","expectedAnswer":"rounds=4","publicFiles":[]},
+    {"id":"mini-spn-007","question":"分析 Mini-SPN 任务 007，并返回结构化 candidate_count 结果。","expectedAnswer":"candidate_count=2","publicFiles":[]},
+    {"id":"mini-spn-008","question":"分析 Mini-SPN 任务 008，并返回可验证的结构化结果。","expectedAnswer":"verified=true","publicFiles":[]}
+  ]
+}

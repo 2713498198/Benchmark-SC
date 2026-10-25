@@ -48,6 +48,9 @@ public class SessionService {
      */
     @Transactional
     public void signIn(BenchmarkUser user, HttpServletRequest request, HttpServletResponse response) {
+        if (!"active".equals(user.accountStatus())) {
+            throw new IllegalStateException("Cannot create a session for a disabled account");
+        }
         token(request).ifPresent(value -> sessions.delete(hash(value)));
         // 使用安全随机源生成 256 位令牌；十六进制编码后得到 64 个字符。
         byte[] random = new byte[32];

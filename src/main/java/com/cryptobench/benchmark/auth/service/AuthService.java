@@ -52,6 +52,9 @@ public class AuthService {
         if (user == null || !passwords.matches(input.password(), user)) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "邮箱或密码不正确");
         }
+        if (!"active".equals(user.accountStatus())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "账号已停用");
+        }
         return user;
     }
 

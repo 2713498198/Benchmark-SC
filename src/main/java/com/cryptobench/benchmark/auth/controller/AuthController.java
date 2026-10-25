@@ -5,6 +5,7 @@ import com.cryptobench.benchmark.auth.dto.RegisterRequest;
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.auth.service.AuthService;
 import com.cryptobench.benchmark.auth.service.SessionService;
+import com.cryptobench.benchmark.auth.service.PasswordResetService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -28,10 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService auth;
     private final SessionService sessions;
+    private final PasswordResetService resets;
 
-    public AuthController(AuthService auth, SessionService sessions) {
+    public AuthController(AuthService auth, SessionService sessions, PasswordResetService resets) {
         this.auth = auth;
         this.sessions = sessions;
+        this.resets = resets;
     }
 
     /**
@@ -87,12 +90,17 @@ public class AuthController {
         return Map.of("ok", true);
     }
 
-    /**
-     * 找回密码的兼容占位接口：仅返回接收成功，尚未发送重置邮件或修改密码。
-     */
+    /** 邮箱不存在时也返回相同结果，避免账号枚举；投递由可配置 notifier 处理。 */
     @PostMapping(value = "/forgot", consumes = "application/json")
     public Map<String, Boolean> forgot(@RequestBody Map<String, Object> input) {
-        // 保持现有前端调用协议，邮件重置流程需后续接入。
+        resets.request(String.valueOf(input.getOrDefault("email", "")));
+        return Map.of("ok", true);
+    }
+
+    @PostMapping(value = "/reset", consumes = "application/json")
+    public Map<String, Boolean> reset(@RequestBody Map<String, Object> input) {
+        resets.reset(String.valueOf(input.getOrDefault("token", "")),
+                String.valueOf(input.getOrDefault("password", "")));
         return Map.of("ok", true);
     }
 

@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | 账号、会话、连接元数据、报告与自定义测评集 | 已有业务接口和数据库持久化 | `J/auth/`、`connection/`、`report/`、`dataset/` |
 | CryptoBench-SC V4 公开题库 | 127 道题的浏览、筛选、公开附件和 ZIP 下载 | `S/data/cryptobench-sc-v4/`、`ResourcesPage.js` |
-| Agent 执行与评分 | 真实调度、隔离执行、服务端评分尚未接入；现有流程包含模拟连接和模拟成绩 | `S/js/vue/ArenaPage.js` |
+| Agent 执行与评分 | 真实调度、服务端评分已接入；Docker 来源提供隔离执行，V4 仍等待任务目录与验证器 | `J/execution/`、`S/js/vue/ArenaPage.js` |
 
 阅读目标：能说清“网站保存了什么数据”“哪些数据来自题库”“页面上的成绩如何产生”。
 
@@ -127,13 +127,13 @@ S/index.html
 | 2 | `vue/CommunityPage.js` | 登录、注册、工作台、连接操作、自定义测评集发布 |
 | 3 | `vue/ResourcesPage.js`、`vue/ResourceInfo.js` | 题库展示、筛选、题干加载、下载和说明内容 |
 | 4 | `data.js`、`cryptobench-v4.js` | 内置示例数据与真实公开题库元信息的来源 |
-| 5 | `vue/ArenaPage.js` | 测评配置、模拟连接、进度、报告、同步与公开 |
+| 5 | `vue/ArenaPage.js`、`J/execution/` | 测评配置、Agent 检查、服务端运行轮询、报告、同步与公开 |
 | 6 | `leaderboard-model.js` → `vue/LeaderboardPage.js` → `leaderboard-chart.js` | 先理解榜单过滤和排序，再看界面及图表 |
 | 7 | `vue/HomePage.js`、`core.js`、`S/css/` | 首页表现、工具函数和样式，按需查阅 |
 
 当前前端没有 `.vue` 单文件组件，也没有必须运行的 Vite 开发服务。组件的逻辑和 `template` 字符串写在 `.js` 中；路由由 `app.js` 解析 URL 的 `#` 部分并选择页面。
 
-阅读 `ArenaPage.js` 时，重点找 `checkConnection()`、`begin()` 和 `score()`：连接检查只验证地址格式，计时器推进演示进度，成绩由前端演示函数产生。真实题库的 `executionReady: false` 会阻止进入该演示执行流程。
+阅读 `ArenaPage.js` 时，重点找 `checkConnection()`、`begin()` 和 `refreshRun()`：连接检查调用 Agent 的 `/health` 与 `/capabilities`，`begin()` 创建服务端运行，页面轮询状态和日志，成绩由服务端验证器产生。真实题库的 `executionReady: false` 会阻止创建运行。
 
 公开题库的数据流建议这样读：
 

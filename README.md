@@ -135,8 +135,13 @@ target/                                 编译和打包产物，不提交 Git
 | `GET /api/reports/public` | 所有公开报告，登录身份不影响返回范围；供首页成本效果图自动刷新 |
 | `POST /api/reports/{id}/sync`、`publish` | 同步、公开自己的报告 |
 | `POST /api/datasets/custom` | 管理员发布测评集版本 |
+| `GET /api/admin/users`、`GET /api/admin/audit` | 管理员查看账号与操作审计 |
+| `POST /api/admin/invitations` | 管理员发出一次性管理员邀请（邮件或本地 outbox） |
+| `PATCH /api/admin/users/{id}/role`、`status` | 管理员变更角色、启用或停用账号 |
+| `POST /api/admin/users/{id}/sessions/revoke` | 撤销目标账号全部会话 |
+| `POST /api/auth/admin-invitations/accept` | 受邀管理员设置密码并创建账号 |
 
-注册接口只创建研究者，不能通过客户端指定管理员角色。本地体验入口可创建管理员体验账号；生产管理员需要通过受控的数据初始化或账号管理流程设置。
+注册接口只创建研究者，不能通过客户端指定管理员角色。本地体验入口可创建管理员体验账号；生产管理员通过一次性环境变量初始化首个管理员，后续使用管理员邀请和后台账号管理。设置 `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD` 后启动一次即可创建首个管理员；密码至少 12 位，启动成功后应移除密码环境变量。邀请令牌只保存哈希，邮件内容可通过 `PASSWORD_RESET_OUTBOX` 或内部邮件网关投递。
 
 ## 旧版本数据迁移
 
@@ -185,4 +190,18 @@ python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
 
 只公开题干、附件及必要元数据；隐藏答案、参考解法和评分器不进入静态目录或 ZIP。
 
-本次实现了 Spring Boot 业务后端及数据库持久化。真实 Agent 调度、隔离执行、服务端评分和邮件找回密码仍待接入；其余示例题库和示例榜单延续已有标注。报告指标仍来自现有前端流程，不能视为服务端认证成绩；真实题库继续禁止生成模拟成绩。
+本项目已实现服务端运行调度、真实 Agent 接入、Mini-SPN 服务端验证、Docker 沙箱执行来源、可信报告和密码找回流程。运行记录支持排队、运行、完成、失败、超时、取消、日志和重试；客户端提交的成绩不会覆盖服务端验证结果。CryptoBench-SC V4 仍标记为 `executionReady: false`，因为它还没有绑定服务端任务目录和验证器，不会生成模拟成绩。
+
+本地 Agent 的协议、接口和 Docker 镜像要求见 [本地 Agent 测试指南](docs/local-agent.md)。启动确定性 Mock Agent：
+
+```powershell
+npm run agent:mock
+```
+
+登录平台后，在“开始测评”中使用 `http://127.0.0.1:8000`，点击“检查本地 Agent”，再创建 Mini-SPN 测评。服务端会轮询运行状态和日志，并在完成后生成带 `runId`、验证器版本和可信状态的私有报告。公开榜单接口 `GET /api/reports/public` 只返回已公开报告，不会返回其他用户的私有记录。
+
+Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal network，限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理容器与网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。
+
+Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验测评集与版本；题目目录声明的必需工具和能力也会在发送 `/analyze` 前检查。V4 目前仍没有服务端题目目录与验证器，因此会被明确拒绝执行，不会生成伪造分数。
+
+密码找回接口为 `POST /api/auth/forgot` 和 `POST /api/auth/reset`。令牌只保存哈希且一次性使用；邮件投递可通过 `PASSWORD_RESET_DELIVERY_URL` 配置内网邮件网关，本地联调可用 `PASSWORD_RESET_OUTBOX` 写入临时 outbox 文件。

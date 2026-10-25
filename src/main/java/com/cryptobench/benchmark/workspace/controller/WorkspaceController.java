@@ -5,6 +5,7 @@ import com.cryptobench.benchmark.connection.service.ConnectionService;
 import com.cryptobench.benchmark.dataset.service.DatasetService;
 import com.cryptobench.benchmark.report.service.ReportService;
 import com.cryptobench.benchmark.workspace.dto.BootstrapResponse;
+import com.cryptobench.benchmark.config.BenchmarkProperties;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +19,14 @@ public class WorkspaceController {
     private final ConnectionService connections;
     private final ReportService reports;
     private final DatasetService datasets;
+    private final BenchmarkProperties properties;
 
-    public WorkspaceController(ConnectionService connections, ReportService reports, DatasetService datasets) {
+    public WorkspaceController(ConnectionService connections, ReportService reports, DatasetService datasets,
+                               BenchmarkProperties properties) {
         this.connections = connections;
         this.reports = reports;
         this.datasets = datasets;
+        this.properties = properties;
     }
 
     /**
@@ -33,6 +37,7 @@ public class WorkspaceController {
         // 公开报告与用户自己的报告分开返回，前端据此维护工作台和公共榜单状态。
         return new BootstrapResponse(user == null ? null : user.toResponse(),
                 user == null ? List.of() : connections.list(user.id()),
-                user == null ? List.of() : reports.list(user), reports.listPublished(), datasets.listPublished());
+                user == null ? List.of() : reports.list(user), reports.listPublished(), datasets.listPublished(),
+                properties.demoEnabled());
     }
 }

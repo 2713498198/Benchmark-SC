@@ -98,7 +98,7 @@ class BenchmarkApiIntegrationTest {
         assertThat(b.send("DELETE", "/api/connections/" + connectionId, null).getResponse().getStatus()).isEqualTo(404);
         String id = "report-" + UUID.randomUUID();
         JsonNode report = a.json(a.send("POST", "/api/reports", Map.of("id", id, "scope", "full", "kind", "evaluation",
-                "synced", true, "published", true, "ownerId", "fake")));
+                "demo", true, "synced", true, "published", true, "ownerId", "fake")));
         // 客户端伪造的归属、同步和公开字段均不应成为服务端认可的状态。
         assertThat(report.path("synced").asBoolean()).isFalse();
         assertThat(report.path("published").asBoolean()).isFalse();
@@ -121,7 +121,7 @@ class BenchmarkApiIntegrationTest {
         Client other = registeredClient();
         String publicId = "public-feed-" + UUID.randomUUID();
         String privateId = "private-feed-" + UUID.randomUUID();
-        owner.send("POST", "/api/reports", Map.of("id", publicId, "kind", "evaluation", "scope", "full"));
+        owner.send("POST", "/api/reports", Map.of("id", publicId, "kind", "evaluation", "scope", "full", "demo", true));
         owner.send("POST", "/api/reports", Map.of("id", privateId, "kind", "evaluation", "scope", "full"));
         owner.send("POST", "/api/reports/" + publicId + "/sync", null);
         assertThat(owner.send("POST", "/api/reports/" + publicId + "/publish", null)
@@ -159,12 +159,62 @@ class BenchmarkApiIntegrationTest {
         assertThat(new Client().json(new Client().send("GET", "/api/bootstrap", null)).path("customDatasets").toString()).contains(id);
     }
 
+    @Test
+    void enforcesAdministratorAccountLifecycleAndAuditRules() throws Exception {
+        Client researcher = registeredClient();
+        assertThat(researcher.send("GET", "/api/admin/users", null).getResponse().getStatus()).isEqualTo(403);
+
+        Client admin = new Client();
+        assertThat(admin.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
+        JsonNode accounts = admin.json(admin.send("GET", "/api/admin/users?size=100", null));
+        assertThat(accounts.path("items").isArray()).isTrue();
+        String researcherId = null;
+        for (JsonNode item : accounts.path("items")) {
+            if (researcherEmail(researcher).equals(item.path("email").asText())) {
+                researcherId = item.path("id").asText();
+                break;
+            }
+        }
+        assertThat(researcherId).isNotBlank();
+
+        String inviteEmail = "invited-" + UUID.randomUUID() + "@example.com";
+        MvcResult invite = admin.send("POST", "/api/admin/invitations",
+                Map.of("email", inviteEmail, "name", "受邀管理员"));
+        assertThat(invite.getResponse().getStatus()).isEqualTo(202);
+        assertThat(invite.getResponse().getContentAsString()).doesNotMatch("[a-f0-9]{64}");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_admin_invitations WHERE email=? AND used_at IS NULL",
+                Integer.class, inviteEmail)).isEqualTo(1);
+        assertThat(admin.send("POST", "/api/admin/invitations",
+                Map.of("email", inviteEmail, "name", "受邀管理员")).getResponse().getStatus()).isEqualTo(409);
+
+        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/role",
+                Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
+        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/status",
+                Map.of("status", "disabled")).getResponse().getStatus()).isEqualTo(200);
+        assertThat(researcher.send("GET", "/api/connections", null).getResponse().getStatus()).isEqualTo(401);
+        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/status",
+                Map.of("status", "active")).getResponse().getStatus()).isEqualTo(200);
+        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/role",
+                Map.of("role", "researcher")).getResponse().getStatus()).isEqualTo(200);
+        assertThat(admin.send("GET", "/api/admin/audit", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(admin.send("POST", "/api/admin/users/does-not-exist/sessions/revoke", null)
+                .getResponse().getStatus()).isEqualTo(404);
+    }
+
+    private String researcherEmail(Client client) {
+        return client.email;
+    }
+
     /**
      * 即使报告已同步，PK 报告和抽样测评仍不允许公开。
      */
     @Test
     void rejectsPkAndPartialReportPublication() throws Exception {
         Client client = registeredClient();
+        String unverified = "unverified-" + UUID.randomUUID();
+        client.send("POST", "/api/reports", Map.of("id", unverified, "kind", "evaluation", "scope", "full"));
+        client.send("POST", "/api/reports/" + unverified + "/sync", null);
+        assertThat(client.send("POST", "/api/reports/" + unverified + "/publish", null).getResponse().getStatus()).isEqualTo(400);
         for (String kind : new String[]{"pk", "sample"}) {
             String id = "restricted-" + UUID.randomUUID();
             client.send("POST", "/api/reports", Map.of("id", id, "kind", kind.equals("pk") ? "pk" : "evaluation",
@@ -191,7 +241,7 @@ class BenchmarkApiIntegrationTest {
      */
     private Client registeredClient() throws Exception {
         Client client = new Client();
-        assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", UUID.randomUUID() + "@example.com",
+        assertThat(client.send("POST", "/api/auth/register", Map.of("name", "Test", "email", client.email,
                 "password", "test-password")).getResponse().getStatus()).isEqualTo(201);
         return client;
     }
@@ -199,6 +249,7 @@ class BenchmarkApiIntegrationTest {
     // 轻量测试客户端：每个实例有独立 Cookie 存储，避免不同用户的会话混用。
     private class Client {
         private final Map<String, Cookie> cookies = new HashMap<>();
+        private final String email = UUID.randomUUID() + "@example.com";
 
         // 模拟浏览器发送 JSON；非 GET 请求先获取 CSRF 令牌，并接收响应中的新 Cookie。
         MvcResult send(String method, String path, Object body) throws Exception {

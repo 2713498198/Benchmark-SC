@@ -7,7 +7,7 @@ import ArenaPage from './vue/ArenaPage.js';
 import CommunityPage from './vue/CommunityPage.js';
 import LeaderboardPage from './vue/LeaderboardPage.js';
 
-const state=reactive({user:null,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null});
+const state=reactive({user:null,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null,demoEnabled:false});
 const labels={'/':'首页','/datasets':'测评集','/tools':'测评工具','/leaderboard':'测评榜单','/arena':'PK 竞技'};
 function parseRoute(){try{const route=decodeURI(location.hash.slice(1)||'/');return route.startsWith('/')?route:'/'+route;}catch{return '/404';}}
 async function api(path,options={}){
@@ -22,13 +22,13 @@ async function api(path,options={}){
  if(!response.ok)throw Error(body?.error||'请求失败');return body;
 }
 function save(){try{localStorage.setItem('cryptobench.v1',JSON.stringify({reports:state.reports,connections:state.connections,customDatasets:state.customDatasets}));}catch{}}
-function applyBootstrap(boot){state.user=boot.user||null;state.reports=(boot.reports||[]).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));state.connections=boot.connections||[];state.customDatasets=boot.customDatasets||[];state.publicReports=boot.publicReports||[];save();}
+function applyBootstrap(boot){state.user=boot.user||null;state.reports=(boot.reports||[]).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));state.connections=boot.connections||[];state.customDatasets=boot.customDatasets||[];state.publicReports=boot.publicReports||[];state.demoEnabled=boot.demoEnabled===true;save();}
 async function hydrate(){try{applyBootstrap(await api('/api/bootstrap'));}catch{applyBootstrap({});}}
 function navigate(path){location.hash=path;}
 
 const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,CommunityPage,LeaderboardPage},setup(){
  const route=ref(parseRoute()),toastMessage=ref(''),menuOpen=ref(false),dialog=ref(null),modal=reactive({kind:'',title:'',message:'',action:null,entries:[]}),connection=reactive({name:'',url:'',model:''});let toastTimer;
- const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
+ const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|reset-password|admin-invite|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
  const active=computed(()=>route.value.split('?')[0]);
  function toast(message){toastMessage.value=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastMessage.value='',3700);}
  function closeModal(){modal.kind='';modal.action=null;if(dialog.value?.open)dialog.value.close();}
@@ -49,6 +49,6 @@ const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,CommunityPage,Le
  <dialog id="modal" ref="dialog" @close="closeModal" @click.self="closeModal"><div class="dialog-head"><h2>{{modal.title}}</h2><button class="icon-button" data-close-modal aria-label="关闭" @click="closeModal"><SvgIcon name="close" :size="18"/></button></div>
   <form v-if="modal.kind==='connection'" id="connection-form" class="stack" @submit.prevent="saveConnection"><div class="field"><label>连接名称</label><input name="name" v-model="connection.name" required maxlength="50" placeholder="我的密码分析 Agent"></div><div class="field"><label>服务地址</label><input name="url" v-model="connection.url" type="url" required placeholder="http://127.0.0.1:8000"></div><div class="field"><label>模型标识</label><input name="model" v-model="connection.model" required placeholder="your-model-id"></div><p class="inline-note">凭证不会保存；这里只保存连接元信息。</p><button class="btn primary" type="submit">保存连接</button></form>
   <template v-else-if="modal.kind==='compare'"><p class="inline-note">同一测评集、版本、预算与成绩类型；不同配置可能影响结果。</p><div class="table-scroll rank-comparison" tabindex="0" role="region" aria-label="测评记录对比矩阵"><table><thead><tr><th>比较指标</th><th v-for="item in modal.entries" :key="item.id">{{item.agent}}</th></tr></thead><tbody><tr v-for="field in [['通过率','score'],['通过 / 总数','passed'],['基础模型','model'],['平均耗时','time'],['费用 USD','cost'],['执行来源','source'],['成绩性质','demo'],['Agent 版本','agentVersion'],['验证器版本','evaluatorVersion'],['随机种子','seed']]" :key="field[1]"><th>{{field[0]}}</th><td v-for="item in modal.entries" :key="item.id">{{item[field[1]]??'未提供'}}</td></tr></tbody></table></div></template>
-  <template v-else><p>{{modal.message}}</p><div class="dialog-actions"><button class="btn primary" :id="modal.kind==='sync'?'confirm-sync':modal.kind==='publish'?'confirm-publish':null" @click="runConfirm">{{modal.kind==='sync'?'确认同步':'确认公开'}}</button></div></template>
+  <template v-else><p>{{modal.message}}</p><div class="dialog-actions"><button class="btn primary" :id="modal.kind==='sync'?'confirm-sync':modal.kind==='publish'?'confirm-publish':null" @click="runConfirm">{{modal.kind==='sync'?'确认同步':modal.kind==='publish'?'确认公开':'确认执行'}}</button></div></template>
  </dialog></div>`};
 createApp(App).mount('#app');

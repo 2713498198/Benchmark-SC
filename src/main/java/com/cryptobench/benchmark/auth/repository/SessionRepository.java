@@ -22,7 +22,8 @@ public class SessionRepository {
      * 仅匹配尚未过期的令牌摘要，再查询关联用户；不存在或已过期都视为未登录。
      */
     public Optional<BenchmarkUser> findUser(String tokenHash) {
-        return jdbc.query("SELECT user_id FROM benchmark_sessions WHERE token_hash = ? AND expires_at > ?",
+        return jdbc.query("SELECT s.user_id FROM benchmark_sessions s JOIN benchmark_users u ON u.id=s.user_id "
+                        + "WHERE s.token_hash = ? AND s.expires_at > ? AND u.account_status='active'",
                 (row, index) -> row.getString(1), tokenHash, System.currentTimeMillis())
                 .stream().findFirst().flatMap(users::findById);
     }
@@ -41,5 +42,13 @@ public class SessionRepository {
      */
     public void delete(String tokenHash) {
         jdbc.update("DELETE FROM benchmark_sessions WHERE token_hash = ?", tokenHash);
+    }
+
+    public void deleteByUser(String userId) {
+        jdbc.update("DELETE FROM benchmark_sessions WHERE user_id = ?", userId);
+    }
+
+    public int deleteByUserAndCount(String userId) {
+        return jdbc.update("DELETE FROM benchmark_sessions WHERE user_id = ?", userId);
     }
 }

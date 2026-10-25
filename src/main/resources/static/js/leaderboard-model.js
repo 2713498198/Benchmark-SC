@@ -2,6 +2,7 @@ import {executionSourceKey} from './execution-sources.js';
 
 export const validNumber=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 export const displayScore=record=>validNumber(record.score)&&record.score<=100?Number(record.score.toFixed(1)):null;
+export const trustLabel=record=>record.demo===true?'示例':record.verified===true&&record.verificationStatus==='verified'?'已验证':'未核验';
 const stable=(a,b)=>String(a.record.id).localeCompare(String(b.record.id),'en');
 const scoreValue=entry=>displayScore(entry.record)??-Infinity;
 

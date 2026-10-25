@@ -15,5 +15,5 @@ import java.util.List;
  */
 public record BootstrapResponse(UserResponse user, List<ConnectionResponse> connections,
                                 List<ObjectNode> reports, List<ObjectNode> publicReports,
-                                List<ObjectNode> customDatasets) {
+                                List<ObjectNode> customDatasets, boolean demoEnabled) {
 }

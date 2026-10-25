@@ -49,7 +49,7 @@ public class ReportController {
     }
 
     /**
-     * 保存前端提交的报告 JSON，实际执行过程和成绩尚未由服务端验证。
+     * 保存客户端导出的报告副本；客户端记录始终标记为未核验，不能伪造可信成绩。
      */
     @PostMapping(consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)

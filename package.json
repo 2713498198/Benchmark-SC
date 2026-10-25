@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "mvn spring-boot:run",
+    "agent:mock": "node tests/fixtures/mock-agent.mjs",
     "vendor:vue": "node scripts/sync-vue.mjs",
     "check": "node tests/check.mjs && node tests/vue-templates.mjs",
     "test": "node tests/smoke.mjs",

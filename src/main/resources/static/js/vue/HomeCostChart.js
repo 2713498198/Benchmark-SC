@@ -20,6 +20,7 @@ export default {components:{SvgIcon,RankChart},setup(){
  });
  watch(sourceOptions,options=>{if(!options.some(option=>option.value===filters.source))filters.source='all';});
  const type=computed(()=>mode.value==='auto'?(publicData.value.cohort.length?'public':'demo'):mode.value);
+ const publicTrust=computed(()=>publicData.value.cohort.some(({record})=>record.verified===true&&record.verificationStatus==='verified')?'公开记录 · 已验证':'公开记录 · 未核验');
  const rows=computed(()=>type.value==='public'?publicData.value.visible.map(e=>e.record):leaderboardModel(rankings,snapshot.value??app.state.publicReports,[],{...filters,type:'demo'}).visible.map(e=>e.record));
  const frontier=computed(()=>chartModel(rows.value,'cost').frontier.flatMap(p=>p.rows));
  const amount=value=>value!==0&&(value<.001||value>=1e6)?value.toExponential(1):value.toLocaleString('en-US',{maximumFractionDigits:3});
@@ -48,7 +49,7 @@ export default {components:{SvgIcon,RankChart},setup(){
  function visibility(){if(document.hidden)stop();else refresh();}
  onMounted(()=>{document.addEventListener('visibilitychange',visibility);refresh();});
  onBeforeUnmount(()=>{disposed=true;stop();document.removeEventListener('visibilitychange',visibility);});
- return {filters,mode,zoom,datasets,versions,type,rows,frontier,amount,datasetTitle,updated,updateLabel,failed,loading,leaderboardUrl,sourceOptions};
+ return {filters,mode,zoom,datasets,versions,type,rows,frontier,amount,datasetTitle,updated,updateLabel,failed,loading,leaderboardUrl,sourceOptions,publicTrust};
 },template:`<section class="container home-cost-section" aria-labelledby="home-cost-title" data-home-cost-chart>
  <header class="home-cost-heading"><div><h2 id="home-cost-title">测评榜单</h2><p>快速找到更适合你的模型与智能体组合。</p></div><a class="text-link" :href="leaderboardUrl">完整榜单 <SvgIcon name="arrow" :size="16"/></a></header>
  <div class="home-cost-filters" role="group" aria-label="成本效果图测评条件">
@@ -58,7 +59,7 @@ export default {components:{SvgIcon,RankChart},setup(){
   <label><span>预算方案</span><select data-home-filter="budget" v-model="filters.budget"><option value="standard">标准 · 300s / 20 次调用</option><option value="extended">扩展 · 600s / 40 次调用</option></select></label>
   <label><span>成绩类型</span><select data-home-filter="type" v-model="mode"><option value="auto">自动 · 公开优先</option><option value="public">公开记录</option><option value="demo">示例数据</option></select></label>
  </div>
- <div class="home-cost-status"><div class="home-cost-trust"><span class="badge">{{type==='demo'?'示例数据':'公开记录 · 未核验'}}</span><p v-if="type==='demo'">{{mode==='auto'?'当前条件暂无公开记录':'仅供展示，不代表真实成绩'}}</p><details class="home-data-note"><summary>说明</summary><p>{{type==='demo'?'示例数据不代表真实模型测评成绩。':'公开仅表示记录可见，执行与证据尚未核验。'}}每条记录保留独立测评结果，费用与通过率缺失的记录不绘入图表。</p></details></div><p class="home-cost-update" role="status" aria-live="polite"><span v-if="failed">更新失败，已保留现有数据 · </span><span v-else-if="loading">更新中 · </span>{{updated?'最近更新 '+updateLabel:updateLabel}}<span> · 每 30 秒刷新</span></p></div>
+ <div class="home-cost-status"><div class="home-cost-trust"><span class="badge">{{type==='demo'?'示例数据':publicTrust}}</span><p v-if="type==='demo'">{{mode==='auto'?'当前条件暂无公开记录':'仅供展示，不代表真实成绩'}}</p><details class="home-data-note"><summary>说明</summary><p>{{type==='demo'?'示例数据不代表真实模型测评成绩。':'公开记录仅表示记录可见，验证状态以每条成绩依据为准。'}}每条记录保留独立测评结果，费用与通过率缺失的记录不绘入图表。</p></details></div><p class="home-cost-update" role="status" aria-live="polite"><span v-if="failed">更新失败，已保留现有数据 · </span><span v-else-if="loading">更新中 · </span>{{updated?'最近更新 '+updateLabel:updateLabel}}<span> · 每 30 秒刷新</span></p></div>
  <RankChart :rows="rows" metric="cost" :zoom="zoom" fixed-metric hide-title @zoom="zoom=$event"/>
  <section v-if="frontier.length" class="home-frontier" aria-labelledby="home-frontier-title"><div class="home-frontier-heading"><h3 id="home-frontier-title">优选组合</h3><div class="home-frontier-values"><span>费用 USD</span><span>通过率</span></div></div><ul><li v-for="r in frontier" :key="r.id"><div><strong>{{r.model}}</strong><span>{{r.agent}}</span></div><div class="home-frontier-values"><span><small class="sr-only">费用 USD</small><b>&#36;{{amount(r.cost)}}</b></span><span><small class="sr-only">通过率</small><b>{{r.score.toFixed(1)}}%</b></span></div></li></ul></section>
  </section>`};

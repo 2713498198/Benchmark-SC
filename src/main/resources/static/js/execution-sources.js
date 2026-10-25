@@ -1,10 +1,11 @@
-// The current application runs local demos. Other execution locations are
-// declarations in submitted reports, not execution services provided by us.
+// Execution locations are recorded by the server run source and reused by the
+// homepage and leaderboard filters.
 export const executionSourceKey=value=>typeof value==='string'&&value.trim()?value:'unreported';
 export function executionSourceLabel(value){
  const key=executionSourceKey(value);
  if(key==='all')return '全部来源';
  if(key==='local')return '本地执行';
+ if(key==='docker')return 'Docker 沙箱';
  if(key==='cloud')return '云端（报告声明）';
  if(key==='unreported')return '未提供来源';
  return key+'（报告声明）';

@@ -42,3 +42,13 @@ benchmark:
   # 旧数据导入必须显式启用；相对源路径以应用工作目录为基准。
   legacy-import-enabled: ${LEGACY_IMPORT_ENABLED:false}
   legacy-db-file: ${CRYPTOBENCH_DB_FILE:data/runtime/db.json}
+  admin:
+    bootstrap:
+      email: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL:}
+      name: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME:}
+      password: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD:}
+  password-reset:
+    # 配置邮件网关 URL 后由后端投递 JSON；本地也可写入 outbox 文件联调。
+    delivery-url: ${PASSWORD_RESET_DELIVERY_URL:}
+    outbox: ${PASSWORD_RESET_OUTBOX:}
+    base-url: ${PASSWORD_RESET_BASE_URL:http://127.0.0.1:4173}
