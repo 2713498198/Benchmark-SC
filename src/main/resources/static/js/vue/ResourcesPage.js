@@ -13,7 +13,7 @@ const example=d=>({schema:'cryptobench-proposed-v1',demo:true,dataset:d.id,versi
 const deployNotes=`CryptoBench 本地部署说明
 
 平台使用 Spring Boot 和 Vue，账号与报告由后端持久化。
-真实 Agent 执行、服务端评分和 Docker 沙箱入口已支持；桌面安装包暂未实施。
+真实 Agent 执行、服务端评分和 Docker 沙箱入口已支持；Windows 便携版已可构建，EXE 安装器需要 WiX Toolset。
 
 方式一：Spring Boot 本地启动
 1. 安装 JDK 21 与 Maven 3.6.3 或更新版本。
@@ -23,7 +23,7 @@ const deployNotes=`CryptoBench 本地部署说明
 方式二：Docker 运行网站容器（本地开发）
 1. 在项目根目录执行 mvn clean verify。
 2. 将下载的 compose.yaml 放在项目根目录，确认 Docker Desktop 已启动。
-3. 执行 docker compose up -d，访问 http://localhost:8080。
+3. 执行 docker compose up -d，访问 http://localhost:4173。
 4. 使用 docker compose down 停止；数据保存在项目的 var/data。网站容器不会挂载 Docker socket。
 
 Agent 沙箱：在主机上构建 cryptobench-mock-agent:local，并让宿主机 Spring Boot 使用 Docker Desktop 创建每次运行的临时容器。

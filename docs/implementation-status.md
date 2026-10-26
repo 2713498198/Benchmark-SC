@@ -23,6 +23,8 @@
 - GitHub Actions 前端、后端和 Docker 沙箱验证工作流。
 - 新增平台级 Docker E2E：真实启动 Spring Boot，提交 `/api/runs`，轮询运行状态并检查可信报告：
   `npm run test:docker:e2e`。
+- Compose 部署冒烟测试：构建平台镜像、启动容器、检查 Docker 健康状态和 `/actuator/health`，结束后清理容器与网络：
+  `npm run test:compose`。
 
 ## 已验证
 
@@ -123,6 +125,7 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `node --check tests/docker-platform-e2e.mjs`：通过。
 - `npm run test:docker`：通过。
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
+- `npm run test:compose`：通过，Compose 容器健康检查 HTTP 200，测试结束后完成清理。
 - `npm run check`：通过，102 个 JavaScript 模块和 11 个 Vue 模板。
 - `mvn --batch-mode verify`：通过，25 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。

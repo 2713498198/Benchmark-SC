@@ -44,6 +44,9 @@ jobs:
       - name: Run platform Docker execution E2E
         run: npm run test:docker:e2e
 
+      - name: Run Docker Compose deployment smoke test
+        run: npm run test:compose
+
   windows-package:
     runs-on: windows-latest
     timeout-minutes: 20
