@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`93b6f26 test: verify versioned model pricing`
+最近提交：`e120895 docs: update backend test count`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
