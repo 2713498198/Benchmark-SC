@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`e120895 docs: update backend test count`
+最近提交：`f616798 docs: refresh implementation checkpoint`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
