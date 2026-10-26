@@ -63,7 +63,7 @@ jobs:
 
       - name: Build Windows app image
         shell: pwsh
-        run: .\scripts\package-windows.ps1 -OutputDir "$env:RUNNER_TEMP\cryptobench-app"
+        run: .\scripts\package-windows.ps1 -AllowExternalOutput -OutputDir "$env:RUNNER_TEMP\cryptobench-app"
 
       - name: Verify app image layout
         shell: pwsh
@@ -92,7 +92,7 @@ jobs:
 
       - name: Build Windows EXE installer
         shell: pwsh
-        run: .\scripts\package-windows.ps1 -Installer -OutputDir "$env:RUNNER_TEMP\cryptobench-installer"
+        run: .\scripts\package-windows.ps1 -Installer -AllowExternalOutput -OutputDir "$env:RUNNER_TEMP\cryptobench-installer"
 
       - name: Verify Windows EXE installer artifact
         shell: pwsh
@@ -102,7 +102,7 @@ jobs:
 
       - name: Build Windows upgrade installer
         shell: pwsh
-        run: .\scripts\package-windows.ps1 -Installer -AppVersion 1.0.1 -OutputDir "$env:RUNNER_TEMP\cryptobench-installer-upgrade"
+        run: .\scripts\package-windows.ps1 -Installer -AllowExternalOutput -AppVersion 1.0.1 -OutputDir "$env:RUNNER_TEMP\cryptobench-installer-upgrade"
 
       - name: Verify Windows installer lifecycle
         shell: pwsh

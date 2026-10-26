@@ -2,6 +2,7 @@
 param(
     [string]$OutputDir = "",
     [switch]$Installer,
+    [switch]$AllowExternalOutput,
     [ValidatePattern('^\d+(\.\d+){1,3}$')]
     [string]$AppVersion = '1.0.0'
 )
@@ -12,7 +13,7 @@ if ([string]::IsNullOrWhiteSpace($OutputDir)) {
     $OutputDir = Join-Path $root 'output\desktop'
 }
 $OutputDir = [IO.Path]::GetFullPath($OutputDir)
-if (-not $OutputDir.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+if (-not $AllowExternalOutput -and -not $OutputDir.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
     throw "OutputDir must stay inside the project directory: $root"
 }
 
