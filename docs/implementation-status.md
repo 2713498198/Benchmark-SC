@@ -48,11 +48,19 @@ npm run test:docker:e2e
 
 ### Windows 桌面包
 
-脚本已经存在，但尚未在 Windows 上完成实际构建、启动、浏览器打开、升级和卸载验收：
+Windows `app-image` 已在本机实际构建并启动验收通过，内置 Java 运行时和 `CryptoBench.exe` 均存在；健康检查返回 HTTP 200，测试结束后端口已释放：
 
 ```powershell
 .\scripts\package-windows.ps1
 ```
+
+启动验收命令：
+
+```powershell
+npm run test:desktop
+```
+
+当前仍未完成的是升级和卸载流程，以及需要 WiX Toolset 的 EXE 安装器构建。
 
 生成的 `output/desktop` 属于本地产物，不提交到仓库。
 
@@ -117,4 +125,5 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
 - `npm run check`：通过，85 个 JavaScript 模块和 11 个 Vue 模板。
 - `mvn --batch-mode verify`：通过，25 项测试通过。
+- `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 

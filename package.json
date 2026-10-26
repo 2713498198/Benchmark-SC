@@ -13,6 +13,7 @@
     "test:docker": "node tests/docker-integration.mjs",
     "test:docker:e2e": "node tests/docker-platform-e2e.mjs",
     "test:docker-ui": "node tests/docker-ui-browser.mjs",
+    "test:desktop": "node tests/windows-app-image.mjs",
     "package:windows": "powershell -ExecutionPolicy Bypass -File scripts/package-windows.ps1"
   },
   "dependencies": {

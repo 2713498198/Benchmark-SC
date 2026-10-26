@@ -69,3 +69,7 @@ jobs:
           if (-not (Test-Path -LiteralPath $app)) { throw "App image was not created: $app" }
           if (-not (Test-Path -LiteralPath (Join-Path $app 'CryptoBench.exe'))) { throw 'Desktop launcher executable is missing' }
           if (-not (Test-Path -LiteralPath (Join-Path $app 'runtime'))) { throw 'Bundled runtime is missing' }
+
+      - name: Smoke test Windows app image
+        shell: pwsh
+        run: node tests/windows-app-image.mjs "$env:RUNNER_TEMP\cryptobench-app\CryptoBench\CryptoBench.exe"
