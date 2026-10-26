@@ -9,10 +9,11 @@ export async function runScenarios({page,check,go,shot}) {
   await fresh('/evaluate');
   await page.locator('[data-form="model"]').selectOption(model);
   await page.locator('[data-check-connection]').click();
+  await page.locator('#connection-status').filter({hasText:'已连接'}).waitFor();
   await page.locator('[data-eval-next]').click();
   if(dataset)await page.locator('[data-form="datasetId"]').selectOption(dataset);
   await page.locator('[data-form="scope"]').selectOption(scope);
-  await page.locator('[data-form="failure"]').selectOption(failure);
+  if (await page.locator('[data-form="failure"]').count()) await page.locator('[data-form="failure"]').selectOption(failure);
   await page.locator('[data-eval-next]').click();
  };
  const start=()=>page.locator('[data-eval-next]').click();
@@ -35,13 +36,15 @@ export async function runScenarios({page,check,go,shot}) {
  check('custom model remains selected',await page.locator('[data-form="model"]').inputValue()==='research-local-model');
  await page.locator('[data-form="endpoint"]').fill('ftp://example.org');
  await page.locator('[data-check-connection]').click();
- check('reject non-http connection',await page.locator('#connection-status').innerText().then(t=>t.includes('有效')));
+ await page.waitForFunction(()=>{const text=document.querySelector('#connection-status')?.textContent||'';return !text.includes('尚未检查')&&!text.includes('配置已变更');});
+ check('reject non-http connection',await page.locator('#connection-status').innerText().then(t=>!t.includes('已连接')&&t.toLowerCase().includes('http')));
  await page.locator('[data-eval-next]').click();
  check('invalid connection blocks next',await page.locator('[data-form="endpoint"]').isVisible());
  await page.locator('[data-form="endpoint"]').fill('http://127.0.0.1:9000');
  await page.locator('[data-check-connection]').click();
  await page.locator('[data-form="endpoint"]').fill('http://127.0.0.1:9001');
  check('connection edit invalidates check',await page.locator('#connection-status').innerText().then(t=>t.includes('重新检查')));
+ await page.locator('[data-form="endpoint"]').fill('http://127.0.0.1:8000');
  await page.locator('[aria-label="访问凭证"]').fill('test-only-credential-should-not-persist');
  await page.locator('[data-check-connection]').click();
  await page.locator('[data-eval-next]').click();
@@ -50,9 +53,9 @@ export async function runScenarios({page,check,go,shot}) {
  check('custom model in report',custom.model==='research-local-model');
  check('credential not persisted',await page.evaluate(()=>!localStorage.getItem('cryptobench.v1').includes('test-only-credential-should-not-persist')));
  const json=await downloadText('[data-report-json]');
- check('JSON report download',json.name===custom.id+'.json'&&JSON.parse(json.text).id===custom.id&&JSON.parse(json.text).demo===true);
+ check('JSON report download',json.name===custom.id+'.json'&&JSON.parse(json.text).id===custom.id&&JSON.parse(json.text).demo===false);
  const csv=await downloadText('[data-report-csv]');
- check('CSV report download',csv.name===custom.id+'.csv'&&csv.text.includes('"passed_a","passed_b","total","demo"'));
+ check('CSV report download',csv.name===custom.id+'.csv'&&csv.text.includes('"task_id","status","passed","cost_usd","elapsed_ms"'));
  await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();await page.locator('#modal').waitFor({state:'hidden'});
  check('sync preserves private visibility',await latest().then(r=>r.synced&&!r.published));
 
@@ -65,11 +68,9 @@ export async function runScenarios({page,check,go,shot}) {
  check('sample accounting',sample.total===8&&sample.categories.reduce((n,c)=>n+c.total,0)===8&&sample.categories.reduce((n,c)=>n+c.passed,0)===sample.passed);
  check('sample cannot enter leaderboard',await page.locator('[data-publish-report]').isDisabled());
  const beforeFailure=await reportCount();
- for(const [failure,title] of [['error','Agent 连接失败'],['timeout','任务执行超时']]){
-  await ready({failure});await start();await page.getByRole('heading',{name:title,exact:true}).waitFor();
-  check('run '+failure,await reportCount()===beforeFailure);
- }
+ check('simulation failure controls removed',await page.locator('[data-form="failure"]').count()===0);
  await ready();await start();await page.locator('[data-cancel-run]').click();
+ await page.getByRole('heading',{name:'任务已取消',exact:true}).waitFor();
  check('cancel stops run',await page.locator('.run-heading h3').innerText()==='任务已取消'&&await reportCount()===beforeFailure);
 
  // Published task versions cannot overwrite each other or share a leaderboard.
@@ -93,20 +94,17 @@ export async function runScenarios({page,check,go,shot}) {
  check('dataset version passed to evaluation',await page.locator('[data-form="datasetId"]').inputValue()==='custom-spn@2.0.0');
  await page.locator('[data-form="datasetId"]').selectOption('mini-spn@1.0.0');await page.locator('[data-eval-next]').click();
  check('changing dataset overrides entry query',await page.locator('.info-list').innerText().then(t=>t.includes('Mini-SPN')&&t.includes('120 项')));
- await ready({dataset:'custom-spn@2.0.0'});await start();const versioned=await openReport();
- check('report pins selected task version',versioned.datasetId==='custom-spn'&&versioned.version==='2.0.0'&&versioned.total===2);
- await page.locator('[data-sync-report]').click();await page.locator('#confirm-sync').click();await page.locator('#modal').waitFor({state:'hidden'});await page.locator('[data-publish-report]').click();await page.locator('#confirm-publish').click();await page.locator('#modal').waitFor({state:'hidden'});
+ await ready({dataset:'custom-spn@2.0.0'});await start();
+ await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('尚未绑定'));
+ check('unbound dataset blocks execution',await page.locator('a[href^="#/report/"]').count()===0);
  await go('/leaderboard?dataset=custom-spn&version=2.0.0');
- check('leaderboard version entry',await page.locator('[data-rank="version"]').inputValue()==='2.0.0'&&await page.locator('tbody tr').count()===1);
+ check('unbound version has no leaderboard records',await page.locator('[data-rank="version"]').inputValue()==='2.0.0'&&await page.locator('tbody tr').count()===0);
  await page.locator('[data-rank="version"]').selectOption('1.0.0');
  check('leaderboard versions remain isolated',await page.locator('tbody tr').count()===0);
- await page.locator('[data-rank="version"]').selectOption('2.0.0');
- const rankCsv=await downloadText('[data-export-rank]');
- check('leaderboard CSV respects version',rankCsv.text.includes('2.0.0')&&!rankCsv.text.includes('1.0.0'));
  await go('/datasets');await shot('datasets-desktop');
 
  // Distinct contenders and independent Agent metadata are retained.
- await fresh('/arena');
+ await fresh('/evaluate');await page.locator('[data-check-connection]').click();await page.locator('#connection-status').filter({hasText:'已连接'}).waitFor();await go('/arena');
  const a=await page.locator('[data-duel="a"]').inputValue();
  await page.locator('[data-duel="b"]').selectOption(a);await page.locator('[data-start-pk]').click();
  check('duplicate contenders blocked',await page.locator('.run-heading').count()===0&&await page.locator('#toast').innerText().then(t=>t.includes('不同')));
