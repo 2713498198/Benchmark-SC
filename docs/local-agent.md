@@ -98,6 +98,8 @@ Mini-SPN 的隐藏验证材料位于服务端 classpath 的 `evaluation/mini-spn
 
 耗时由服务端围绕 `/analyze` 请求测量。费用由服务端价格表根据 Agent 返回的输入、输出 token 数计算；未知模型或缺少合法用量时显示为空，不会按零费用计入榜单。Agent 返回的费用字段只作为原始证据保存。
 
+可信报告会同时保存 `usage` 汇总：`inputTokens`、`outputTokens`、`totalTokens`、`knownTasks` 和 `taskCount`；每个完整用量的任务结果也会保存同名的用量明细。只有所有任务都提供合法的输入和输出 token 时才生成总 Token 数，部分缺失时保留覆盖数量并将总量置空。
+
 PK 请求需要在 `players` 中提供两个参赛方。服务端会为每个参赛方执行同一组任务，分别验证并生成 `competitors`、`winner` 和独立的时间、费用结果：
 
 ```json
