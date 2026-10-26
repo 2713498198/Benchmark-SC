@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Pin the Docker E2E runner so the sandbox network contract is not changed
+    # by the rolling ubuntu-latest image migration.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Check out source
