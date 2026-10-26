@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`e23cf9a docs: save implementation progress`
+最近提交：`471a321 ci: verify Windows desktop package`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
