@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`73bdc65 build: enable per-user windows installer upgrades`
+最近提交：`93b6f26 test: verify versioned model pricing`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -25,6 +25,7 @@
   `npm run test:docker:e2e`。
 - Compose 部署冒烟测试：构建平台镜像、启动容器、检查 Docker 健康状态和 `/actuator/health`，结束后清理容器与网络：
   `npm run test:compose`。
+- 通用模型价格表支持版本化配置；未知模型或无效用量保留空费用，并由 `ServerCostCalculatorTest` 验证自定义价格表覆盖和 token 计费。
 
 ## 已验证
 
@@ -137,4 +138,5 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 - `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器。
 - `tests/windows-installer.ps1`：通过，本机完成安装、升级和卸载生命周期验证。
+- `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
 
