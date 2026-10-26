@@ -43,6 +43,11 @@ jobs:
       - name: Run backend tests and package
         run: mvn --batch-mode verify
 
+      - name: Verify Docker engine
+        run: |
+          docker version
+          docker info --format '{{.ServerVersion}} {{.OperatingSystem}}'
+
       - name: Run Docker Agent sandbox E2E
         run: npm run test:docker
 
