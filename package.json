@@ -11,6 +11,7 @@
     "test": "node tests/smoke.mjs",
     "test:design": "node tests/redesign.mjs",
     "test:docker": "node tests/docker-integration.mjs",
+    "test:docker:e2e": "node tests/docker-platform-e2e.mjs",
     "test:docker-ui": "node tests/docker-ui-browser.mjs",
     "package:windows": "powershell -ExecutionPolicy Bypass -File scripts/package-windows.ps1"
   },

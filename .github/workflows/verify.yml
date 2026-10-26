@@ -40,3 +40,6 @@ jobs:
 
       - name: Run Docker Agent sandbox E2E
         run: npm run test:docker
+
+      - name: Run platform Docker execution E2E
+        run: npm run test:docker:e2e
