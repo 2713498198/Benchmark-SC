@@ -494,6 +494,8 @@ public class RunService {
             if (task.verificationResult() != null) item.set("verification", task.verificationResult());
             if (task.costUsd() != null) item.put("costUsd", task.costUsd());
             if (task.elapsedMs() != null) item.put("elapsedMs", task.elapsedMs());
+            ObjectNode usage = usageView(task.agentResponse());
+            if (usage != null) item.set("usage", usage);
         }
         return result;
     }
@@ -712,6 +714,19 @@ public class RunService {
             return value.asLong();
         }
         return null;
+    }
+
+    /** Expose only verified token counters in a task result; never copy the raw Agent response. */
+    private ObjectNode usageView(JsonNode response) {
+        JsonNode usage = response == null ? null : response.get("usage");
+        Long input = usageValue(usage, "inputTokens", "input_tokens", "promptTokens", "prompt_tokens");
+        Long output = usageValue(usage, "outputTokens", "output_tokens", "completionTokens", "completion_tokens");
+        if (input == null || output == null) return null;
+        ObjectNode result = mapper.createObjectNode();
+        result.put("inputTokens", input);
+        result.put("outputTokens", output);
+        result.put("totalTokens", input + output);
+        return result;
     }
 
     private List<RunTask> participantTasks(ParticipantRuntime runtime, List<RunTask> stored) {
