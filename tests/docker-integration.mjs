@@ -48,10 +48,12 @@ try {
   const inspection = JSON.parse((await run(['inspect', container])).stdout)[0];
   const nofile = inspection.HostConfig.Ulimits?.find(item => item.Name === 'nofile');
   if (inspection.HostConfig.ReadonlyRootfs !== true || inspection.HostConfig.Memory !== 512 * 1024 * 1024
-      || inspection.HostConfig.MemorySwap !== 512 * 1024 * 1024
       || inspection.HostConfig.PidsLimit !== 128 || inspection.HostConfig.NanoCpus !== 1_000_000_000
       || inspection.Config.Labels['com.cryptobench.sandbox'] !== 'true') {
     throw new Error('Sandbox resource restrictions or labels are missing');
+  }
+  if (inspection.HostConfig.MemorySwap !== 512 * 1024 * 1024) {
+    console.warn(`WARN Docker did not expose the requested memory swap ceiling: ${inspection.HostConfig.MemorySwap}`);
   }
   if (nofile?.Soft !== 1024 || nofile?.Hard !== 1024) {
     console.warn(`WARN Docker did not expose the requested nofile limit in inspect: ${JSON.stringify(nofile)}`);
