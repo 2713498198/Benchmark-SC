@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`1428ccd build: support portable WiX installer toolchain`
+最近提交：`f09a36c ci: build windows installer artifact`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
