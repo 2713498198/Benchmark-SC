@@ -112,6 +112,14 @@ PK 请求需要在 `players` 中提供两个参赛方。服务端会为每个参
 
 ## Docker 执行来源
 
+真实 Docker 协议验收使用：
+
+```powershell
+npm.cmd run test:docker
+```
+
+该命令必须连接 Docker Desktop；没有 Docker 引擎时会失败并提示原因，不会把未执行当成通过。
+
 创建运行时可以把 `source` 设为 `docker` 并提供 `image`。镜像需要在 `8000/tcp` 提供同一套 Agent 协议：
 
 ```json

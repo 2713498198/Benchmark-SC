@@ -9,7 +9,8 @@
     "vendor:vue": "node scripts/sync-vue.mjs",
     "check": "node tests/check.mjs && node tests/vue-templates.mjs",
     "test": "node tests/smoke.mjs",
-    "test:design": "node tests/redesign.mjs"
+    "test:design": "node tests/redesign.mjs",
+    "test:docker": "node tests/docker-integration.mjs"
   },
   "dependencies": {
     "vue": "3.5.22"
