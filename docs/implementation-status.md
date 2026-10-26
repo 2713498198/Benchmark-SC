@@ -135,7 +135,7 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:docker`：通过。
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
 - `npm run test:compose`：通过，Compose 容器健康检查 HTTP 200，测试结束后完成清理。
-- `npm run test:docker-ui`：通过，验证 Docker 执行来源入口、镜像可用性状态和不可用时的安全禁用。
+- `npm run test:docker-ui`：通过；在构建 `cryptobench-mock-agent:local` 与 `cryptobench-agent-proxy:local` 后，确认 Docker 引擎可用时前端入口启用，镜像不可用时安全禁用。
 - `npm test`：通过，完整浏览器场景和移动端检查通过；测试使用独立内存 H2，避免污染本地持久化数据。
 - `npm run check`：通过，104 个 JavaScript 模块和 11 个 Vue 模板。
 - `mvn --batch-mode verify`：通过，26 项测试通过。
