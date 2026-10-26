@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [string]$OutputDir = "",
-    [switch]$Installer
+    [switch]$Installer,
+    [ValidatePattern('^\d+(\.\d+){1,3}$')]
+    [string]$AppVersion = '1.0.0'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -72,7 +74,7 @@ $arguments = @(
     '--main-class', 'org.springframework.boot.loader.launch.JarLauncher',
     '--runtime-image', $javaHome,
     '--dest', $OutputDir,
-    '--app-version', '1.0.0',
+    '--app-version', $AppVersion,
     '--vendor', 'CryptoBench',
     '--description', 'Cryptanalysis agent benchmarking platform',
     '--java-options', '-Dserver.address=127.0.0.1',

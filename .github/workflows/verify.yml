@@ -99,3 +99,15 @@ jobs:
         run: |
           $installer = Join-Path $env:RUNNER_TEMP 'cryptobench-installer\CryptoBench-1.0.0.exe'
           if (-not (Test-Path -LiteralPath $installer)) { throw "Installer was not created: $installer" }
+
+      - name: Build Windows upgrade installer
+        shell: pwsh
+        run: .\scripts\package-windows.ps1 -Installer -AppVersion 1.0.1 -OutputDir "$env:RUNNER_TEMP\cryptobench-installer-upgrade"
+
+      - name: Verify Windows installer lifecycle
+        shell: pwsh
+        run: |
+          .\tests\windows-installer.ps1 `
+            -InitialInstaller "$env:RUNNER_TEMP\cryptobench-installer\CryptoBench-1.0.0.exe" `
+            -UpgradeInstaller "$env:RUNNER_TEMP\cryptobench-installer-upgrade\CryptoBench-1.0.1.exe" `
+            -LogDirectory "$env:RUNNER_TEMP\cryptobench-installer-logs"
