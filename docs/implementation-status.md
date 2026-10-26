@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`a4d0710 feat: validate private evaluator catalogs`
+最近提交：`e6771c2 docs: add evaluator catalog validation checkpoint`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -27,6 +27,7 @@
   `npm run test:compose`。
 - 通用模型价格表支持版本化配置；未知模型或无效用量保留空费用，并由 `ServerCostCalculatorTest` 验证自定义价格表覆盖和 token 计费。
 - 新增私有 evaluator catalog 校验器：检查版本、任务 ID、题干、公开文件路径和静态目录泄漏；只输出摘要与 SHA-256，不打印隐藏答案：`npm run validate:evaluator`。
+- 本地完整浏览器冒烟测试已在独立内存 H2 数据库和真实 Mock Agent 上通过，覆盖真实 Agent 接入、报告生成、结果核算、运行取消、管理员导入、移动端路由、敏感文件隔离和页面错误检查：`npm test`。
 
 ## 已验证
 
@@ -134,7 +135,9 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:docker`：通过。
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
 - `npm run test:compose`：通过，Compose 容器健康检查 HTTP 200，测试结束后完成清理。
-- `npm run check`：通过，103 个 JavaScript 模块和 11 个 Vue 模板。
+- `npm run test:docker-ui`：通过，验证 Docker 执行来源入口、镜像可用性状态和不可用时的安全禁用。
+- `npm test`：通过，完整浏览器场景和移动端检查通过；测试使用独立内存 H2，避免污染本地持久化数据。
+- `npm run check`：通过，104 个 JavaScript 模块和 11 个 Vue 模板。
 - `mvn --batch-mode verify`：通过，26 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 - `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器。
