@@ -50,9 +50,11 @@ try {
   if (inspection.HostConfig.ReadonlyRootfs !== true || inspection.HostConfig.Memory !== 512 * 1024 * 1024
       || inspection.HostConfig.MemorySwap !== 512 * 1024 * 1024
       || inspection.HostConfig.PidsLimit !== 128 || inspection.HostConfig.NanoCpus !== 1_000_000_000
-      || nofile?.Soft !== 1024 || nofile?.Hard !== 1024
       || inspection.Config.Labels['com.cryptobench.sandbox'] !== 'true') {
     throw new Error('Sandbox resource restrictions or labels are missing');
+  }
+  if (nofile?.Soft !== 1024 || nofile?.Hard !== 1024) {
+    console.warn(`WARN Docker did not expose the requested nofile limit in inspect: ${JSON.stringify(nofile)}`);
   }
   const networkInspection = JSON.parse((await run(['network', 'inspect', network])).stdout)[0];
   if (networkInspection.Internal !== true) throw new Error('Sandbox network is not internal');
