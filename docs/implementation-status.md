@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`e6771c2 docs: add evaluator catalog validation checkpoint`
+验证基线：`main` 分支（提交记录以 Git 为准）
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
