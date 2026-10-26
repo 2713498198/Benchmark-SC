@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`130477f test: cover windows installer lifecycle`
+最近提交：`5131e53 ci: allow temporary windows package outputs`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -68,6 +68,7 @@ EXE 安装器构建已在本机完成：使用 WiX 3.14 官方 binaries ZIP（�
 `.\scripts\package-windows.ps1 -Installer` 成功生成 `output/desktop/CryptoBench-1.0.0.exe`。
 静默安装探测返回 MSI 错误 1925（当前用户没有为整机安装所需的管理员权限），因此本机安装、升级和卸载流程仍需在管理员环境中验证。
 Windows CI 已加入 1.0.0 安装、1.0.1 升级、卸载及注册表和可执行文件清理检查。
+CI 使用 `-AllowExternalOutput` 将临时产物写入 runner 临时目录；默认本地输出路径保护仍然保留。
 
 生成的 `output/desktop` 属于本地产物，不提交到仓库。
 
