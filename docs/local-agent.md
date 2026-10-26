@@ -131,7 +131,7 @@ npm.cmd run test:docker
 }
 ```
 
-平台会使用受限容器启动 Agent，设置 CPU、内存、进程数、只读根文件系统、丢弃 Linux capabilities、禁止特权提升，并将容器放入每次运行独立的 internal network。任务结束、失败或取消后会停止容器并删除 network。Docker 不可用时运行会进入失败状态，不会回退为浏览器模拟成绩。
+平台会使用受限容器启动 Agent，设置 CPU、内存与 swap 上限、文件描述符和进程数、只读根文件系统、丢弃 Linux capabilities、禁止特权提升，并将容器放入每次运行独立的 internal network。任务结束、失败或取消后会停止容器并删除 network。Docker 不可用时运行会进入失败状态，不会回退为浏览器模拟成绩。
 
 ## 密码找回本地联调
 
