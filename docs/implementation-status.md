@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：待本次 Docker 兼容修复提交
+最近提交：`e3711bc fix: support Docker 29 agent sandbox networking`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
