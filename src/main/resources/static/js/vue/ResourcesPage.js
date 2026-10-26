@@ -13,7 +13,8 @@ const example=d=>({schema:'cryptobench-proposed-v1',demo:true,dataset:d.id,versi
 const deployNotes=`CryptoBench 本地部署说明
 
 平台使用 Spring Boot 和 Vue，账号与报告由后端持久化。
-真实 Agent 执行、服务端评分和 Docker 沙箱入口已支持；Windows 便携版已可构建，EXE 安装器需要 WiX Toolset。
+真实 Agent 执行、服务端评分和 Docker 沙箱入口已支持；Windows 便携版和当前用户 EXE 安装器均可构建。
+EXE 安装器使用当前用户目录，不要求管理员权限；WiX Toolset 仅用于构建安装包。
 
 方式一：Spring Boot 本地启动
 1. 安装 JDK 21 与 Maven 3.6.3 或更新版本。

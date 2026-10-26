@@ -65,6 +65,12 @@ if ($Installer) {
     }
 }
 
+$installerArguments = if ($Installer) {
+    @('--win-per-user-install', '--win-upgrade-uuid', 'f7b2f3a6-9f8a-4e2d-8e0a-4a89b9d6c2f1')
+} else {
+    @()
+}
+
 $arguments = @(
     '--type', $type,
     '--name', 'CryptoBench',
@@ -82,7 +88,7 @@ $arguments = @(
     '--java-options', '-Dserver.port=4173',
     '--java-options', '-Dspring.profiles.active=local',
     '--java-options', '-Dloader.main=com.cryptobench.desktop.DesktopLauncher'
-)
+) + $installerArguments
 & $jpackage @arguments
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed with exit code $LASTEXITCODE" }
 Write-Host "Created CryptoBench $type in $OutputDir"
