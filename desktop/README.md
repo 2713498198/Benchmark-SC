@@ -14,4 +14,10 @@
 .\scripts\package-windows.ps1 -Installer
 ```
 
+构建后可运行桌面包健康检查：
+
+```powershell
+npm run test:desktop
+```
+
 脚本会先执行 Maven 打包，并要求 JDK 21 自带的 `jpackage`。当前仓库不提交生成的桌面产物；发布前需在 Windows 机器上运行脚本并做启动、升级和卸载验证。

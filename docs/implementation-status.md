@@ -123,7 +123,7 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `node --check tests/docker-platform-e2e.mjs`：通过。
 - `npm run test:docker`：通过。
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
-- `npm run check`：通过，85 个 JavaScript 模块和 11 个 Vue 模板。
+- `npm run check`：通过，102 个 JavaScript 模块和 11 个 Vue 模板。
 - `mvn --batch-mode verify`：通过，25 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 
