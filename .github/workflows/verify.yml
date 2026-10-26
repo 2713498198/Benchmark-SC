@@ -76,3 +76,26 @@ jobs:
       - name: Smoke test Windows app image
         shell: pwsh
         run: node tests/windows-app-image.mjs "$env:RUNNER_TEMP\cryptobench-app\CryptoBench\CryptoBench.exe"
+
+      - name: Prepare portable WiX binaries
+        shell: pwsh
+        run: |
+          $wixDir = Join-Path $env:GITHUB_WORKSPACE '.tools\wix314'
+          New-Item -ItemType Directory -Force -Path $wixDir | Out-Null
+          $zip = Join-Path $env:RUNNER_TEMP 'wix314-binaries.zip'
+          Invoke-WebRequest -UseBasicParsing `
+            'https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip' `
+            -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $wixDir -Force
+          if (-not (Get-ChildItem $wixDir -Filter candle.exe -Recurse)) { throw 'WiX candle.exe was not downloaded' }
+          if (-not (Get-ChildItem $wixDir -Filter light.exe -Recurse)) { throw 'WiX light.exe was not downloaded' }
+
+      - name: Build Windows EXE installer
+        shell: pwsh
+        run: .\scripts\package-windows.ps1 -Installer -OutputDir "$env:RUNNER_TEMP\cryptobench-installer"
+
+      - name: Verify Windows EXE installer artifact
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'cryptobench-installer\CryptoBench-1.0.0.exe'
+          if (-not (Test-Path -LiteralPath $installer)) { throw "Installer was not created: $installer" }
