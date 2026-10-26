@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`f09a36c ci: build windows installer artifact`
+最近提交：`130477f test: cover windows installer lifecycle`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -66,7 +66,8 @@ npm run test:desktop
 
 EXE 安装器构建已在本机完成：使用 WiX 3.14 官方 binaries ZIP（存放在本地忽略目录 `.tools/wix314`）后，
 `.\scripts\package-windows.ps1 -Installer` 成功生成 `output/desktop/CryptoBench-1.0.0.exe`。
-静默安装探测返回 MSI 错误 1925（当前用户没有为整机安装所需的管理员权限），因此安装、升级和卸载流程仍需在管理员环境中验证。
+静默安装探测返回 MSI 错误 1925（当前用户没有为整机安装所需的管理员权限），因此本机安装、升级和卸载流程仍需在管理员环境中验证。
+Windows CI 已加入 1.0.0 安装、1.0.1 升级、卸载及注册表和可执行文件清理检查。
 
 生成的 `output/desktop` 属于本地产物，不提交到仓库。
 
@@ -134,4 +135,5 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `mvn --batch-mode verify`：通过，25 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 - `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器；安装探测因当前用户权限返回 MSI 1925，未宣称安装成功。
+- `tests/windows-installer.ps1`：已加入 Windows CI，负责安装、升级、卸载生命周期验证；本机未以管理员权限执行。
 
