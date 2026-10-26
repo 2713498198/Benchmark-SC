@@ -10,5 +10,6 @@ benchmark:
   demo-enabled: true
   docker:
     enabled: ${CRYPTOBENCH_DOCKER_ENABLED:true}
+    proxy-image: ${CRYPTOBENCH_DOCKER_PROXY_IMAGE:cryptobench-agent-proxy:local}
     allowed-images:
       - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}

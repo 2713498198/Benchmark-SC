@@ -200,7 +200,7 @@ npm run agent:mock
 
 登录平台后，在“开始测评”中使用 `http://127.0.0.1:8000`，点击“检查本地 Agent”，再创建 Mini-SPN 测评。服务端会轮询运行状态和日志，并在完成后生成带 `runId`、验证器版本和可信状态的私有报告。公开榜单接口 `GET /api/reports/public` 只返回已公开报告，不会返回其他用户的私有记录。
 
-Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal network，限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理容器与网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。
+Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal Agent network，并使用平台自有的 `cryptobench-agent-proxy:local` 代理镜像把请求限制在宿主机 `127.0.0.1`；Agent 容器本身没有发布端口，也不能访问外部网络。平台同时限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理 Agent、代理容器和网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。
 
 Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验测评集与版本；题目目录声明的必需工具和能力也会在发送 `/analyze` 前检查。V4 目前仍没有服务端题目目录与验证器，因此会被明确拒绝执行，不会生成伪造分数。
 

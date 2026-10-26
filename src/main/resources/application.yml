@@ -39,6 +39,7 @@ benchmark:
   demo-enabled: false
   docker:
     enabled: ${CRYPTOBENCH_DOCKER_ENABLED:false}
+    proxy-image: ${CRYPTOBENCH_DOCKER_PROXY_IMAGE:cryptobench-agent-proxy:local}
     allowed-images:
       - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}
   # prod 默认启用 Secure Cookie，本地 HTTP 开发默认关闭。

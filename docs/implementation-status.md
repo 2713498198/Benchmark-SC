@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`471a321 ci: verify Windows desktop package`
+最近提交：待本次 Docker 兼容修复提交
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -15,7 +15,7 @@
 - Mini-SPN 服务端验证器和私有任务目录。
 - 服务端重新计算通过率、耗时、Token 用量和费用；不采信客户端提交的费用或成绩。
 - 单次运行和 PK 报告分别保存真实用量明细；缺失 Token 或费用不会按零处理。
-- Docker 沙箱资源限制：CPU、内存、swap、PID、文件描述符、只读根文件系统、临时目录、capabilities、禁止新增权限和 internal network。
+- Docker 沙箱资源限制：CPU、内存、swap、PID、文件描述符、只读根文件系统、临时目录、capabilities、禁止新增权限和 internal Agent network；宿主机访问通过平台自有代理容器完成。
 - Docker 容器、网络的运行结束清理及应用重启时遗留资源回收。
 - 本地进程和 Docker 沙箱两种执行来源的前端入口。
 - 连接管理、账号认证、管理员账号管理、报告公开和权限隔离。
@@ -24,25 +24,27 @@
 - 新增平台级 Docker E2E：真实启动 Spring Boot，提交 `/api/runs`，轮询运行状态并检查可信报告：
   `npm run test:docker:e2e`。
 
-## 已实现但尚未完成验证
+## 已验证
 
 ### Docker 真实端到端
 
-当前电脑尚未安装 Docker CLI/Engine，因此以下命令在本机暂时会因 `spawn docker ENOENT` 失败：
+Docker Desktop 已安装并启动。当前本机已通过以下两条真实验证：
 
 ```powershell
 npm run test:docker
 npm run test:docker:e2e
 ```
 
-Docker Desktop 安装并启动后，在项目目录重新执行上述两条命令。第二条会验证：
+第一条验证资源限制、Agent 协议和清理；第二条验证完整平台调用链：
 
 1. 构建 Mock Agent 镜像。
 2. 启动 Spring Boot 平台。
 3. 通过 `source=docker` 创建真实运行。
 4. 调用 Agent 的 `/health`、`/capabilities`、`/analyze`。
 5. 由服务端生成 Mini-SPN 可信报告和真实 Token/费用统计。
-6. 清理容器和网络。
+6. 清理 Agent、代理容器和网络。
+
+最近一次平台级运行完成了 8 道 Mini-SPN 任务，生成了服务端可信报告；测试结束后没有遗留带有 `com.cryptobench.owner=cryptobench` 标签的容器、网络或测试镜像。
 
 ### Windows 桌面包
 
@@ -103,7 +105,7 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
    mvn --batch-mode verify
    ```
 
-6. 若 Docker E2E 失败，保留完整错误输出，优先检查镜像构建、容器端口、internal network、Agent 三个接口和清理阶段。
+6. 若 Docker E2E 失败，保留完整错误输出，优先检查 Agent/代理镜像构建、代理端口、internal network、Agent 三个接口和清理阶段。
 
 7. Docker 与回归测试通过后，再继续 Windows 包验证；V4 仍需等待隐藏验证材料。
 
@@ -111,7 +113,8 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 
 - `npm run check`：通过。
 - `node --check tests/docker-platform-e2e.mjs`：通过。
-- `npm run test:docker`：当前机器因没有 Docker 引擎未通过。
-- `npm run test:docker:e2e`：当前机器因没有 Docker 引擎未通过。
-- 当前 PowerShell 没有可用的 `mvn` 命令；安装或配置 Maven 后需重新执行 `mvn verify`。
+- `npm run test:docker`：通过。
+- `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
+- `npm run check`：通过，85 个 JavaScript 模块和 11 个 Vue 模板。
+- `mvn --batch-mode verify`：通过，25 项测试通过。
 

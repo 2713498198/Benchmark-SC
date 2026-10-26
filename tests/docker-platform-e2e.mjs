@@ -6,6 +6,7 @@ import {randomUUID} from 'node:crypto';
 const root = process.cwd();
 const suffix = randomUUID().slice(0, 8);
 const image = `cryptobench-mock-agent:platform-${suffix}`;
+const proxyImage = `cryptobench-agent-proxy:platform-${suffix}`;
 const port = 4300 + Math.floor(Math.random() * 500);
 const base = `http://127.0.0.1:${port}`;
 const dbFile = `./tmp/docker-platform-${suffix}`;
@@ -49,7 +50,7 @@ function captureCookies(response) {
   for (const value of values) {
     const pair = value.split(';', 1)[0];
     const separator = pair.indexOf('=');
-    if (separator > 0) cookies.set(pair.slice(0, separator), pair.slice(separator + 1));
+    if (separator > 0 && pair.slice(separator + 1)) cookies.set(pair.slice(0, separator), pair.slice(separator + 1));
   }
 }
 
@@ -71,6 +72,11 @@ async function api(path, options = {}) {
     throw new Error(`${options.method || 'GET'} ${path} -> ${response.status}: ${text}`);
   }
   return {response, body};
+}
+
+async function refreshCsrf() {
+  const result = await api('/api/auth/csrf');
+  if (result.body?.token) cookies.set('XSRF-TOKEN', encodeURIComponent(result.body.token));
 }
 
 async function waitFor(url, predicate = response => response.ok, timeoutMs = 60_000) {
@@ -101,6 +107,7 @@ async function startApplication() {
       PORT: String(port),
       CRYPTOBENCH_DOCKER_ENABLED: 'true',
       CRYPTOBENCH_DOCKER_MOCK_IMAGE: image,
+      CRYPTOBENCH_DOCKER_PROXY_IMAGE: proxyImage,
       DB_URL: `jdbc:h2:file:${dbFile};MODE=MySQL;DB_CLOSE_ON_EXIT=FALSE`
     },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -119,18 +126,39 @@ async function stopApplication() {
   if (appProcess.exitCode === null) appProcess.kill('SIGKILL');
 }
 
+async function removeRunResources(runId) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const containers = await command(['docker', 'ps', '-aq', '--filter', `label=com.cryptobench.run-id=${runId}`], {allowFailure: true});
+    for (const id of containers.stdout.split(/\r?\n/).filter(Boolean)) {
+      await command(['docker', 'rm', '-f', id.trim()], {allowFailure: true});
+    }
+    const networks = await command(['docker', 'network', 'ls', '-q', '--filter', `label=com.cryptobench.run-id=${runId}`], {allowFailure: true});
+    for (const id of networks.stdout.split(/\r?\n/).filter(Boolean)) {
+      await command(['docker', 'network', 'rm', id.trim()], {allowFailure: true});
+    }
+    const remaining = await command(['docker', 'network', 'ls', '-q', '--filter', `label=com.cryptobench.run-id=${runId}`], {allowFailure: true});
+    if (!remaining.stdout) return;
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  throw new Error(`Docker run resources were not cleaned: ${runId}`);
+}
+
 try {
   await mkdir(`${root}/tmp`, {recursive: true});
   await command(['docker', 'build', '-f', 'tests/fixtures/mock-agent.Dockerfile', '-t', image, 'tests/fixtures']);
+  await command(['docker', 'build', '-f', 'docker/agent-proxy.Dockerfile', '-t', proxyImage, 'docker']);
   await startApplication();
 
-  await api('/api/auth/csrf');
+  await refreshCsrf();
   const email = `docker-platform-${suffix}@example.com`;
   const registration = await api('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify({name: 'Docker E2E Researcher', email, password: 'docker-platform-password'})
   });
   assert.equal(registration.body.user.role, 'researcher');
+  // Registration creates the session; refresh the CSRF cookie before the first
+  // protected write so the test mirrors a browser bootstrap sequence.
+  await refreshCsrf();
 
   const runtime = await api('/api/agent/runtime');
   assert.equal(runtime.body.dockerEnabled, true);
@@ -156,8 +184,8 @@ try {
     await new Promise(resolve => setTimeout(resolve, 300));
   }
   assert.equal(run.status, 'completed', JSON.stringify(run));
-  assert.equal(run.completedTasks, 8);
-  assert.equal(run.passedTasks, 8);
+  assert.equal(run.progress.completed, 8);
+  assert.equal(run.progress.passed, 8);
   assert.ok(run.reportId);
 
   const report = (await api(`/api/reports/${encodeURIComponent(run.reportId)}`)).body;
@@ -183,14 +211,10 @@ try {
 } finally {
   await stopApplication();
   if (runId) {
-    const containers = await command(['docker', 'ps', '-aq', '--filter', `label=com.cryptobench.run-id=${runId}`], {allowFailure: true});
-    for (const id of containers.stdout.split(/\R/).filter(Boolean)) {
-      await command(['docker', 'rm', '-f', id.trim()], {allowFailure: true});
-    }
-    const networks = await command(['docker', 'network', 'ls', '-q', '--filter', `label=com.cryptobench.run-id=${runId}`], {allowFailure: true});
-    for (const id of networks.stdout.split(/\R/).filter(Boolean)) {
-      await command(['docker', 'network', 'rm', id.trim()], {allowFailure: true});
-    }
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    try { await removeRunResources(runId); }
+    catch (error) { console.error(`FAIL platform Docker E2E cleanup: ${error.message}`); process.exitCode = 1; }
   }
   await command(['docker', 'image', 'rm', '-f', image], {allowFailure: true});
+  await command(['docker', 'image', 'rm', '-f', proxyImage], {allowFailure: true});
 }
