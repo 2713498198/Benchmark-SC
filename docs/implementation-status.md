@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`e3711bc fix: support Docker 29 agent sandbox networking`
+最近提交：`bd17db5 test: smoke test Windows desktop app image`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
