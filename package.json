@@ -15,7 +15,8 @@
     "test:compose": "node tests/compose-smoke.mjs",
     "test:docker-ui": "node tests/docker-ui-browser.mjs",
     "test:desktop": "node tests/windows-app-image.mjs",
-    "package:windows": "powershell -ExecutionPolicy Bypass -File scripts/package-windows.ps1"
+    "package:windows": "powershell -ExecutionPolicy Bypass -File scripts/package-windows.ps1",
+    "package:windows:installer": "powershell -ExecutionPolicy Bypass -File scripts/package-windows.ps1 -Installer"
   },
   "dependencies": {
     "vue": "3.5.22"

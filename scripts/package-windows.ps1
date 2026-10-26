@@ -48,8 +48,18 @@ $jar = Join-Path $root 'target\cryptobench-1.0.0-SNAPSHOT.jar'
 if (-not (Test-Path -LiteralPath $jar)) { throw "Packaged JAR was not found: $jar" }
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $type = if ($Installer) { 'exe' } else { 'app-image' }
-if ($Installer -and -not (Get-Command candle.exe -ErrorAction SilentlyContinue) -and -not (Get-Command light.exe -ErrorAction SilentlyContinue)) {
-    throw 'The EXE installer requires WiX Toolset (candle.exe and light.exe). Run without -Installer to build a portable app-image.'
+if ($Installer) {
+    $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+    $light = Get-Command light.exe -ErrorAction SilentlyContinue
+    if (-not $candle -or -not $light) {
+        $bundledWix = Get-ChildItem (Join-Path $root '.tools\wix314') -Filter candle.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        $bundledLight = Get-ChildItem (Join-Path $root '.tools\wix314') -Filter light.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($bundledWix -and $bundledLight) {
+            $env:Path = "$($bundledWix.Directory.FullName);$env:Path"
+        } else {
+            throw 'The EXE installer requires WiX Toolset (candle.exe and light.exe). Install WiX or place the official binaries under .tools\wix314.'
+        }
+    }
 }
 
 $arguments = @(
