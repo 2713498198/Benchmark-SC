@@ -12,7 +12,10 @@ const context=await browser.newContext({viewport:{width:1440,height:1000}});
 const page=await context.newPage();
 const errors=[];
 page.on('pageerror',error=>errors.push(error.message));
-page.on('response',response=>{if(response.status()>=400)errors.push(`${response.status()} ${response.url()}`);});
+page.on('response',response=>{
+  const expectedAuthBoundary=response.status()===401&&response.url().endsWith('/api/agent/runtime');
+  if(response.status()>=400&&!expectedAuthBoundary)errors.push(`${response.status()} ${response.url()}`);
+});
 async function go(route){
   await page.goto(base+'/#'+route);
   await page.waitForLoadState('networkidle');
@@ -49,11 +52,12 @@ try{
 
   await go('/evaluate?dataset=mini-spn&version=1.0.0&new=1');
   await page.locator('[data-check-connection]').click();
-  const saved=page.waitForResponse(response=>response.url().endsWith('/api/reports')&&response.request().method()==='POST');
+  const runCreated=page.waitForResponse(response=>response.url().endsWith('/api/runs')&&response.request().method()==='POST');
   for(let step=0;step<3;step++)await page.locator('[data-eval-next]').click();
-  assert.equal((await saved).status(),201);
+  assert.equal((await runCreated).status(),202);
   await page.locator('a[href^="#/report/"]').click();
   await page.locator('[data-report-json]').waitFor();
+  assert.match(await page.locator('.report-usage').innerText(),/真实模型用量/);
   const reportId=page.url().split('/report/')[1];
   await page.reload();
   await page.locator('[data-report-json]').waitFor();
@@ -80,7 +84,8 @@ try{
   await page.setViewportSize({width:390,height:844});
   for(const route of ['/','/datasets','/leaderboard','/arena','/evaluate','/login','/docs','/download']){
     await go(route);
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),route);
+    const width=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));
+    assert.ok(width.scroll<=width.viewport+1,`${route}: ${width.scroll}px > ${width.viewport}px`);
   }
   await go('/');
   await page.screenshot({path:output+'/home-mobile.png',fullPage:true});
