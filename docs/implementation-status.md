@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`f616798 docs: refresh implementation checkpoint`
+最近提交：`a4d0710 feat: validate private evaluator catalogs`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -26,6 +26,7 @@
 - Compose 部署冒烟测试：构建平台镜像、启动容器、检查 Docker 健康状态和 `/actuator/health`，结束后清理容器与网络：
   `npm run test:compose`。
 - 通用模型价格表支持版本化配置；未知模型或无效用量保留空费用，并由 `ServerCostCalculatorTest` 验证自定义价格表覆盖和 token 计费。
+- 新增私有 evaluator catalog 校验器：检查版本、任务 ID、题干、公开文件路径和静态目录泄漏；只输出摘要与 SHA-256，不打印隐藏答案：`npm run validate:evaluator`。
 
 ## 已验证
 
@@ -139,4 +140,5 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器。
 - `tests/windows-installer.ps1`：通过，本机完成安装、升级和卸载生命周期验证。
 - `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
+- `npm run validate:evaluator`：通过，Mini-SPN 私有目录 8 项任务校验通过；不安全的 hidden/oracle/answer 公开路径会被拒绝。
 
