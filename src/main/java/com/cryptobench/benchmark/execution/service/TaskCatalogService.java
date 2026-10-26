@@ -10,8 +10,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +29,37 @@ public class TaskCatalogService {
         this.evaluators = evaluatorList.stream().collect(Collectors.toUnmodifiableMap(
                 evaluator -> new DatasetVersion(evaluator.datasetId(), evaluator.version()),
                 Function.identity()));
+    }
+
+    /**
+     * Fail fast when a server-owned evaluator is registered without a complete
+     * private task catalog. Public metadata alone must never make a dataset
+     * executable.
+     */
+    @PostConstruct
+    void validateRegistrations() {
+        evaluators.forEach((key, evaluator) -> {
+            if (evaluator.evaluatorVersion() == null || evaluator.evaluatorVersion().isBlank()) {
+                throw new IllegalStateException("Evaluator version is missing for " + key);
+            }
+            String resource = evaluator.taskResource();
+            if (resource == null || !resource.startsWith("/evaluation/") || resource.contains("/static/")) {
+                throw new IllegalStateException("Evaluator catalog must be a private evaluation resource for " + key);
+            }
+            List<TaskDefinition> registeredTasks = tasks(key.datasetId(), key.version());
+            if (registeredTasks.isEmpty()) {
+                throw new IllegalStateException("Evaluator catalog is empty for " + key);
+            }
+            Set<String> ids = new HashSet<>();
+            for (TaskDefinition task : registeredTasks) {
+                if (task.id() == null || task.id().isBlank() || !ids.add(task.id())) {
+                    throw new IllegalStateException("Evaluator catalog has a duplicate or blank task ID for " + key);
+                }
+                if (task.question() == null || task.question().isBlank()) {
+                    throw new IllegalStateException("Evaluator catalog has a blank question for " + key + " / " + task.id());
+                }
+            }
+        });
     }
 
     public List<TaskDefinition> tasks(String datasetId, String version) {
