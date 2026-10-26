@@ -40,13 +40,17 @@ try {
   await run(['build', '-f', 'tests/fixtures/mock-agent.Dockerfile', '-t', image, 'tests/fixtures']);
   await run(['network', 'create', '--driver', 'bridge', '--internal', network]);
   const started = await run(['run', '-d', '--rm', '--network', network, '--publish', '127.0.0.1::8000',
-    '--cpus', '1', '--memory', '512m', '--pids-limit', '128', '--read-only', '--cap-drop', 'ALL',
+    '--cpus', '1', '--memory', '512m', '--memory-swap', '512m', '--ulimit', 'nofile=1024:1024',
+    '--pids-limit', '128', '--read-only', '--cap-drop', 'ALL',
     '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,noexec,nosuid,size=64m',
     '--label', 'com.cryptobench.sandbox=true', '--label', `com.cryptobench.network=${network}`, image]);
   container = started.stdout;
   const inspection = JSON.parse((await run(['inspect', container])).stdout)[0];
+  const nofile = inspection.HostConfig.Ulimits?.find(item => item.Name === 'nofile');
   if (inspection.HostConfig.ReadonlyRootfs !== true || inspection.HostConfig.Memory !== 512 * 1024 * 1024
+      || inspection.HostConfig.MemorySwap !== 512 * 1024 * 1024
       || inspection.HostConfig.PidsLimit !== 128 || inspection.HostConfig.NanoCpus !== 1_000_000_000
+      || nofile?.Soft !== 1024 || nofile?.Hard !== 1024
       || inspection.Config.Labels['com.cryptobench.sandbox'] !== 'true') {
     throw new Error('Sandbox resource restrictions or labels are missing');
   }

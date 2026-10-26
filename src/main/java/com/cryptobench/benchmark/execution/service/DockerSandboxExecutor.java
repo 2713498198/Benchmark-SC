@@ -68,6 +68,7 @@ public class DockerSandboxExecutor {
                     Duration.ofSeconds(20));
             String id = command(List.of("docker", "run", "-d", "--rm", "--network", network,
                     "--publish", "127.0.0.1::8000", "--cpus", "1", "--memory", "512m",
+                    "--memory-swap", "512m", "--ulimit", "nofile=1024:1024",
                     "--pids-limit", "128", "--read-only", "--cap-drop", "ALL",
                     "--security-opt", "no-new-privileges", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
                     "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.sandbox=true",
