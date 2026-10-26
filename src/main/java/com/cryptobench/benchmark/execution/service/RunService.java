@@ -78,6 +78,8 @@ public class RunService {
     }
 
     public ObjectNode checkAgent(ObjectNode input) {
+        String source = input.path("source").asText("local").trim().toLowerCase(Locale.ROOT);
+        if ("docker".equals(source)) return checkDockerAgent(input);
         String endpoint;
         try {
             endpoint = AgentHttpClient.normalize(requireText(input, "endpoint"));
@@ -96,6 +98,48 @@ public class RunService {
         } catch (Exception exception) {
             throw new ApiException(HttpStatus.BAD_GATEWAY, "无法连接本地 Agent：" + safeMessage(exception));
         }
+    }
+
+    private ObjectNode checkDockerAgent(ObjectNode input) {
+        String image = optionalText(input, "image");
+        if (image == null) throw new ApiException(HttpStatus.BAD_REQUEST, "Docker 执行需要 image");
+        DockerSandboxExecutor.Sandbox sandbox = null;
+        try {
+            sandbox = docker.start(image);
+            ObjectNode health = agent.check(sandbox.endpoint(), null);
+            ObjectNode capabilities = agent.capabilities(sandbox.endpoint(), null);
+            ObjectNode result = mapper.createObjectNode();
+            result.put("reachable", true);
+            result.put("source", "docker");
+            result.put("image", image);
+            result.set("health", health);
+            result.set("capabilities", capabilities);
+            return result;
+        } catch (Exception exception) {
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "Docker Agent 检查失败：" + safeMessage(exception));
+        } finally {
+            if (sandbox != null) docker.stop(sandbox);
+        }
+    }
+
+    public ObjectNode runtimeStatus() {
+        DockerRuntimeStatus status = docker.status();
+        ObjectNode result = mapper.createObjectNode();
+        result.put("dockerEnabled", status.enabled());
+        result.put("dockerAvailable", status.available());
+        result.put("message", status.message());
+        ArrayNode images = result.putArray("allowedImages");
+        status.images().forEach(image -> {
+            ObjectNode item = images.addObject();
+            item.put("name", image.name());
+            item.put("available", image.available());
+        });
+        ObjectNode limits = result.putObject("limits");
+        limits.put("cpus", 1);
+        limits.put("memory", "512m");
+        limits.put("pids", 128);
+        limits.put("timeoutSeconds", 300);
+        return result;
     }
 
     public ObjectNode create(BenchmarkUser user, ObjectNode input) {

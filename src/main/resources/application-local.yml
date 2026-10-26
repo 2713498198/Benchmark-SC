@@ -8,3 +8,7 @@ spring:
 benchmark:
   # 研究者和管理员体验入口仅供本地使用。
   demo-enabled: true
+  docker:
+    enabled: ${CRYPTOBENCH_DOCKER_ENABLED:true}
+    allowed-images:
+      - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}

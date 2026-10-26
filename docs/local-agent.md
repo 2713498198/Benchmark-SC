@@ -36,6 +36,10 @@ npm run agent:mock -- --port 8100
 
 ## API
 
+### Docker 运行时状态
+
+登录后可调用 `GET /api/agent/runtime` 查看 Docker Desktop 是否可用、允许的本地镜像和平台资源限制。浏览器不接触 Docker socket；服务端仅使用配置中的镜像白名单。
+
 ### 检查 Agent
 
 ```http
@@ -43,6 +47,15 @@ POST /api/agent/check
 Content-Type: application/json
 
 {"endpoint":"http://127.0.0.1:8000"}
+```
+
+Docker 沙箱检查使用：
+
+```http
+POST /api/agent/check
+Content-Type: application/json
+
+{"source":"docker","image":"cryptobench-mock-agent:local"}
 ```
 
 `/capabilities` 可返回 `models`、`tools`、`capabilities` 和 `datasets`。其中

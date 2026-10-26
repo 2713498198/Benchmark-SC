@@ -2,7 +2,10 @@ package com.cryptobench.benchmark.execution.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import com.cryptobench.benchmark.config.PricingProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,38 +14,62 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ServerCostCalculator {
-    private record Price(double inputPerThousand, double outputPerThousand) {}
+    private record Price(double inputPerMillion, double outputPerMillion) {}
 
     /* 价格版本随代码发布；未知模型保留空费用，而不是把缺失值当成 0。 */
-    private static final Map<String, Price> PRICES = Map.ofEntries(
-            Map.entry("gpt-4.1", new Price(0.002, 0.008)),
-            Map.entry("claude sonnet 4", new Price(0.003, 0.015)),
-            Map.entry("deepseek v3", new Price(0.00027, 0.0011)),
-            Map.entry("qwen3", new Price(0.0008, 0.002)),
-            Map.entry("gemini 2.5 pro", new Price(0.00125, 0.010)));
+    private final Map<String, Price> prices;
+    private final String version;
+
+    public ServerCostCalculator() {
+        this.version = "cryptobench-price-table-1.0.0";
+        this.prices = defaults();
+    }
+
+    @Autowired
+    public ServerCostCalculator(PricingProperties properties) {
+        this.version = properties.getVersion();
+        Map<String, Price> configured = new LinkedHashMap<>();
+        properties.getModels().forEach((model, price) -> {
+            if (price != null && valid(price.getInputPerMillionTokens()) && valid(price.getOutputPerMillionTokens())) {
+                configured.put(normalize(model), new Price(price.getInputPerMillionTokens(), price.getOutputPerMillionTokens()));
+            }
+        });
+        this.prices = configured.isEmpty() ? defaults() : configured;
+    }
 
     public Double calculate(String model, JsonNode response) {
-        Price price = PRICES.get(normalize(model));
+        Price price = prices.get(normalize(model));
         JsonNode usage = response == null ? null : response.get("usage");
         if (price == null || usage == null || !usage.isObject()) return null;
         long input = nonNegativeLong(usage.get("inputTokens"));
         long output = nonNegativeLong(usage.get("outputTokens"));
         if (input < 0 || output < 0) return null;
-        double value = input / 1000d * price.inputPerThousand
-                + output / 1000d * price.outputPerThousand;
+        double value = input / 1_000_000d * price.inputPerMillion
+                + output / 1_000_000d * price.outputPerMillion;
         return Double.isFinite(value) && value >= 0 ? Math.round(value * 1_000_000d) / 1_000_000d : null;
     }
 
     public String pricingVersion() {
-        return "cryptobench-price-table-1.0.0";
+        return version;
     }
 
     private static String normalize(String model) {
-        return model == null ? "" : model.trim().toLowerCase(Locale.ROOT);
+        return model == null ? "" : model.trim().toLowerCase(Locale.ROOT).replace('-', ' ').replace('_', ' ');
     }
 
     private static long nonNegativeLong(JsonNode node) {
         if (node == null || !node.isIntegralNumber() || !node.canConvertToLong() || node.asLong() < 0) return -1;
         return node.asLong();
+    }
+
+    private static boolean valid(Double value) { return value != null && Double.isFinite(value) && value >= 0; }
+
+    private static Map<String, Price> defaults() {
+        return Map.ofEntries(
+                Map.entry("gpt 4.1", new Price(2.0, 8.0)),
+                Map.entry("claude sonnet 4", new Price(3.0, 15.0)),
+                Map.entry("deepseek v3", new Price(0.27, 1.1)),
+                Map.entry("qwen3", new Price(0.8, 2.0)),
+                Map.entry("gemini 2.5 pro", new Price(1.25, 10.0)));
     }
 }

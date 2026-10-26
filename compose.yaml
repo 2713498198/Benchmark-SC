@@ -1,0 +1,23 @@
+services:
+  cryptobench:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4173:4173"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SERVER_ADDRESS: 0.0.0.0
+      PORT: 4173
+      CRYPTOBENCH_DOCKER_ENABLED: "false"
+    volumes:
+      - ./var:/app/var
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:4173/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+# Agent 沙箱由主机上的 Spring Boot 进程按每次运行动态创建。
+# 不挂载 Docker socket，避免网站容器获得宿主机 Docker 管理权限。

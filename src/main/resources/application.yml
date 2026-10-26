@@ -37,6 +37,10 @@ management:
 benchmark:
   # 公共默认关闭体验账号，由 local profile 单独开放。
   demo-enabled: false
+  docker:
+    enabled: ${CRYPTOBENCH_DOCKER_ENABLED:false}
+    allowed-images:
+      - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}
   # prod 默认启用 Secure Cookie，本地 HTTP 开发默认关闭。
   secure-cookie: ${SECURE_COOKIE:false}
   # 旧数据导入必须显式启用；相对源路径以应用工作目录为基准。
@@ -52,3 +56,21 @@ benchmark:
     delivery-url: ${PASSWORD_RESET_DELIVERY_URL:}
     outbox: ${PASSWORD_RESET_OUTBOX:}
     base-url: ${PASSWORD_RESET_BASE_URL:http://127.0.0.1:4173}
+  pricing:
+    version: ${CRYPTOBENCH_PRICING_VERSION:cryptobench-price-table-1.0.0}
+    models:
+      gpt-4.1:
+        input-per-million-tokens: 2.0
+        output-per-million-tokens: 8.0
+      claude-sonnet-4:
+        input-per-million-tokens: 3.0
+        output-per-million-tokens: 15.0
+      deepseek-v3:
+        input-per-million-tokens: 0.27
+        output-per-million-tokens: 1.1
+      qwen3:
+        input-per-million-tokens: 0.8
+        output-per-million-tokens: 2.0
+      gemini-2.5-pro:
+        input-per-million-tokens: 1.25
+        output-per-million-tokens: 10.0

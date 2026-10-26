@@ -103,6 +103,17 @@ class ExecutionApiIntegrationTest {
     }
 
     @Test
+    void exposesDockerRuntimeStatusOnlyToAuthenticatedUsers() throws Exception {
+        Client anonymous = new Client();
+        assertThat(anonymous.send("GET", "/api/agent/runtime", null).getResponse().getStatus()).isEqualTo(401);
+        Client client = registeredClient();
+        JsonNode status = client.json(client.send("GET", "/api/agent/runtime", null));
+        assertThat(status.has("dockerEnabled")).isTrue();
+        assertThat(status.has("dockerAvailable")).isTrue();
+        assertThat(status.path("limits").path("memory").asText()).isEqualTo("512m");
+    }
+
+    @Test
     void refusesDatasetThatAgentExplicitlyDoesNotAdvertise() throws Exception {
         HttpServer incompatible = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         incompatible.createContext("/health", exchange -> json(exchange, 200,

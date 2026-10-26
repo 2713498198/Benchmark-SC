@@ -13,23 +13,25 @@ const example=d=>({schema:'cryptobench-proposed-v1',demo:true,dataset:d.id,versi
 const deployNotes=`CryptoBench 本地部署说明
 
 平台使用 Spring Boot 和 Vue，账号与报告由后端持久化。
-真实 Agent 执行、服务端评分和 Docker 沙箱已支持；桌面安装包暂未实施。
+真实 Agent 执行、服务端评分和 Docker 沙箱入口已支持；桌面安装包暂未实施。
 
 方式一：Spring Boot 本地启动
 1. 安装 JDK 21 与 Maven 3.6.3 或更新版本。
 2. 在项目根目录双击 start.cmd，或执行 mvn spring-boot:run。
 3. 访问 http://127.0.0.1:4173，默认 H2 数据保存在 var/data。
 
-方式二：Docker 运行打包应用（本地开发）
+方式二：Docker 运行网站容器（本地开发）
 1. 在项目根目录执行 mvn clean verify。
 2. 将下载的 compose.yaml 放在项目根目录，确认 Docker Desktop 已启动。
 3. 执行 docker compose up -d，访问 http://localhost:8080。
-4. 使用 docker compose down 停止；数据保存在项目的 var/data。
+4. 使用 docker compose down 停止；数据保存在项目的 var/data。网站容器不会挂载 Docker socket。
+
+Agent 沙箱：在主机上构建 cryptobench-mock-agent:local，并让宿主机 Spring Boot 使用 Docker Desktop 创建每次运行的临时容器。
 
 生产 MySQL、HTTPS 与环境变量配置详见项目 README.md。
 本地 Agent 配置样例用于说明字段，不会自动启动模型或执行任务。
 `;
-const compose='services:\n  cryptobench:\n    image: eclipse-temurin:21-jre\n    working_dir: /app\n    command: ["java", "-jar", "/app/cryptobench.jar"]\n    ports:\n      - "8080:4173"\n    environment:\n      SERVER_ADDRESS: "0.0.0.0"\n      SPRING_PROFILES_ACTIVE: local\n    volumes:\n      - ./target/cryptobench-1.0.0-SNAPSHOT.jar:/app/cryptobench.jar:ro\n      - ./var:/app/var\n    restart: unless-stopped\n';
+const compose='services:\n  cryptobench:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    ports:\n      - "4173:4173"\n    environment:\n      SERVER_ADDRESS: "0.0.0.0"\n      PORT: 4173\n      SPRING_PROFILES_ACTIVE: local\n      CRYPTOBENCH_DOCKER_ENABLED: "false"\n    volumes:\n      - ./var:/app/var\n    healthcheck:\n      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:4173/actuator/health"]\n      interval: 10s\n      timeout: 3s\n      retries: 12\n    restart: unless-stopped\n';
 const config={schema:'cryptobench-proposed-v1',demo:true,environment:'local',agent:{endpoint:'http://127.0.0.1:8000',credential:'由本地凭证管理器提供，不写入报告'},evaluation:{dataset:'选择本地已获取的数据集',version:'固定版本',timeout_seconds:300},report:{export_format:'json',auto_publish:false,sync_credentials:false}};
 export default {components:{SvgIcon,ScoringRules,ResourceDocs,ResourceDownload},setup(){
  const app=useApp(),{route}=app;const path=computed(()=>route.value.split('?')[0]),id=computed(()=>path.value.startsWith('/datasets/')?path.value.slice(10):'');

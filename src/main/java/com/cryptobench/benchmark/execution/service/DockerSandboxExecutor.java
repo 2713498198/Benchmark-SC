@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import com.cryptobench.benchmark.config.DockerProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,7 +19,40 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DockerSandboxExecutor {
+    private final DockerProperties properties;
+
+    public DockerSandboxExecutor(DockerProperties properties) {
+        this.properties = properties;
+    }
+
+    public DockerRuntimeStatus status() {
+        List<DockerRuntimeStatus.ImageStatus> images = new ArrayList<>();
+        if (!properties.enabled()) {
+            properties.allowedImagesOrEmpty().forEach(image -> images.add(new DockerRuntimeStatus.ImageStatus(image, false)));
+            return new DockerRuntimeStatus(false, false, "Docker 执行来源未启用", images);
+        }
+        try {
+            command(List.of("docker", "info", "--format", "{{.ServerVersion}}"), Duration.ofSeconds(8));
+            for (String image : properties.allowedImagesOrEmpty()) {
+                boolean present;
+                try {
+                    command(List.of("docker", "image", "inspect", image), Duration.ofSeconds(8));
+                    present = true;
+                } catch (Exception ignored) {
+                    present = false;
+                }
+                images.add(new DockerRuntimeStatus.ImageStatus(image, present));
+            }
+            return new DockerRuntimeStatus(true, true, "Docker 引擎可用", images);
+        } catch (Exception exception) {
+            properties.allowedImagesOrEmpty().forEach(image -> images.add(new DockerRuntimeStatus.ImageStatus(image, false)));
+            return new DockerRuntimeStatus(true, false, "Docker 引擎不可用", images);
+        }
+    }
+
     public Sandbox start(String image) throws IOException, InterruptedException {
+        if (!properties.enabled()) throw new IOException("Docker 执行来源未启用");
+        if (!properties.allows(image)) throw new IOException("Docker 镜像不在允许列表中");
         if (image == null || !image.matches("[a-zA-Z0-9][a-zA-Z0-9._:/@-]{1,180}")) {
             throw new IllegalArgumentException("Docker 镜像名称无效");
         }
@@ -73,13 +108,22 @@ public class DockerSandboxExecutor {
 
     private String command(List<String> command, Duration timeout) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        StringBuilder output = new StringBuilder();
+        Thread reader = Thread.startVirtualThread(() -> {
+            try {
+                output.append(new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IOException ignored) {
+                // The process exit status remains authoritative for command failures.
+            }
+        });
         if (!process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
             process.destroyForcibly();
+            reader.join(500);
             throw new IOException("Docker 命令超时");
         }
-        String output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-        if (process.exitValue() != 0) throw new IOException(output.trim());
-        return output;
+        reader.join(500);
+        if (process.exitValue() != 0) throw new IOException(output.toString().trim());
+        return output.toString();
     }
 
     private void waitForPort(String endpoint, Duration timeout) throws IOException, InterruptedException {

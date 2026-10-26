@@ -30,6 +30,11 @@ public class RunController {
         return runs.checkAgent(input);
     }
 
+    @GetMapping("/agent/runtime")
+    public ObjectNode runtime() {
+        return runs.runtimeStatus();
+    }
+
     @PostMapping(value = "/runs", consumes = "application/json")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ObjectNode create(@AuthenticationPrincipal BenchmarkUser user, @RequestBody ObjectNode input) {
