@@ -88,6 +88,11 @@ class ExecutionApiIntegrationTest {
         assertThat(report.path("score").asDouble()).isEqualTo(100);
         assertThat(report.path("cost").isNull()).isTrue();
         assertThat(report.path("results").get(0).path("verification").path("passed").asBoolean()).isTrue();
+        JsonNode completedRuns = client.json(client.send("GET", "/api/runs?status=completed&page=0&size=1", null));
+        assertThat(completedRuns.isArray()).isTrue();
+        assertThat(completedRuns).hasSize(1);
+        assertThat(completedRuns.get(0).path("runId").asText()).isEqualTo(id);
+        assertThat(client.send("GET", "/api/runs?status=unknown", null).getResponse().getStatus()).isEqualTo(400);
         JsonNode retried = client.json(client.send("POST", "/api/runs/" + id + "/retry", null));
         assertThat(retried.path("runId").asText()).isNotBlank();
         assertThat(retried.path("runId").asText()).isNotEqualTo(id);
@@ -141,6 +146,17 @@ class ExecutionApiIntegrationTest {
         } finally {
             incompatible.stop(0);
         }
+    }
+
+    @Test
+    void refusesV4UntilARegisteredServerEvaluatorAndPrivateCatalogExist() throws Exception {
+        Client client = registeredClient();
+        String endpoint = "http://127.0.0.1:" + agent.getAddress().getPort();
+        MvcResult response = client.send("POST", "/api/runs", Map.of(
+                "datasetId", "cryptobench-sc-v4", "version", "4.0.0", "scope", "sample",
+                "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
+        assertThat(response.getResponse().getStatus()).isEqualTo(400);
+        assertThat(client.json(response).path("error").asText()).contains("尚未绑定服务端验证器");
     }
 
     @Test

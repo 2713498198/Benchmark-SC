@@ -41,8 +41,8 @@ public class ServerCostCalculator {
         Price price = prices.get(normalize(model));
         JsonNode usage = response == null ? null : response.get("usage");
         if (price == null || usage == null || !usage.isObject()) return null;
-        long input = nonNegativeLong(usage.get("inputTokens"));
-        long output = nonNegativeLong(usage.get("outputTokens"));
+        long input = usageCount(usage, "inputTokens", "input_tokens", "promptTokens", "prompt_tokens");
+        long output = usageCount(usage, "outputTokens", "output_tokens", "completionTokens", "completion_tokens");
         if (input < 0 || output < 0) return null;
         double value = input / 1_000_000d * price.inputPerMillion
                 + output / 1_000_000d * price.outputPerMillion;
@@ -60,6 +60,14 @@ public class ServerCostCalculator {
     private static long nonNegativeLong(JsonNode node) {
         if (node == null || !node.isIntegralNumber() || !node.canConvertToLong() || node.asLong() < 0) return -1;
         return node.asLong();
+    }
+
+    /** Accept the canonical contract plus common provider/OpenAI naming aliases. */
+    private static long usageCount(JsonNode usage, String... names) {
+        for (String name : names) {
+            if (usage.has(name)) return nonNegativeLong(usage.get(name));
+        }
+        return -1;
     }
 
     private static boolean valid(Double value) { return value != null && Double.isFinite(value) && value >= 0; }

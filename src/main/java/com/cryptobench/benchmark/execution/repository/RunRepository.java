@@ -62,6 +62,25 @@ public class RunRepository {
         return jdbc.query("SELECT * FROM benchmark_runs WHERE owner_id = ? ORDER BY created_at DESC", runMapper, ownerId);
     }
 
+    public List<Run> findByOwner(String ownerId, List<String> statuses, int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(100, Math.max(1, size));
+        StringBuilder sql = new StringBuilder("SELECT * FROM benchmark_runs WHERE owner_id = ?");
+        List<Object> args = new java.util.ArrayList<>();
+        args.add(ownerId);
+        if (statuses != null && !statuses.isEmpty()) {
+            List<String> allowed = statuses.stream().filter(List.of("queued", "running", "completed", "failed", "timeout", "cancelled")::contains).toList();
+            if (!allowed.isEmpty()) {
+                sql.append(" AND status IN (").append("?,".repeat(allowed.size()).replaceAll(",$", "")).append(")");
+                args.addAll(allowed);
+            }
+        }
+        sql.append(" ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        args.add(safeSize);
+        args.add(safePage * safeSize);
+        return jdbc.query(sql.toString(), runMapper, args.toArray());
+    }
+
     public void updateStatus(String id, String status, int completed, int passed, int failed,
                              String errorCode, String errorMessage, String reportId,
                              boolean cancelRequested, String startedAt, String finishedAt) {

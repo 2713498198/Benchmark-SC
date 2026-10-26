@@ -51,6 +51,10 @@ public class DockerSandboxExecutor {
     }
 
     public Sandbox start(String image) throws IOException, InterruptedException {
+        return start(image, "untracked");
+    }
+
+    public Sandbox start(String image, String runId) throws IOException, InterruptedException {
         if (!properties.enabled()) throw new IOException("Docker 执行来源未启用");
         if (!properties.allows(image)) throw new IOException("Docker 镜像不在允许列表中");
         if (image == null || !image.matches("[a-zA-Z0-9][a-zA-Z0-9._:/@-]{1,180}")) {
@@ -59,13 +63,15 @@ public class DockerSandboxExecutor {
         String network = "cryptobench-run-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         String containerId = null;
         try {
-            command(List.of("docker", "network", "create", "--driver", "bridge", "--internal", network),
+            command(List.of("docker", "network", "create", "--driver", "bridge", "--internal",
+                            "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.run-id=" + safeLabel(runId), network),
                     Duration.ofSeconds(20));
             String id = command(List.of("docker", "run", "-d", "--rm", "--network", network,
                     "--publish", "127.0.0.1::8000", "--cpus", "1", "--memory", "512m",
                     "--pids-limit", "128", "--read-only", "--cap-drop", "ALL",
                     "--security-opt", "no-new-privileges", "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
-                    "--label", "com.cryptobench.sandbox=true", "--label", "com.cryptobench.network=" + network,
+                    "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.sandbox=true",
+                    "--label", "com.cryptobench.run-id=" + safeLabel(runId), "--label", "com.cryptobench.network=" + network,
                     image), Duration.ofSeconds(30)).trim();
             containerId = id;
             if (id.isBlank()) throw new IOException("Docker 未返回容器 ID");
@@ -91,7 +97,8 @@ public class DockerSandboxExecutor {
         try {
             command(List.of("docker", "stop", "-t", "5", sandbox.containerId()), Duration.ofSeconds(15));
         } catch (Exception ignored) {
-            // 运行失败时清理是尽力而为；network rm 仍会清理未退出的容器引用失败场景。
+            try { command(List.of("docker", "rm", "-f", sandbox.containerId()), Duration.ofSeconds(10)); }
+            catch (Exception ignoredForce) { }
         }
         try {
             command(List.of("docker", "network", "rm", sandbox.network()), Duration.ofSeconds(10));
@@ -103,7 +110,29 @@ public class DockerSandboxExecutor {
     /** 保留按容器 ID 清理的兼容入口，供运维或旧调用使用。 */
     public void stop(String containerId) {
         try { command(List.of("docker", "stop", "-t", "5", containerId), Duration.ofSeconds(15)); }
-        catch (Exception ignored) { }
+        catch (Exception ignored) { try { command(List.of("docker", "rm", "-f", containerId), Duration.ofSeconds(10)); } catch (Exception ignoredForce) { } }
+    }
+
+    /** 只回收本应用标签的遗留资源，避免影响其他 Docker 项目。 */
+    public void reapOwnedResources() {
+        if (!properties.enabled()) return;
+        try {
+            String containers = command(List.of("docker", "ps", "-aq", "--filter", "label=com.cryptobench.owner=cryptobench"), Duration.ofSeconds(10));
+            for (String id : containers.split("\\R")) if (!id.isBlank()) {
+                try { command(List.of("docker", "rm", "-f", id.trim()), Duration.ofSeconds(10)); } catch (Exception ignored) { }
+            }
+            String networks = command(List.of("docker", "network", "ls", "-q", "--filter", "label=com.cryptobench.owner=cryptobench"), Duration.ofSeconds(10));
+            for (String id : networks.split("\\R")) if (!id.isBlank()) {
+                try { command(List.of("docker", "network", "rm", id.trim()), Duration.ofSeconds(10)); } catch (Exception ignored) { }
+            }
+        } catch (Exception ignored) {
+            // Docker may be unavailable during application startup; the next startup can retry.
+        }
+    }
+
+    private String safeLabel(String value) {
+        String label = value == null ? "untracked" : value.replaceAll("[^a-zA-Z0-9_.-]", "-");
+        return label.isBlank() ? "untracked" : label.substring(0, Math.min(100, label.length()));
     }
 
     private String command(List<String> command, Duration timeout) throws IOException, InterruptedException {

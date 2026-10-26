@@ -96,6 +96,15 @@ class BenchmarkApiIntegrationTest {
         String connectionId = a.json(connection).path("id").asText();
         assertThat(b.json(b.send("GET", "/api/connections", null)).size()).isZero();
         assertThat(b.send("DELETE", "/api/connections/" + connectionId, null).getResponse().getStatus()).isEqualTo(404);
+        JsonNode edited = a.json(a.send("PATCH", "/api/connections/" + connectionId,
+                Map.of("name", "Edited Agent", "url", "http://127.0.0.1:9001", "model", "edited-model")));
+        assertThat(edited.path("name").asText()).isEqualTo("Edited Agent");
+        assertThat(edited.path("url").asText()).isEqualTo("http://127.0.0.1:9001");
+        assertThat(edited.has("token")).isFalse();
+        assertThat(a.send("POST", "/api/connections/" + connectionId + "/check", null)
+                .getResponse().getStatus()).isEqualTo(502);
+        assertThat(b.send("POST", "/api/connections/" + connectionId + "/check", null)
+                .getResponse().getStatus()).isEqualTo(404);
         String id = "report-" + UUID.randomUUID();
         JsonNode report = a.json(a.send("POST", "/api/reports", Map.of("id", id, "scope", "full", "kind", "evaluation",
                 "demo", true, "synced", true, "published", true, "ownerId", "fake")));

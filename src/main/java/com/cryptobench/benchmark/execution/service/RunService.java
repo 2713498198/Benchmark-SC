@@ -36,7 +36,6 @@ public class RunService {
     private final RunRepository runs;
     private final TaskCatalogService catalog;
     private final AgentHttpClient agent;
-    private final MiniSpnEvaluator evaluator;
     private final ServerCostCalculator costs;
     private final DockerSandboxExecutor docker;
     private final ReportService reports;
@@ -50,12 +49,11 @@ public class RunService {
     private final ConcurrentHashMap<String, Future<?>> activeJobs = new ConcurrentHashMap<>();
 
     public RunService(RunRepository runs, TaskCatalogService catalog, AgentHttpClient agent,
-                      MiniSpnEvaluator evaluator, ServerCostCalculator costs, ReportService reports,
+                      ServerCostCalculator costs, ReportService reports,
                       com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker) {
         this.runs = runs;
         this.catalog = catalog;
         this.agent = agent;
-        this.evaluator = evaluator;
         this.costs = costs;
         this.reports = reports;
         this.mapper = mapper;
@@ -64,6 +62,7 @@ public class RunService {
 
     @PostConstruct
     void recoverInterruptedRuns() {
+        docker.reapOwnedResources();
         runs.markInterruptedRuns();
     }
 
@@ -233,6 +232,20 @@ public class RunService {
         return runs.findByOwner(user.id()).stream().map(this::view).toList();
     }
 
+    public List<ObjectNode> list(BenchmarkUser user, String status, int page, int size) {
+        List<String> statuses = status == null || status.isBlank()
+                ? List.of()
+                : java.util.Arrays.stream(status.split(","))
+                        .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                        .filter(value -> !value.isBlank())
+                        .toList();
+        List<String> allowed = List.of("queued", "running", "completed", "failed", "timeout", "cancelled");
+        if (statuses.stream().anyMatch(value -> !allowed.contains(value))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "运行状态筛选条件无效");
+        }
+        return runs.findByOwner(user.id(), statuses, page, size).stream().map(this::view).toList();
+    }
+
     public List<RunLog> logs(BenchmarkUser user, String id, long after) {
         owned(user, id, false);
         return runs.logs(id, Math.max(0, after), 100);
@@ -296,7 +309,7 @@ public class RunService {
                 return;
             }
             if ("docker".equals(source)) {
-                sandbox = docker.start(image);
+                sandbox = docker.start(image, id);
                 endpoint = sandbox.endpoint();
                 log(id, "INFO", "Docker Agent 容器已启动");
             }
@@ -347,7 +360,7 @@ public class RunService {
                         ObjectNode response = agent.analyze(participantEndpoint, participant.token(), request,
                                 Duration.ofSeconds("extended".equals(budget) ? 600 : 300));
                         long elapsed = elapsedMillis(nano);
-                        ObjectNode verification = evaluator.evaluate(task, response);
+                        ObjectNode verification = catalog.evaluate(datasetId, version, task, response);
                         boolean taskPassed = verification.path("passed").asBoolean(false);
                         String status = verification.path("status").asText("invalid");
                         Double cost = costs.calculate(participant.model(), response);

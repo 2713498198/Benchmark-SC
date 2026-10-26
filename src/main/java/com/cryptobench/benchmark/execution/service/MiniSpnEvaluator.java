@@ -6,12 +6,24 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MiniSpnEvaluator {
+public class MiniSpnEvaluator implements BenchmarkEvaluator {
     private final ObjectMapper mapper;
 
     public MiniSpnEvaluator(ObjectMapper mapper) {
         this.mapper = mapper;
     }
+
+    @Override
+    public String datasetId() { return "mini-spn"; }
+
+    @Override
+    public String version() { return "1.0.0"; }
+
+    @Override
+    public String evaluatorVersion() { return "mini-spn-evaluator-1.0.0"; }
+
+    @Override
+    public String taskResource() { return "/evaluation/mini-spn/1.0.0/tasks.json"; }
 
     public ObjectNode evaluate(TaskDefinition task, ObjectNode response) {
         ObjectNode result = mapper.createObjectNode();

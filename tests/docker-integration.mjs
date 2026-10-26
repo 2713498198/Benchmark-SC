@@ -44,6 +44,14 @@ try {
     '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,noexec,nosuid,size=64m',
     '--label', 'com.cryptobench.sandbox=true', '--label', `com.cryptobench.network=${network}`, image]);
   container = started.stdout;
+  const inspection = JSON.parse((await run(['inspect', container])).stdout)[0];
+  if (inspection.HostConfig.ReadonlyRootfs !== true || inspection.HostConfig.Memory !== 512 * 1024 * 1024
+      || inspection.HostConfig.PidsLimit !== 128 || inspection.HostConfig.NanoCpus !== 1_000_000_000
+      || inspection.Config.Labels['com.cryptobench.sandbox'] !== 'true') {
+    throw new Error('Sandbox resource restrictions or labels are missing');
+  }
+  const networkInspection = JSON.parse((await run(['network', 'inspect', network])).stdout)[0];
+  if (networkInspection.Internal !== true) throw new Error('Sandbox network is not internal');
   const portResult = await run(['port', container, '8000/tcp']);
   const port = Number(portResult.stdout.split(':').at(-1));
   if (!port) throw new Error('Docker did not return an Agent port');
@@ -63,6 +71,12 @@ try {
   if (dockerAvailable) {
     if (container) await run(['rm', '-f', container], {allowFailure: true});
     await run(['network', 'rm', network], {allowFailure: true});
+    const remainingContainer = await run(['inspect', container || 'missing'], {allowFailure: true});
+    const remainingNetwork = await run(['network', 'inspect', network], {allowFailure: true});
+    if (remainingContainer.code === 0 || remainingNetwork.code === 0) {
+      console.error('FAIL Docker Agent E2E: sandbox resources were not cleaned');
+      process.exitCode = 1;
+    }
     await run(['image', 'rm', '-f', image], {allowFailure: true});
   }
 }

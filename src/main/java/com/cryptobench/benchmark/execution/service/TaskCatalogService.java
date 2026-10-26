@@ -4,10 +4,14 @@ import com.cryptobench.benchmark.common.ApiException;
 import com.cryptobench.benchmark.execution.model.TaskDefinition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -15,18 +19,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskCatalogService {
     private final ObjectMapper mapper;
+    private final Map<DatasetVersion, BenchmarkEvaluator> evaluators;
 
-    public TaskCatalogService(ObjectMapper mapper) {
+    public TaskCatalogService(ObjectMapper mapper, List<BenchmarkEvaluator> evaluatorList) {
         this.mapper = mapper;
+        this.evaluators = evaluatorList.stream().collect(Collectors.toUnmodifiableMap(
+                evaluator -> new DatasetVersion(evaluator.datasetId(), evaluator.version()),
+                Function.identity()));
     }
 
     public List<TaskDefinition> tasks(String datasetId, String version) {
-        if (!"mini-spn".equals(datasetId) || !"1.0.0".equals(version)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "该测评集版本尚未绑定服务端验证器");
-        }
-        try (InputStream input = getClass().getResourceAsStream("/evaluation/mini-spn/1.0.0/tasks.json")) {
+        BenchmarkEvaluator evaluator = evaluator(datasetId, version);
+        try (InputStream input = getClass().getResourceAsStream(evaluator.taskResource())) {
             if (input == null) {
-                throw new IllegalStateException("Mini-SPN execution catalog is missing");
+                throw new IllegalStateException("Execution catalog is missing for " + datasetId + "@" + version);
             }
             JsonNode root = mapper.readTree(input);
             List<TaskDefinition> result = new ArrayList<>();
@@ -47,9 +53,20 @@ public class TaskCatalogService {
     }
 
     public String evaluatorVersion(String datasetId, String version) {
-        if ("mini-spn".equals(datasetId) && "1.0.0".equals(version)) {
-            return "mini-spn-evaluator-1.0.0";
-        }
-        throw new ApiException(HttpStatus.BAD_REQUEST, "该测评集版本尚未绑定服务端验证器");
+        return evaluator(datasetId, version).evaluatorVersion();
     }
+
+    public ObjectNode evaluate(String datasetId, String version, TaskDefinition task, ObjectNode response) {
+        return evaluator(datasetId, version).evaluate(task, response);
+    }
+
+    private BenchmarkEvaluator evaluator(String datasetId, String version) {
+        BenchmarkEvaluator evaluator = evaluators.get(new DatasetVersion(datasetId, version));
+        if (evaluator == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "该测评集版本尚未绑定服务端验证器");
+        }
+        return evaluator;
+    }
+
+    private record DatasetVersion(String datasetId, String version) {}
 }

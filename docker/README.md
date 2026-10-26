@@ -9,6 +9,8 @@ mvn clean verify
 docker compose up -d --build
 ```
 
+镜像构建阶段会安装 `wget`，用于 Compose 的 `/actuator/health` 健康检查；运行时不会安装额外开发工具。
+
 访问 `http://127.0.0.1:4173`，停止服务使用 `docker compose down`。数据保存在项目的 `var/` 目录。
 
 ## Agent 沙箱

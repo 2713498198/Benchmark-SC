@@ -42,8 +42,11 @@ public class RunController {
     }
 
     @GetMapping("/runs")
-    public List<ObjectNode> list(@AuthenticationPrincipal BenchmarkUser user) {
-        return runs.list(user);
+    public List<ObjectNode> list(@AuthenticationPrincipal BenchmarkUser user,
+                                 @RequestParam(required = false) String status,
+                                 @RequestParam(defaultValue = "0") int page,
+                                 @RequestParam(defaultValue = "50") int size) {
+        return runs.list(user, status, page, size);
     }
 
     @GetMapping("/runs/{id}")

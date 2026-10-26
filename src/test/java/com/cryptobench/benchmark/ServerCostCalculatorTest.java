@@ -30,4 +30,10 @@ class ServerCostCalculatorTest {
         assertThat(calculator.calculate("GPT-4.1", mapper.readTree(
                 "{\"usage\":{\"inputTokens\":-1,\"outputTokens\":2}}"))).isNull();
     }
+
+    @Test
+    void acceptsCommonProviderTokenFieldAliases() throws Exception {
+        var response = mapper.readTree("{\"usage\":{\"prompt_tokens\":1000,\"completion_tokens\":500}}");
+        assertThat(calculator.calculate("GPT-4.1", response)).isEqualTo(0.006d);
+    }
 }
