@@ -134,7 +134,7 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
 - `npm run test:compose`：通过，Compose 容器健康检查 HTTP 200，测试结束后完成清理。
 - `npm run check`：通过，103 个 JavaScript 模块和 11 个 Vue 模板。
-- `mvn --batch-mode verify`：通过，25 项测试通过。
+- `mvn --batch-mode verify`：通过，26 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 - `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器。
 - `tests/windows-installer.ps1`：通过，本机完成安装、升级和卸载生命周期验证。
