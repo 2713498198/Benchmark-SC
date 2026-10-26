@@ -2,6 +2,7 @@ package com.cryptobench.benchmark;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cryptobench.benchmark.execution.service.ServerCostCalculator;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import jakarta.servlet.http.Cookie;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ExecutionApiIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
+    @Autowired ServerCostCalculator serverCosts;
     private static HttpServer agent;
 
     @BeforeAll
@@ -39,7 +41,7 @@ class ExecutionApiIntegrationTest {
         agent = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         agent.createContext("/health", exchange -> json(exchange, 200, "{\"status\":\"ok\",\"version\":\"test-agent-1\"}"));
         agent.createContext("/capabilities", exchange -> json(exchange, 200,
-                "{\"protocolVersion\":\"1.0\",\"agentVersion\":\"test-agent-1\",\"models\":[\"test-model\"]}"));
+                "{\"protocolVersion\":\"1.0\",\"agentVersion\":\"test-agent-1\",\"models\":[\"test-model\",\"GPT-4.1\"]}"));
         agent.createContext("/analyze", exchange -> {
             JsonNode request = new ObjectMapper().readTree(exchange.getRequestBody().readAllBytes());
             String id = request.path("taskId").asText();
@@ -110,6 +112,27 @@ class ExecutionApiIntegrationTest {
         Client client = registeredClient();
         MvcResult result = client.send("POST", "/api/agent/check", Map.of("endpoint", "http://example.com"));
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    void calculatesCostFromServerPricingAndIgnoresAgentCost() throws Exception {
+        assertThat(serverCosts.calculate("GPT-4.1", mapper.readTree(
+                "{\"usage\":{\"inputTokens\":10,\"outputTokens\":10}}"))).isEqualTo(0.0001d);
+        Client client = registeredClient();
+        String endpoint = "http://127.0.0.1:" + agent.getAddress().getPort();
+        JsonNode created = client.json(client.send("POST", "/api/runs", Map.of(
+                "datasetId", "mini-spn", "version", "1.0.0", "scope", "sample", "budget", "standard",
+                "source", "local", "endpoint", endpoint, "model", "GPT-4.1")));
+        String id = created.path("runId").asText();
+        JsonNode state = created;
+        for (int i = 0; i < 50 && !"completed".equals(state.path("status").asText()); i++) {
+            Thread.sleep(100);
+            state = client.json(client.send("GET", "/api/runs/" + id, null));
+        }
+        JsonNode report = client.json(client.send("GET", "/api/reports/" + state.path("reportId").asText(), null));
+        assertThat(report.path("cost").asDouble()).isEqualTo(0.0008d);
+        assertThat(report.path("pricingVersion").asText()).isEqualTo("cryptobench-price-table-1.0.0");
+        assertThat(report.path("results").get(0).path("costUsd").asDouble()).isEqualTo(0.0001d);
     }
 
     @Test
