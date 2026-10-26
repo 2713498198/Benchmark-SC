@@ -4,7 +4,7 @@
 
 当前分支：`main`
 
-最近提交：`0a0c018 docs: record desktop smoke test usage`
+最近提交：`1428ccd build: support portable WiX installer toolchain`
 
 远程仓库：`https://github.com/2713498198/Benchmark-SC.git`
 
@@ -62,7 +62,11 @@ Windows `app-image` 已在本机实际构建并启动验收通过，内置 Java 
 npm run test:desktop
 ```
 
-当前仍未完成的是升级和卸载流程，以及需要 WiX Toolset 的 EXE 安装器构建。
+当前仍未完成的是在管理员环境中安装 EXE，以及安装后的升级和卸载流程。
+
+EXE 安装器构建已在本机完成：使用 WiX 3.14 官方 binaries ZIP（存放在本地忽略目录 `.tools/wix314`）后，
+`.\scripts\package-windows.ps1 -Installer` 成功生成 `output/desktop/CryptoBench-1.0.0.exe`。
+静默安装探测返回 MSI 错误 1925（当前用户没有为整机安装所需的管理员权限），因此安装、升级和卸载流程仍需在管理员环境中验证。
 
 生成的 `output/desktop` 属于本地产物，不提交到仓库。
 
@@ -126,7 +130,8 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:docker`：通过。
 - `npm run test:docker:e2e`：通过，真实生成报告并完成资源清理。
 - `npm run test:compose`：通过，Compose 容器健康检查 HTTP 200，测试结束后完成清理。
-- `npm run check`：通过，102 个 JavaScript 模块和 11 个 Vue 模板。
+- `npm run check`：通过，103 个 JavaScript 模块和 11 个 Vue 模板。
 - `mvn --batch-mode verify`：通过，25 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
+- `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器；安装探测因当前用户权限返回 MSI 1925，未宣称安装成功。
 
