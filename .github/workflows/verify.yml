@@ -35,6 +35,9 @@ jobs:
       - name: Check frontend JavaScript and Vue templates
         run: npm run check
 
+      - name: Validate private evaluator catalog contract
+        run: npm run validate:evaluator
+
       - name: Run backend tests and package
         run: mvn --batch-mode verify
 
