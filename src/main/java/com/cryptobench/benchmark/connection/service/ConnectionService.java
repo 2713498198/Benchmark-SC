@@ -11,6 +11,8 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.cryptobench.benchmark.execution.service.AgentHttpClient;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * 连接业务服务：创建服务端 ID 和时间，转换响应，并处理删除失败；不保存凭证。
@@ -18,9 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ConnectionService {
     private final ConnectionRepository connections;
+    private final AgentHttpClient agent;
 
-    public ConnectionService(ConnectionRepository connections) {
+    public ConnectionService(ConnectionRepository connections, AgentHttpClient agent) {
         this.connections = connections;
+        this.agent = agent;
     }
 
     /**
@@ -48,6 +52,29 @@ public class ConnectionService {
     public void delete(String ownerId, String id) {
         if (!connections.delete(id, ownerId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "连接不存在");
+        }
+    }
+
+    @Transactional
+    public ConnectionResponse update(String ownerId, String id, ConnectionRequest input) {
+        if (!connections.update(id, ownerId, input.name().trim(), input.url(), input.model().trim())) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "连接不存在");
+        }
+        return connections.findByOwner(ownerId).stream().filter(item -> item.id().equals(id))
+                .findFirst().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "连接不存在")).toResponse();
+    }
+
+    public ObjectNode check(String ownerId, String id) {
+        var connection = connections.findByOwner(ownerId).stream().filter(item -> item.id().equals(id))
+                .findFirst().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "连接不存在"));
+        try {
+            ObjectNode result = new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode();
+            result.put("reachable", true);
+            result.set("health", agent.check(connection.url(), null));
+            result.set("capabilities", agent.capabilities(connection.url(), null));
+            return result;
+        } catch (Exception exception) {
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "Agent 连接检查失败");
         }
     }
 }

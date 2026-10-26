@@ -10,6 +10,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,5 +56,17 @@ public class ConnectionController {
     public Map<String, Boolean> delete(@AuthenticationPrincipal BenchmarkUser user, @PathVariable String id) {
         connections.delete(user.id(), id);
         return Map.of("ok", true);
+    }
+
+    @PatchMapping(value = "/{id}", consumes = "application/json")
+    public ConnectionResponse update(@AuthenticationPrincipal BenchmarkUser user, @PathVariable String id,
+                                     @Valid @RequestBody ConnectionRequest input) {
+        return connections.update(user.id(), id, input);
+    }
+
+    @PostMapping("/{id}/check")
+    public com.fasterxml.jackson.databind.node.ObjectNode check(@AuthenticationPrincipal BenchmarkUser user,
+                                                                 @PathVariable String id) {
+        return connections.check(user.id(), id);
     }
 }

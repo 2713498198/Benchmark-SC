@@ -43,4 +43,9 @@ public class ConnectionRepository {
     public boolean delete(String id, String ownerId) {
         return jdbc.update("DELETE FROM benchmark_connections WHERE id = ? AND owner_id = ?", id, ownerId) > 0;
     }
+
+    public boolean update(String id, String ownerId, String name, String url, String model) {
+        return jdbc.update("UPDATE benchmark_connections SET display_name=?, endpoint_url=?, model_id=? WHERE id=? AND owner_id=?",
+                name, url, model, id, ownerId) > 0;
+    }
 }
