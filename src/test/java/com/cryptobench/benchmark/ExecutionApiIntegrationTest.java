@@ -87,6 +87,10 @@ class ExecutionApiIntegrationTest {
         assertThat(report.path("verificationStatus").asText()).isEqualTo("verified");
         assertThat(report.path("score").asDouble()).isEqualTo(100);
         assertThat(report.path("cost").isNull()).isTrue();
+        assertThat(report.path("usage").path("inputTokens").asLong()).isEqualTo(80);
+        assertThat(report.path("usage").path("outputTokens").asLong()).isEqualTo(80);
+        assertThat(report.path("usage").path("totalTokens").asLong()).isEqualTo(160);
+        assertThat(report.path("usage").path("knownTasks").asInt()).isEqualTo(8);
         assertThat(report.path("results").get(0).path("verification").path("passed").asBoolean()).isTrue();
         JsonNode completedRuns = client.json(client.send("GET", "/api/runs?status=completed&page=0&size=1", null));
         assertThat(completedRuns.isArray()).isTrue();
@@ -180,6 +184,10 @@ class ExecutionApiIntegrationTest {
         assertThat(report.path("verified").asBoolean()).isTrue();
         assertThat(report.path("competitors")).hasSize(2);
         assertThat(report.path("competitors").get(0).path("score").asDouble()).isEqualTo(100);
+        assertThat(report.path("competitors").get(0).path("usage").path("inputTokens").asLong()).isEqualTo(80);
+        assertThat(report.path("competitors").get(0).path("usage").path("outputTokens").asLong()).isEqualTo(80);
+        assertThat(report.path("competitors").get(0).path("usage").path("totalTokens").asLong()).isEqualTo(160);
+        assertThat(report.path("competitors").get(1).path("usage").path("knownTasks").asInt()).isEqualTo(8);
     }
 
     private Client registeredClient() throws Exception {

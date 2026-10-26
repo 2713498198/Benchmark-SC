@@ -468,6 +468,7 @@ public class RunService {
         result.put("demo", false);
         result.put("createdAt", Instant.now().toString());
         result.put("date", Instant.now().toString());
+        result.set("usage", usageSummary(stored));
         if (kind.equals("pk")) {
             addPkSummary(result, participants, stored, tasks.size());
             result.put("agent", participants.stream().map(p -> p.participant().agent()).reduce((a, b) -> a + " vs " + b).orElse("Agent"));
@@ -515,6 +516,8 @@ public class RunService {
             item.put("total", total);
             item.put("score", score);
             item.put("time", runtime.elapsed(stored) / 1000d);
+            List<RunTask> ownTasks = participantTasks(runtime, stored);
+            item.set("usage", usageSummary(ownTasks));
             Double cost = runtime.cost(stored);
             if (cost == null) item.putNull("cost"); else item.put("cost", cost);
         }
@@ -669,6 +672,51 @@ public class RunService {
     private Double completeCost(List<RunTask> tasks) {
         if (tasks.stream().anyMatch(task -> task.costUsd() == null)) return null;
         return tasks.stream().mapToDouble(RunTask::costUsd).sum();
+    }
+
+    /** 汇总 Agent 返回的真实 Token 用量；部分任务缺失时保留覆盖数并隐藏不完整总量。 */
+    private ObjectNode usageSummary(List<RunTask> tasks) {
+        ObjectNode result = mapper.createObjectNode();
+        result.put("taskCount", tasks.size());
+        long input = 0;
+        long output = 0;
+        int known = 0;
+        for (RunTask task : tasks) {
+            JsonNode usage = task.agentResponse() == null ? null : task.agentResponse().get("usage");
+            Long inputTokens = usageValue(usage, "inputTokens", "input_tokens", "promptTokens", "prompt_tokens");
+            Long outputTokens = usageValue(usage, "outputTokens", "output_tokens", "completionTokens", "completion_tokens");
+            if (inputTokens == null || outputTokens == null) continue;
+            input += inputTokens;
+            output += outputTokens;
+            known++;
+        }
+        result.put("knownTasks", known);
+        if (known == tasks.size() && !tasks.isEmpty()) {
+            result.put("inputTokens", input);
+            result.put("outputTokens", output);
+            result.put("totalTokens", input + output);
+        } else {
+            result.putNull("inputTokens");
+            result.putNull("outputTokens");
+            result.putNull("totalTokens");
+        }
+        return result;
+    }
+
+    private Long usageValue(JsonNode usage, String... names) {
+        if (usage == null || !usage.isObject()) return null;
+        for (String name : names) {
+            JsonNode value = usage.get(name);
+            if (value == null) continue;
+            if (!value.isIntegralNumber() || !value.canConvertToLong() || value.asLong() < 0) return null;
+            return value.asLong();
+        }
+        return null;
+    }
+
+    private List<RunTask> participantTasks(ParticipantRuntime runtime, List<RunTask> stored) {
+        String prefix = runtime.participant().key() + "::";
+        return stored.stream().filter(task -> task.taskId().startsWith(prefix)).toList();
     }
 
     private ObjectNode view(Run run) {
