@@ -6,6 +6,7 @@ const image = `cryptobench-mock-agent:test-${suffix}`;
 const proxyImage = `cryptobench-agent-proxy:test-${suffix}`;
 const agentNetwork = `cryptobench-test-agent-${suffix}`;
 const proxyNetwork = `cryptobench-test-proxy-${suffix}`;
+const diagnosticFile = process.env.DOCKER_DIAGNOSTIC_FILE || '';
 let agentContainer = '';
 let proxyContainer = '';
 let dockerAvailable = false;
@@ -27,10 +28,19 @@ function run(args, {allowFailure = false} = {}) {
       if (settled) return;
       settled = true;
       const result = {code, stdout: stdout.trim(), stderr: stderr.trim()};
-      if (code !== 0 && !allowFailure) reject(new Error(result.stderr || result.stdout || `docker exit ${code}`));
+      if (code !== 0 && !allowFailure) {
+        const detail = result.stderr || result.stdout || `docker exit ${code}`;
+        reject(new Error(`docker ${args.join(' ')} -> ${detail}`));
+      }
       else resolve(result);
     });
   });
+}
+
+async function writeDiagnostic(message) {
+  if (!diagnosticFile) return;
+  const {appendFile} = await import('node:fs/promises');
+  await appendFile(diagnosticFile, `${new Date().toISOString()} ${message}\n`);
 }
 
 async function createProxyNetwork() {
@@ -69,14 +79,23 @@ async function waitFor(url, timeoutMs = 10000) {
 }
 
 try {
+  await writeDiagnostic(`starting image=${image}`);
   await run(['version']);
   dockerAvailable = true;
+  await writeDiagnostic('docker version passed');
   await run(['info']);
+  await writeDiagnostic('docker info passed');
+  await writeDiagnostic('building mock agent image');
   await run(['build', '-f', 'tests/fixtures/mock-agent.Dockerfile', '-t', image, 'tests/fixtures']);
+  await writeDiagnostic('mock agent image built');
+  await writeDiagnostic('building proxy image');
   await run(['build', '-f', 'docker/agent-proxy.Dockerfile', '-t', proxyImage, 'docker']);
+  await writeDiagnostic('proxy image built');
   await run(['network', 'create', '--driver', 'bridge', '--internal',
     '--label', 'com.cryptobench.owner=cryptobench', agentNetwork]);
+  await writeDiagnostic(`agent network created ${agentNetwork}`);
   await createProxyNetwork();
+  await writeDiagnostic(`proxy network created mode=${proxyNetworkMode}`);
   const started = await run(['run', '-d', '--rm', '--network', agentNetwork, '--network-alias', 'agent',
     '--cpus', '1', '--memory', '512m', '--memory-swap', '512m', '--ulimit', 'nofile=1024:1024',
     '--pids-limit', '128', '--read-only', '--cap-drop', 'ALL',
@@ -132,6 +151,7 @@ try {
   console.log(`PASS Docker Agent E2E: ${agentContainer.slice(0, 12)} via ${proxyContainer.slice(0, 12)} (${image})`);
 } catch (error) {
   console.error(`FAIL Docker Agent E2E: ${error.message}`);
+  await writeDiagnostic(`failure: ${error.stack || error.message}`);
   process.exitCode = 1;
 } finally {
   if (!dockerAvailable) process.exitCode = 1;

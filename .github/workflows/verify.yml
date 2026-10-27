@@ -49,7 +49,17 @@ jobs:
           docker info --format '{{.ServerVersion}} {{.OperatingSystem}}'
 
       - name: Run Docker Agent sandbox E2E
-        run: npm run test:docker
+        run: |
+          export DOCKER_DIAGNOSTIC_FILE="$RUNNER_TEMP/docker-sandbox.log"
+          npm run test:docker 2>&1 | tee "$DOCKER_DIAGNOSTIC_FILE"
+
+      - name: Upload Docker sandbox diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-sandbox-diagnostics
+          path: ${{ runner.temp }}/docker-sandbox.log
+          if-no-files-found: warn
 
       - name: Run platform Docker execution E2E
         run: npm run test:docker:e2e
