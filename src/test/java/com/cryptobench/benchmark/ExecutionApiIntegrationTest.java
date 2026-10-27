@@ -3,12 +3,15 @@ package com.cryptobench.benchmark;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cryptobench.benchmark.execution.service.ServerCostCalculator;
+import com.cryptobench.benchmark.execution.model.Run;
+import com.cryptobench.benchmark.execution.repository.RunRepository;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import jakarta.servlet.http.Cookie;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +37,7 @@ class ExecutionApiIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @Autowired ServerCostCalculator serverCosts;
+    @Autowired RunRepository runRepository;
     private static HttpServer agent;
 
     @BeforeAll
@@ -144,6 +148,32 @@ class ExecutionApiIntegrationTest {
         assertThat(status.has("dockerEnabled")).isTrue();
         assertThat(status.has("dockerAvailable")).isTrue();
         assertThat(status.path("limits").path("memory").asText()).isEqualTo("512m");
+    }
+
+    @Test
+    void marksQueuedAndRunningRunsInterruptedAfterRestartButPreservesTerminalRuns() throws Exception {
+        Client client = registeredClient();
+        String ownerId = client.json(client.send("GET", "/api/auth/me", null)).path("user").path("id").asText();
+        String now = Instant.now().toString();
+        String queuedId = "run-recovery-queued-" + UUID.randomUUID();
+        String runningId = "run-recovery-running-" + UUID.randomUUID();
+        String completedId = "run-recovery-completed-" + UUID.randomUUID();
+
+        runRepository.insert(recoveryFixture(queuedId, ownerId, "queued", now, null));
+        runRepository.insert(recoveryFixture(runningId, ownerId, "running", now, now));
+        runRepository.insert(recoveryFixture(completedId, ownerId, "completed", now, now));
+
+        assertThat(runRepository.markInterruptedRuns()).isEqualTo(2);
+        assertThat(runRepository.find(queuedId, false).orElseThrow().status()).isEqualTo("failed");
+        assertThat(runRepository.find(queuedId, false).orElseThrow().errorCode()).isEqualTo("worker_restarted");
+        assertThat(runRepository.find(runningId, false).orElseThrow().status()).isEqualTo("failed");
+        assertThat(runRepository.find(completedId, false).orElseThrow().status()).isEqualTo("completed");
+    }
+
+    private Run recoveryFixture(String id, String ownerId, String status, String createdAt, String startedAt) {
+        return new Run(id, ownerId, "evaluation", "local", "mini-spn", "1.0.0", "standard", "sample",
+                "test-model", null, 42, status, 1, 0, 0, 0, mapper.createObjectNode(), null, null, null,
+                null, false, createdAt, startedAt, null);
     }
 
     @Test
