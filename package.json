@@ -9,6 +9,7 @@
     "vendor:vue": "node scripts/sync-vue.mjs",
     "check": "node tests/check.mjs && node tests/vue-templates.mjs",
     "validate:evaluator": "node scripts/validate-evaluator-catalog.mjs src/main/resources/evaluation/mini-spn/1.0.0/tasks.json mini-spn 1.0.0",
+    "validate:v4-materials": "node scripts/validate-v4-materials.mjs",
     "test:evaluator": "node tests/evaluator-catalog.mjs",
     "test:v4-materials": "node tests/v4-materials.mjs",
     "test": "node tests/smoke.mjs",

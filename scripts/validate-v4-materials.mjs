@@ -25,6 +25,10 @@ if (!manifestPath || !options['public-catalog'] || !options['materials-root']) {
 const manifestAbsolute = path.resolve(manifestPath);
 const catalogAbsolute = path.resolve(options['public-catalog']);
 const materialsAbsolute = path.resolve(options['materials-root']);
+const normalizedManifest = manifestAbsolute.replaceAll('\\', '/').toLowerCase();
+if (normalizedManifest.includes('/resources/static/') || normalizedManifest.endsWith('/resources/static')) {
+  throw new Error('Private V4 material manifest must stay outside resources/static.');
+}
 const normalizedMaterials = materialsAbsolute.replaceAll('\\', '/').toLowerCase();
 if (normalizedMaterials.includes('/resources/static/') || normalizedMaterials.endsWith('/resources/static')) {
   throw new Error('Private V4 materials must stay outside resources/static.');
