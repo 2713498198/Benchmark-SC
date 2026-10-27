@@ -1,0 +1,54 @@
+name: Publish CryptoBench Windows release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Prepare WiX
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:GITHUB_WORKSPACE '.tools\wix314'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $zip = Join-Path $env:RUNNER_TEMP 'wix314-binaries.zip'
+          Invoke-WebRequest -UseBasicParsing 'https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip' -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force
+      - name: Build installer and portable package
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'cryptobench-release'
+          $portable = Join-Path $env:RUNNER_TEMP 'cryptobench-portable'
+          .\scripts\package-windows.ps1 -Installer -AllowExternalOutput -OutputDir $root
+          .\scripts\package-windows.ps1 -AllowExternalOutput -OutputDir $portable
+          $tag = "${{ github.ref_name }}"
+          Compress-Archive -Path (Join-Path $portable 'CryptoBench') -DestinationPath (Join-Path $root "CryptoBench-$tag-portable.zip") -Force
+      - name: Create checksums
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'cryptobench-release'
+          Get-ChildItem $root -Recurse -File | Get-FileHash -Algorithm SHA256 | ConvertTo-Csv -NoTypeInformation | Set-Content (Join-Path $root 'SHA256SUMS.csv')
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            ${{ runner.temp }}/cryptobench-release/**/*.exe
+            ${{ runner.temp }}/cryptobench-release/**/*.zip
+            ${{ runner.temp }}/cryptobench-release/SHA256SUMS.csv

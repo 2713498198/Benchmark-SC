@@ -2,6 +2,7 @@ package com.cryptobench.benchmark;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.cryptobench.benchmark.execution.service.ServerCostCalculator;
 import com.cryptobench.benchmark.execution.model.Run;
 import com.cryptobench.benchmark.execution.repository.RunRepository;
@@ -168,6 +169,42 @@ class ExecutionApiIntegrationTest {
         assertThat(runRepository.find(queuedId, false).orElseThrow().errorCode()).isEqualTo("worker_restarted");
         assertThat(runRepository.find(runningId, false).orElseThrow().status()).isEqualTo("failed");
         assertThat(runRepository.find(completedId, false).orElseThrow().status()).isEqualTo("completed");
+    }
+
+    @Test
+    void requeuesRecoverableRunsAndLeavesCancelledRunsTerminal() throws Exception {
+        Client client = registeredClient();
+        String ownerId = client.json(client.send("GET", "/api/auth/me", null)).path("user").path("id").asText();
+        String now = Instant.now().toString();
+        String queuedId = "run-requeue-" + UUID.randomUUID();
+        String cancelledId = "run-cancelled-" + UUID.randomUUID();
+
+        ObjectNode config = mapper.createObjectNode();
+        config.put("endpoint", "http://127.0.0.1:8000");
+        config.putArray("participants").addObject()
+                .put("key", "main").put("label", "Agent").put("agent", "Agent")
+                .put("model", "test-model").put("agentVersion", "test-agent-1");
+        runRepository.insert(new Run(queuedId, ownerId, "evaluation", "local", "mini-spn", "1.0.0",
+                "standard", "sample", "test-model", null, 42, "running", 1, 0, 0, 0, config,
+                null, null, null, null, false, now, now, null));
+        runRepository.insertTask(queuedId, "main:mini-spn-001", 1);
+        runRepository.updateTask(queuedId, "main:mini-spn-001", "running", mapper.createObjectNode(),
+                mapper.createObjectNode(), true, 1d, 0.1d, 10L, now, null);
+
+        runRepository.insert(new Run(cancelledId, ownerId, "evaluation", "local", "mini-spn", "1.0.0",
+                "standard", "sample", "test-model", null, 42, "cancelled", 1, 0, 0, 0,
+                config, "cancelled", "用户取消运行", null, null, true, now, now, now));
+
+        assertThat(runRepository.recoverInterruptedRuns()).extracting(Run::id).containsExactly(queuedId);
+        Run recovered = runRepository.find(queuedId, false).orElseThrow();
+        assertThat(recovered.status()).isEqualTo("queued");
+        assertThat(recovered.errorCode()).isEqualTo("worker_restarted");
+        assertThat(recovered.startedAt()).isNull();
+        assertThat(runRepository.findTasks(queuedId).get(0).status()).isEqualTo("queued");
+        assertThat(runRepository.find(cancelledId, false).orElseThrow().status()).isEqualTo("cancelled");
+        // Keep the shared test database independent of method execution order.
+        runRepository.updateStatus(queuedId, "failed", 0, 0, 0, "test_cleanup", null, null,
+                false, null, Instant.now().toString());
     }
 
     private Run recoveryFixture(String id, String ownerId, String status, String createdAt, String startedAt) {

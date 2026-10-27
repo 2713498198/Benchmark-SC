@@ -207,3 +207,7 @@ Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运�
 Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验测评集与版本；题目目录声明的必需工具和能力也会在发送 `/analyze` 前检查。V4 目前仍没有服务端题目目录与验证器，因此会被明确拒绝执行，不会生成伪造分数。
 
 密码找回接口为 `POST /api/auth/forgot` 和 `POST /api/auth/reset`。令牌只保存哈希且一次性使用；邮件投递可通过 `PASSWORD_RESET_DELIVERY_URL` 配置内网邮件网关，本地联调可用 `PASSWORD_RESET_OUTBOX` 写入临时 outbox 文件。
+
+管理员邀请复用同一投递适配器：生产环境设置 `PASSWORD_RESET_DELIVERY_URL`，本地联调设置 `PASSWORD_RESET_OUTBOX=tmp/mail-outbox.jsonl`。邀请接口只返回投递状态和过期时间，不返回明文令牌；本地 outbox 中的消息可用于手动打开邀请链接。应用重启会回收遗留 Docker 资源，并把未取消的排队或运行中任务重新排队；需要访问凭证的本地 Agent 需在重启后重新输入凭证，凭证不会写入运行记录。
+
+模型价格由管理员在“管理后台 → 模型价格”维护，也可通过 `GET /api/pricing/active` 读取当前公开价格快照。价格表按版本创建、启用后不可修改，服务端按启用版本重新计算费用；未知模型或缺失用量保留为空费用。Windows 桌面包由 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签后构建并发布到 GitHub Release，同时提供 EXE 安装器、便携版 ZIP 和 SHA-256 校验文件；页面“下载公开安装包”会打开最新 Release。

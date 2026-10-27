@@ -75,7 +75,7 @@ public class PasswordResetNotifier {
     }
 
     /** Sends an admin invitation through the same configured gateway or local outbox. */
-    public void sendAdminInvite(String email, String name, String token, Instant expiresAt) {
+    public boolean sendAdminInvite(String email, String name, String token, Instant expiresAt) {
         ObjectNode payload = mapper.createObjectNode();
         payload.put("type", "admin_invite");
         payload.put("email", email);
@@ -83,10 +83,16 @@ public class PasswordResetNotifier {
         payload.put("inviteUrl", baseUrl + "/#/admin-invite?token=" + token);
         payload.put("token", token);
         payload.put("expiresAt", expiresAt.toString());
-        sendPayload(payload, email, "Admin invitation mail queued for {}", "Admin invitation delivery failed for {}");
+        return sendPayload(payload, email, "Admin invitation mail queued for {}", "Admin invitation delivery failed for {}");
     }
 
-    private void sendPayload(ObjectNode payload, String email, String queuedMessage, String failureMessage) {
+    public String deliveryMode() {
+        if (!deliveryUrl.isBlank()) return "gateway";
+        if (!outbox.isBlank()) return "outbox";
+        return "unconfigured";
+    }
+
+    private boolean sendPayload(ObjectNode payload, String email, String queuedMessage, String failureMessage) {
         try {
             String body = mapper.writeValueAsString(payload);
             if (!deliveryUrl.isBlank()) {
@@ -103,10 +109,13 @@ public class PasswordResetNotifier {
                 Files.writeString(file, body + System.lineSeparator(), StandardCharsets.UTF_8,
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } else {
-                LOG.info(queuedMessage, email);
+                LOG.warn("{}; configure PASSWORD_RESET_DELIVERY_URL or PASSWORD_RESET_OUTBOX", queuedMessage.replace("{}", email));
+                return false;
             }
+            return true;
         } catch (Exception exception) {
             LOG.warn(failureMessage, email);
+            return false;
         }
     }
 }

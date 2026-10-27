@@ -69,9 +69,9 @@ public class AdminAccountService {
         long expires = now + INVITATION_LIFETIME.toMillis();
         invitations.insert("invite_" + UUID.randomUUID(), email, name, hash(token), actor.id(),
                 Instant.now().toString(), expires);
-        notifier.sendAdminInvite(email, name, token, Instant.ofEpochMilli(expires));
+        boolean delivered = notifier.sendAdminInvite(email, name, token, Instant.ofEpochMilli(expires));
         audit(actor.id(), null, "invite_admin", json("email", email, "name", name), "success");
-        return new InvitationResult("sent", Instant.ofEpochMilli(expires).toString());
+        return new InvitationResult(delivered ? "queued" : "unconfigured", Instant.ofEpochMilli(expires).toString(), notifier.deliveryMode());
     }
 
     @Transactional(noRollbackFor = ApiException.class)
@@ -188,7 +188,7 @@ public class AdminAccountService {
     }
 
     public record Page<T>(List<T> items, long total, int page, int size) {}
-    public record InvitationResult(String status, String expiresAt) {}
+    public record InvitationResult(String status, String expiresAt, String delivery) {}
     public record AccountView(String id, String name, String email, String role, String status, String createdAt) {
         static AccountView from(BenchmarkUser user) { return new AccountView(user.id(), user.name(), user.email(), user.role(), user.accountStatus(), user.createdAt()); }
     }

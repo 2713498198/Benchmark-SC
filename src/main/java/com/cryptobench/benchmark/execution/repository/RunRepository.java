@@ -114,6 +114,16 @@ public class RunRepository {
                 java.time.Instant.now().toString());
     }
 
+    /** Re-queues interrupted work and clears in-flight task results before a new worker claims it. */
+    public List<Run> recoverInterruptedRuns() {
+        List<Run> interrupted = jdbc.query("SELECT * FROM benchmark_runs WHERE status IN ('queued','running') AND cancel_requested=FALSE",
+                runMapper);
+        if (interrupted.isEmpty()) return interrupted;
+        jdbc.update("UPDATE benchmark_runs SET status='queued', error_code='worker_restarted', error_message='应用重启后已重新排队', started_at=NULL, finished_at=NULL WHERE status IN ('queued','running') AND cancel_requested=FALSE");
+        interrupted.forEach(run -> jdbc.update("UPDATE benchmark_run_tasks SET status='queued', agent_response=NULL, verification_result=NULL, passed=NULL, score=NULL, cost_usd=NULL, elapsed_ms=NULL, started_at=NULL, finished_at=NULL WHERE run_id=? AND status NOT IN ('queued')", run.id()));
+        return interrupted;
+    }
+
     public void insertTask(String runId, String taskId, int ordinal) {
         jdbc.update("INSERT INTO benchmark_run_tasks (run_id, task_id, ordinal, status, attempt) VALUES (?, ?, ?, 'queued', 1)",
                 runId, taskId, ordinal);

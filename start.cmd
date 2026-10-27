@@ -28,7 +28,6 @@ call "%MAVEN_CMD%" -v >nul 2>nul
 if errorlevel 1 (
   echo Maven could not run: "%MAVEN_CMD%"
   echo Check JAVA_HOME and install Maven 3.6.3 or later.
-  pause
   exit /b 1
 )
 echo Using Maven: "%MAVEN_CMD%"

@@ -39,6 +39,7 @@ public class SecurityConfiguration {
                 // 授权规则按顺序匹配；报告 GET 允许进入业务层，再由 Service 区分公开记录与私有记录。
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/bootstrap").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/pricing/active").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/datasets/custom").hasRole("ADMIN")
                         .requestMatchers("/api/connections", "/api/connections/**").authenticated()

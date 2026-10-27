@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import com.cryptobench.benchmark.config.PricingProperties;
+import com.cryptobench.benchmark.pricing.repository.PricingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,24 +18,44 @@ public class ServerCostCalculator {
     private record Price(double inputPerMillion, double outputPerMillion) {}
 
     /* 价格版本随代码发布；未知模型保留空费用，而不是把缺失值当成 0。 */
-    private final Map<String, Price> prices;
-    private final String version;
+    private volatile Map<String, Price> prices;
+    private volatile String version;
 
     public ServerCostCalculator() {
         this.version = "cryptobench-price-table-1.0.0";
         this.prices = defaults();
     }
 
-    @Autowired
     public ServerCostCalculator(PricingProperties properties) {
         this.version = properties.getVersion();
-        Map<String, Price> configured = new LinkedHashMap<>();
-        properties.getModels().forEach((model, price) -> {
-            if (price != null && valid(price.getInputPerMillionTokens()) && valid(price.getOutputPerMillionTokens())) {
-                configured.put(normalize(model), new Price(price.getInputPerMillionTokens(), price.getOutputPerMillionTokens()));
-            }
+        this.prices = configured(properties);
+    }
+
+    /** Loads the active database price table when present, while retaining config fallback for tests/first boot. */
+    @Autowired
+    public ServerCostCalculator(PricingProperties properties, PricingRepository repository) {
+        this.version = properties.getVersion();
+        this.prices = configured(properties);
+        repository.active().ifPresent(table -> {
+            Map<String, Price> loaded = new LinkedHashMap<>();
+            repository.prices(table.version()).forEach(row -> loaded.put(normalize(row.model()),
+                    new Price(row.inputPerMillionTokens(), row.outputPerMillionTokens())));
+            if (!loaded.isEmpty()) { this.version = table.version(); this.prices = loaded; }
         });
-        this.prices = configured.isEmpty() ? defaults() : configured;
+        this.repository = repository;
+    }
+
+    private PricingRepository repository;
+
+    /** Refreshes the in-memory price snapshot after an administrator activates a new version. */
+    public synchronized void reload() {
+        if (repository == null) return;
+        repository.active().ifPresent(table -> {
+            Map<String, Price> loaded = new LinkedHashMap<>();
+            repository.prices(table.version()).forEach(row -> loaded.put(normalize(row.model()),
+                    new Price(row.inputPerMillionTokens(), row.outputPerMillionTokens())));
+            if (!loaded.isEmpty()) { version = table.version(); prices = loaded; }
+        });
     }
 
     public Double calculate(String model, JsonNode response) {
@@ -71,6 +92,16 @@ public class ServerCostCalculator {
     }
 
     private static boolean valid(Double value) { return value != null && Double.isFinite(value) && value >= 0; }
+
+    private static Map<String, Price> configured(PricingProperties properties) {
+        Map<String, Price> configured = new LinkedHashMap<>();
+        properties.getModels().forEach((model, price) -> {
+            if (price != null && valid(price.getInputPerMillionTokens()) && valid(price.getOutputPerMillionTokens())) {
+                configured.put(normalize(model), new Price(price.getInputPerMillionTokens(), price.getOutputPerMillionTokens()));
+            }
+        });
+        return configured.isEmpty() ? defaults() : configured;
+    }
 
     private static Map<String, Price> defaults() {
         return Map.ofEntries(

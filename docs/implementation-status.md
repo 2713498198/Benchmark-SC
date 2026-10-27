@@ -29,6 +29,10 @@
 - Compose 部署冒烟测试：构建平台镜像、启动容器、检查 Docker 健康状态和 `/actuator/health`，结束后清理容器与网络：
   `npm run test:compose`。
 - 通用模型价格表支持版本化配置；未知模型或无效用量保留空费用，并由 `ServerCostCalculatorTest` 验证自定义价格表覆盖和 token 计费。
+- 管理员价格后台已接入版本草稿、启用、三位 ISO 货币校验和公开 `GET /api/pricing/active` 快照；启用后服务端费用计算器即时重新加载，API 权限和版本生命周期由 `PricingApiIntegrationTest` 覆盖。
+- 应用启动会回收遗留 Docker 资源，并恢复未取消的 `queued/running` 运行；运行配置和任务状态会重新排队，取消的运行保持终态。凭证仍只保存在当前 worker 内存中，重启后需重新输入受保护 Agent 的凭证。
+- 管理员邀请邮件现在明确返回 `gateway`、`outbox` 或 `unconfigured` 投递状态；邀请令牌仍只保存哈希，明文只进入已配置的网关或本地 outbox，不出现在 API 响应、日志和审计记录。
+- Windows 桌面下载入口已指向 GitHub Release；`.github/workflows/release.yml` 在 `v*.*.*` 标签上构建 EXE 安装器和便携版 ZIP、生成 `SHA256SUMS.csv` 并发布资产。
 - 新增私有 evaluator catalog 校验器：检查版本、任务 ID、题干、公开文件路径和静态目录泄漏；只输出摘要与 SHA-256，不打印隐藏答案：`npm run validate:evaluator`。
 - evaluator catalog 增加公开题库覆盖闸门：材料交付后可使用 `--public-catalog` 验证私有目录与公开题库 ID 完整一致，拒绝缺题或多余题；`npm run test:evaluator` 覆盖通过与缺题失败场景。
 - 增加 V4 隐藏材料清单校验器：校验私有目录不在 `resources/static`、每道公开题都有 verifier 引用和 hidden/oracle/answer/reference 材料、文件真实 SHA-256、路径不越界以及公开目录哈希；材料未交付前只运行 `npm run test:v4-materials` 的夹具测试，不会将示例材料当作正式材料。
@@ -143,12 +147,15 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `npm run test:compose`：通过，Compose 容器健康检查 HTTP 200，测试结束后完成清理。
 - `npm run test:docker-ui`：通过；在构建 `cryptobench-mock-agent:local` 与 `cryptobench-agent-proxy:local` 后，确认 Docker 引擎可用时前端入口启用，镜像不可用时安全禁用。
 - `npm test`：通过，完整浏览器场景和移动端检查通过；测试使用独立内存 H2，避免污染本地持久化数据。
-- `npm run check`：通过，107 个 JavaScript 模块和 11 个 Vue 模板。
-- `mvn --batch-mode verify`：通过，31 项测试通过。
+- `npm run check`：通过，108 个 JavaScript 模块和 11 个 Vue 模板。
+- `mvn --batch-mode verify`：通过，35 项测试通过。
 - `npm run test:desktop`：通过，Windows app-image 健康检查 HTTP 200，进程树已清理。
 - `.\scripts\package-windows.ps1 -Installer`：通过，生成 Windows EXE 安装器。
 - `tests/windows-installer.ps1`：通过，本机完成安装、升级和卸载生命周期验证。
 - `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
+- `PricingApiIntegrationTest`：通过，验证游客价格快照、研究者 403、管理员创建/启用多模型价格表和非法价格拒绝。
+- `ExecutionApiIntegrationTest`：通过，验证重启恢复会重新排队未取消运行、清理进行中任务结果并保留取消终态。
+- `PasswordResetNotifierTest`：通过，验证管理员邀请写入本地 outbox、投递模式状态和未配置投递时不虚报成功。
 - `npm run validate:evaluator`：通过，Mini-SPN 私有目录 8 项任务校验通过；不安全的 hidden/oracle/answer 公开路径会被拒绝。
 - GitHub Actions run 43：通过 Ubuntu Docker sandbox、平台 Docker 执行、Compose 健康检查和 Windows 打包任务；CI 使用兼容代理桥接网络，Agent 仍保持 internal 网络隔离。
 - GitHub Actions run 45（提交 `5781d1b`）：通过 `Run Docker Agent sandbox E2E`、`Run platform Docker execution E2E`、`Run Docker Compose deployment smoke test` 和 `windows-package`；验证 Docker Agent HTTP 就绪检查修复。

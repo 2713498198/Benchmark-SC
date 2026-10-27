@@ -63,7 +63,16 @@ public class RunService {
     @PostConstruct
     void recoverInterruptedRuns() {
         docker.reapOwnedResources();
-        runs.markInterruptedRuns();
+        for (Run run : runs.recoverInterruptedRuns()) {
+            try {
+                submitRecovered(run);
+                log(run.id(), "WARN", "应用重启后运行已重新排队");
+            } catch (Exception exception) {
+                runs.updateStatus(run.id(), "failed", 0, 0, 0, "worker_recovery_failed", safeMessage(exception), null,
+                        false, null, Instant.now().toString());
+                log(run.id(), "ERROR", "应用重启后恢复失败：" + safeMessage(exception));
+            }
+        }
     }
 
     @PreDestroy
@@ -446,6 +455,34 @@ public class RunService {
             if (sandbox != null) docker.stop(sandbox);
             activeJobs.remove(id);
         }
+    }
+
+    private void submitRecovered(Run run) {
+        if ("local".equals(run.source()) && (run.config() == null || run.config().path("endpoint").asText("").isBlank())) {
+            throw new IllegalStateException("本地 Agent 地址未保存，无法恢复运行");
+        }
+        List<TaskDefinition> all = catalog.tasks(run.datasetId(), run.version());
+        List<TaskDefinition> selected = "sample".equals(run.scope())
+                ? all.subList(0, Math.min(8, all.size())) : all;
+        List<Participant> participants = recoveredParticipants(run.config());
+        String endpoint = run.config() == null ? null : optionalText(run.config(), "endpoint");
+        String image = run.config() == null ? null : optionalText(run.config(), "image");
+        Future<?> future = workers.submit(() -> execute(run.id(), run.kind(), run.source(), image, endpoint,
+                run.datasetId(), run.version(), run.seed(), run.budget(), run.scope(), selected, participants));
+        activeJobs.put(run.id(), future);
+    }
+
+    private List<Participant> recoveredParticipants(ObjectNode config) {
+        JsonNode node = config == null ? null : config.get("participants");
+        if (node == null || !node.isArray() || node.isEmpty()) throw new IllegalStateException("运行配置缺少参赛方");
+        List<Participant> result = new ArrayList<>();
+        for (JsonNode item : node) {
+            result.add(new Participant(item.path("key").asText("main"), item.path("label").asText("Agent"),
+                    item.path("agent").asText("Agent"), item.path("model").asText("unknown"),
+                    item.path("agentVersion").asText("unknown"), strings(item.get("tools")),
+                    optionalText(item, "endpoint"), null));
+        }
+        return result;
     }
 
     private ObjectNode report(String id, String kind, String source, String datasetId, String version,
