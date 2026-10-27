@@ -41,3 +41,6 @@ var/
 
 # Generated screenshots and design comparison output
 output/
+
+# Private V4 hidden answers, oracle files, references and evaluator manifests
+private/
