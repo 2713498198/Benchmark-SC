@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.Socket;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -100,6 +103,7 @@ public class DockerSandboxExecutor {
             if (colon < 0) throw new IOException("无法读取 Docker Agent 映射端口");
             String endpoint = "http://127.0.0.1:" + port.substring(colon + 1).trim();
             waitForPort(endpoint, Duration.ofSeconds(10));
+            waitForAgentReady(endpoint, Duration.ofSeconds(15));
             return new Sandbox(agentContainerId, proxyContainerId, agentNetwork, proxyNetwork, endpoint);
         } catch (IOException | InterruptedException | RuntimeException exception) {
             removeContainer(proxyContainerId);
@@ -242,6 +246,24 @@ public class DockerSandboxExecutor {
             }
         }
         throw new IOException("Docker Agent 端口在限定时间内未监听");
+    }
+
+    /** TCP 端口可能先于 Agent HTTP 服务监听；等待协议层就绪，避免启动竞态。 */
+    private void waitForAgentReady(String endpoint, Duration timeout) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create(endpoint + "/health"))
+                .timeout(Duration.ofSeconds(2)).GET().build();
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (System.nanoTime() < deadline) {
+            try {
+                HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+                if (response.statusCode() >= 200 && response.statusCode() < 300) return;
+            } catch (java.io.IOException ignored) {
+                // The proxy may accept a socket while the Agent is still booting.
+            }
+            Thread.sleep(150);
+        }
+        throw new IOException("Docker Agent HTTP 服务在限定时间内未就绪");
     }
 
     public record Sandbox(String agentContainerId, String proxyContainerId, String agentNetwork,
