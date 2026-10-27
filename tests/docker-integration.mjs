@@ -151,6 +151,8 @@ try {
   console.log(`PASS Docker Agent E2E: ${agentContainer.slice(0, 12)} via ${proxyContainer.slice(0, 12)} (${image})`);
 } catch (error) {
   console.error(`FAIL Docker Agent E2E: ${error.message}`);
+  const annotation = String(error.stack || error.message).replace(/%/g, '%25').replace(/\r?\n/g, '%0A').replace(/\r/g, '%0D');
+  console.log(`::error title=Docker sandbox E2E::${annotation}`);
   await writeDiagnostic(`failure: ${error.stack || error.message}`);
   process.exitCode = 1;
 } finally {
