@@ -89,6 +89,14 @@ $arguments = @(
     '--java-options', '-Dspring.profiles.active=local',
     '--java-options', '-Dloader.main=com.cryptobench.desktop.DesktopLauncher'
 ) + $installerArguments
+# jpackage refuses to write into an existing destination. Remove only the
+# artifact produced by this invocation so repeated local/CI builds are safe
+# without touching other files in the output directory.
+$artifactName = if ($Installer) { "CryptoBench-$AppVersion.exe" } else { 'CryptoBench' }
+$artifactPath = Join-Path $OutputDir $artifactName
+if (Test-Path -LiteralPath $artifactPath) {
+    Remove-Item -LiteralPath $artifactPath -Recurse -Force
+}
 & $jpackage @arguments
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed with exit code $LASTEXITCODE" }
 Write-Host "Created CryptoBench $type in $OutputDir"
