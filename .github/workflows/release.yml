@@ -3,6 +3,12 @@ name: Publish CryptoBench Windows release
 on:
   push:
     tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build (for example v1.0.1)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -10,8 +16,12 @@ permissions:
 jobs:
   windows-release:
     runs-on: windows-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -35,9 +45,13 @@ jobs:
         run: |
           $root = Join-Path $env:RUNNER_TEMP 'cryptobench-release'
           $portable = Join-Path $env:RUNNER_TEMP 'cryptobench-portable'
-          .\scripts\package-windows.ps1 -Installer -AllowExternalOutput -OutputDir $root
-          .\scripts\package-windows.ps1 -AllowExternalOutput -OutputDir $portable
-          $tag = "${{ github.ref_name }}"
+          $tag = $env:RELEASE_TAG
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
+            throw "Release tag must match vMAJOR.MINOR.PATCH, received: $tag"
+          }
+          $version = $Matches[1]
+          .\scripts\package-windows.ps1 -Installer -AppVersion $version -AllowExternalOutput -OutputDir $root
+          .\scripts\package-windows.ps1 -AppVersion $version -AllowExternalOutput -OutputDir $portable
           Compress-Archive -Path (Join-Path $portable 'CryptoBench') -DestinationPath (Join-Path $root "CryptoBench-$tag-portable.zip") -Force
       - name: Create checksums
         shell: pwsh
@@ -47,6 +61,7 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           files: |
             ${{ runner.temp }}/cryptobench-release/**/*.exe
