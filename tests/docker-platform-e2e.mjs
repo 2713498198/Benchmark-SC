@@ -203,6 +203,8 @@ try {
   console.log(`PASS platform Docker E2E: ${runId} -> ${run.reportId}`);
 } catch (error) {
   console.error(`FAIL platform Docker E2E: ${error.message}`);
+  const annotation = String(error.stack || error.message).replace(/%/g, '%25').replace(/\r?\n/g, '%0A').replace(/\r/g, '%0D');
+  console.log(`::error title=Platform Docker E2E::${annotation}`);
   if (appExit) {
     const exited = await Promise.race([appExit, new Promise(resolve => setTimeout(() => resolve(null), 100))]);
     if (exited?.output) console.error(exited.output.slice(-4000));
