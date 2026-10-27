@@ -74,11 +74,7 @@ public class DockerSandboxExecutor {
             command(List.of("docker", "network", "create", "--driver", "bridge", "--internal",
                             "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.run-id=" + safeLabel(runId), agentNetwork),
                     Duration.ofSeconds(20));
-            command(List.of("docker", "network", "create", "--driver", "bridge",
-                            "--opt", "com.docker.network.bridge.gateway_mode_ipv4=routed",
-                            "--opt", "com.docker.network.bridge.enable_ip_masquerade=false",
-                            "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.run-id=" + safeLabel(runId), proxyNetwork),
-                    Duration.ofSeconds(20));
+            createProxyNetwork(proxyNetwork, runId);
             agentContainerId = command(List.of("docker", "run", "-d", "--rm", "--network", agentNetwork,
                     "--network-alias", "agent", "--cpus", "1", "--memory", "512m",
                     "--memory-swap", "512m", "--ulimit", "nofile=1024:1024",
@@ -157,6 +153,29 @@ public class DockerSandboxExecutor {
             return true;
         } catch (Exception ignored) {
             return false;
+        }
+    }
+
+    /**
+     * Docker 28+ supports routed gateway mode and an explicit no-masquerade
+     * bridge. Older Docker engines reject those options. The Agent remains on
+     * the internal network in either case; the fallback only changes the
+     * platform-owned proxy network, which never contains the Agent directly.
+     */
+    private void createProxyNetwork(String network, String runId) throws IOException, InterruptedException {
+        String owner = safeLabel(runId);
+        List<String> advanced = List.of("docker", "network", "create", "--driver", "bridge",
+                "--opt", "com.docker.network.bridge.gateway_mode_ipv4=routed",
+                "--opt", "com.docker.network.bridge.enable_ip_masquerade=false",
+                "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.run-id=" + owner,
+                network);
+        try {
+            command(advanced, Duration.ofSeconds(20));
+        } catch (IOException unsupported) {
+            removeNetwork(network);
+            command(List.of("docker", "network", "create", "--driver", "bridge",
+                            "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.run-id=" + owner,
+                            network), Duration.ofSeconds(20));
         }
     }
 

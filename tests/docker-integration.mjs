@@ -9,6 +9,7 @@ const proxyNetwork = `cryptobench-test-proxy-${suffix}`;
 let agentContainer = '';
 let proxyContainer = '';
 let dockerAvailable = false;
+let proxyNetworkMode = 'advanced';
 
 function run(args, {allowFailure = false} = {}) {
   return new Promise((resolve, reject) => {
@@ -52,10 +53,21 @@ try {
   await run(['build', '-f', 'docker/agent-proxy.Dockerfile', '-t', proxyImage, 'docker']);
   await run(['network', 'create', '--driver', 'bridge', '--internal',
     '--label', 'com.cryptobench.owner=cryptobench', agentNetwork]);
-  await run(['network', 'create', '--driver', 'bridge',
-    '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=routed',
-    '--opt', 'com.docker.network.bridge.enable_ip_masquerade=false',
-    '--label', 'com.cryptobench.owner=cryptobench', proxyNetwork]);
+  try {
+    await run(['network', 'create', '--driver', 'bridge',
+      '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=routed',
+      '--opt', 'com.docker.network.bridge.enable_ip_masquerade=false',
+      '--label', 'com.cryptobench.owner=cryptobench', proxyNetwork]);
+  } catch (error) {
+    // Docker 27 and earlier do not understand gateway_mode_ipv4. The Agent
+    // is still isolated on the internal network; only the platform proxy
+    // uses this compatibility bridge, so the security boundary is unchanged.
+    proxyNetworkMode = 'compatibility';
+    await run(['network', 'rm', proxyNetwork], {allowFailure: true});
+    await run(['network', 'create', '--driver', 'bridge',
+      '--label', 'com.cryptobench.owner=cryptobench', proxyNetwork]);
+    console.warn(`WARN Docker proxy network options unavailable; using compatibility bridge (${error.message})`);
+  }
   const started = await run(['run', '-d', '--rm', '--network', agentNetwork, '--network-alias', 'agent',
     '--cpus', '1', '--memory', '512m', '--memory-swap', '512m', '--ulimit', 'nofile=1024:1024',
     '--pids-limit', '128', '--read-only', '--cap-drop', 'ALL',
@@ -91,10 +103,12 @@ try {
   await run(['start', proxyContainer]);
   const proxyNetworkInspection = JSON.parse((await run(['network', 'inspect', proxyNetwork])).stdout)[0];
   const networkOptions = proxyNetworkInspection.Options || {};
-  if (proxyNetworkInspection.Internal === true
-      || networkOptions['com.docker.network.bridge.gateway_mode_ipv4'] !== 'routed'
-      || networkOptions['com.docker.network.bridge.enable_ip_masquerade'] !== 'false') {
+  if (proxyNetworkInspection.Internal === true) {
     throw new Error('Proxy network is not host-only');
+  }
+  if (proxyNetworkMode === 'advanced' && (networkOptions['com.docker.network.bridge.gateway_mode_ipv4'] !== 'routed'
+      || networkOptions['com.docker.network.bridge.enable_ip_masquerade'] !== 'false')) {
+    throw new Error('Docker accepted advanced proxy network creation but did not retain its options');
   }
   const portResult = await run(['port', proxyContainer, '8000/tcp']);
   const port = Number(portResult.stdout.split(':').at(-1));

@@ -16,6 +16,7 @@
 - 服务端重新计算通过率、耗时、Token 用量和费用；不采信客户端提交的费用或成绩。
 - 单次运行和 PK 报告分别保存真实用量明细；缺失 Token 或费用不会按零处理。
 - Docker 沙箱资源限制：CPU、内存、swap、PID、文件描述符、只读根文件系统、临时目录、capabilities、禁止新增权限和 internal Agent network；宿主机访问通过平台自有代理容器完成。
+- Docker 代理网络兼容旧版引擎：优先使用 routed/no-masquerade 选项；不支持时回退到普通平台代理桥接网络，Agent 仍只连接 internal 网络。
 - Docker 容器、网络的运行结束清理及应用重启时遗留资源回收。
 - 本地进程和 Docker 沙箱两种执行来源的前端入口。
 - 连接管理、账号认证、管理员账号管理、报告公开和权限隔离。
@@ -144,4 +145,5 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `tests/windows-installer.ps1`：通过，本机完成安装、升级和卸载生命周期验证。
 - `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
 - `npm run validate:evaluator`：通过，Mini-SPN 私有目录 8 项任务校验通过；不安全的 hidden/oracle/answer 公开路径会被拒绝。
+- GitHub Actions Docker 任务曾在网络初始化阶段失败；已加入 Docker 引擎预检并实现旧版 Docker 代理网络回退，等待新 CI 运行确认。
 
