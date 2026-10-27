@@ -2,6 +2,8 @@
 
 V4 的隐藏答案、oracle、参考复放和验证器不能放在 `src/main/resources/static/`，也不能放进公开任务 ZIP。材料交付后先放入仅服务端可读的私有目录，并准备一份清单：
 
+项目根目录的 `private/` 已加入 `.gitignore`。请将清单和材料放在该目录或其他受控目录中，并在提交前确认 `git status` 不包含任何隐藏材料文件。
+
 ```json
 {
   "datasetId": "cryptobench-sc-v4",
