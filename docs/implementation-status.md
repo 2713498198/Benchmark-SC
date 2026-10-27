@@ -30,6 +30,7 @@
 - 通用模型价格表支持版本化配置；未知模型或无效用量保留空费用，并由 `ServerCostCalculatorTest` 验证自定义价格表覆盖和 token 计费。
 - 新增私有 evaluator catalog 校验器：检查版本、任务 ID、题干、公开文件路径和静态目录泄漏；只输出摘要与 SHA-256，不打印隐藏答案：`npm run validate:evaluator`。
 - evaluator catalog 增加公开题库覆盖闸门：材料交付后可使用 `--public-catalog` 验证私有目录与公开题库 ID 完整一致，拒绝缺题或多余题；`npm run test:evaluator` 覆盖通过与缺题失败场景。
+- 增加 V4 隐藏材料清单校验器：校验私有目录不在 `resources/static`、每道公开题都有 verifier 引用和 hidden/oracle/answer/reference 材料、文件真实 SHA-256、路径不越界以及公开目录哈希；材料未交付前只运行 `npm run test:v4-materials` 的夹具测试，不会将示例材料当作正式材料。
 - 本地完整浏览器冒烟测试已在独立内存 H2 数据库和真实 Mock Agent 上通过，覆盖真实 Agent 接入、报告生成、结果核算、运行取消、管理员导入、移动端路由、敏感文件隔离和页面错误检查：`npm test`。
 
 ## 已验证

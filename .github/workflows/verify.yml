@@ -49,6 +49,9 @@ jobs:
       - name: Test evaluator catalog coverage guard
         run: npm run test:evaluator
 
+      - name: Test V4 material manifest guard
+        run: npm run test:v4-materials
+
       - name: Run backend tests and package
         run: mvn --batch-mode verify
 
