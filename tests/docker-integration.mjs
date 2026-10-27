@@ -45,6 +45,12 @@ async function writeDiagnostic(message) {
 
 async function createProxyNetwork() {
   const labels = ['--label', 'com.cryptobench.owner=cryptobench'];
+  if (process.env.DOCKER_PROXY_NETWORK_MODE?.toLowerCase() === 'compatibility') {
+    proxyNetworkMode = 'compatibility';
+    await run(['network', 'create', '--driver', 'bridge', ...labels, proxyNetwork]);
+    console.warn('WARN Docker proxy network forced to compatibility bridge');
+    return;
+  }
   try {
     await run(['network', 'create', '--driver', 'bridge',
       '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=routed',

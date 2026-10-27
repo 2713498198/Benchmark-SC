@@ -13,6 +13,12 @@ jobs:
     # Pin the Docker E2E runner so the sandbox network contract is not changed
     # by the rolling ubuntu-latest image migration.
     runs-on: ubuntu-24.04
+    env:
+      # Hosted runners may expose routed bridge options without supporting
+      # host port publishing on that network. The Agent remains on an
+      # internal network; use the compatible proxy bridge for CI.
+      DOCKER_PROXY_NETWORK_MODE: compatibility
+      CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE: compatibility
     timeout-minutes: 20
     steps:
       - name: Check out source
@@ -50,6 +56,7 @@ jobs:
 
       - name: Run Docker Agent sandbox E2E
         run: |
+          set -o pipefail
           export DOCKER_DIAGNOSTIC_FILE="$RUNNER_TEMP/docker-sandbox.log"
           npm run test:docker 2>&1 | tee "$DOCKER_DIAGNOSTIC_FILE"
 

@@ -164,6 +164,12 @@ public class DockerSandboxExecutor {
      */
     private void createProxyNetwork(String network, String runId) throws IOException, InterruptedException {
         String owner = safeLabel(runId);
+        if ("compatibility".equalsIgnoreCase(System.getenv("CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE"))) {
+            command(List.of("docker", "network", "create", "--driver", "bridge",
+                            "--label", "com.cryptobench.owner=cryptobench", "--label", "com.cryptobench.run-id=" + owner,
+                            network), Duration.ofSeconds(20));
+            return;
+        }
         List<String> advanced = List.of("docker", "network", "create", "--driver", "bridge",
                 "--opt", "com.docker.network.bridge.gateway_mode_ipv4=routed",
                 "--opt", "com.docker.network.bridge.enable_ip_masquerade=false",
