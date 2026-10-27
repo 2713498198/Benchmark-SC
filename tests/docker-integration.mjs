@@ -33,6 +33,29 @@ function run(args, {allowFailure = false} = {}) {
   });
 }
 
+async function createProxyNetwork() {
+  const labels = ['--label', 'com.cryptobench.owner=cryptobench'];
+  try {
+    await run(['network', 'create', '--driver', 'bridge',
+      '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=routed',
+      '--opt', 'com.docker.network.bridge.enable_ip_masquerade=false',
+      ...labels, proxyNetwork]);
+    const inspection = JSON.parse((await run(['network', 'inspect', proxyNetwork])).stdout)[0];
+    const options = inspection.Options || {};
+    if (options['com.docker.network.bridge.gateway_mode_ipv4'] === 'routed'
+        && options['com.docker.network.bridge.enable_ip_masquerade'] === 'false') return;
+    throw new Error(`Docker did not retain proxy network options: ${JSON.stringify(options)}`);
+  } catch (error) {
+    // Docker 27 and earlier may reject or silently ignore gateway_mode_ipv4.
+    // The Agent remains isolated on the internal network; only the platform
+    // proxy uses this compatibility bridge, so the security boundary is unchanged.
+    proxyNetworkMode = 'compatibility';
+    await run(['network', 'rm', proxyNetwork], {allowFailure: true});
+    await run(['network', 'create', '--driver', 'bridge', ...labels, proxyNetwork]);
+    console.warn(`WARN Docker proxy network options unavailable; using compatibility bridge (${error.message})`);
+  }
+}
+
 async function waitFor(url, timeoutMs = 10000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -53,21 +76,7 @@ try {
   await run(['build', '-f', 'docker/agent-proxy.Dockerfile', '-t', proxyImage, 'docker']);
   await run(['network', 'create', '--driver', 'bridge', '--internal',
     '--label', 'com.cryptobench.owner=cryptobench', agentNetwork]);
-  try {
-    await run(['network', 'create', '--driver', 'bridge',
-      '--opt', 'com.docker.network.bridge.gateway_mode_ipv4=routed',
-      '--opt', 'com.docker.network.bridge.enable_ip_masquerade=false',
-      '--label', 'com.cryptobench.owner=cryptobench', proxyNetwork]);
-  } catch (error) {
-    // Docker 27 and earlier do not understand gateway_mode_ipv4. The Agent
-    // is still isolated on the internal network; only the platform proxy
-    // uses this compatibility bridge, so the security boundary is unchanged.
-    proxyNetworkMode = 'compatibility';
-    await run(['network', 'rm', proxyNetwork], {allowFailure: true});
-    await run(['network', 'create', '--driver', 'bridge',
-      '--label', 'com.cryptobench.owner=cryptobench', proxyNetwork]);
-    console.warn(`WARN Docker proxy network options unavailable; using compatibility bridge (${error.message})`);
-  }
+  await createProxyNetwork();
   const started = await run(['run', '-d', '--rm', '--network', agentNetwork, '--network-alias', 'agent',
     '--cpus', '1', '--memory', '512m', '--memory-swap', '512m', '--ulimit', 'nofile=1024:1024',
     '--pids-limit', '128', '--read-only', '--cap-drop', 'ALL',
