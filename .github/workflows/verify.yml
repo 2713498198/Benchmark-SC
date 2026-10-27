@@ -46,6 +46,9 @@ jobs:
       - name: Validate private evaluator catalog contract
         run: npm run validate:evaluator
 
+      - name: Test evaluator catalog coverage guard
+        run: npm run test:evaluator
+
       - name: Run backend tests and package
         run: mvn --batch-mode verify
 

@@ -190,7 +190,7 @@ python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
 
 只公开题干、附件及必要元数据；隐藏答案、参考解法和评分器不进入静态目录或 ZIP。
 
-本项目已实现服务端运行调度、真实 Agent 接入、Mini-SPN 服务端验证、Docker 沙箱执行来源、可信报告和密码找回流程。运行记录支持排队、运行、完成、失败、超时、取消、日志和重试；客户端提交的成绩不会覆盖服务端验证结果。CryptoBench-SC V4 仍标记为 `executionReady: false`，因为它还没有绑定服务端任务目录和验证器，不会生成模拟成绩。
+本项目已实现服务端运行调度、真实 Agent 接入、Mini-SPN 服务端验证、Docker 沙箱执行来源、可信报告和密码找回流程。运行记录支持排队、运行、完成、失败、超时、取消、日志和重试；客户端提交的成绩不会覆盖服务端验证结果。CryptoBench-SC V4 仍标记为 `executionReady: false`，因为它还没有绑定服务端任务目录和验证器，不会生成模拟成绩。正式材料交付后，可用 `node scripts/validate-evaluator-catalog.mjs <private-tasks.json> cryptobench-sc-v4 4.0.0 --public-catalog src/main/resources/static/data/cryptobench-sc-v4/catalog.json` 检查私有目录是否完整覆盖 127 道公开题目；校验器不会输出隐藏答案。
 
 本地 Agent 的协议、接口和 Docker 镜像要求见 [本地 Agent 测试指南](docs/local-agent.md)。启动确定性 Mock Agent：
 
