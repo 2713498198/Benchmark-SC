@@ -1,6 +1,6 @@
 # CryptoBench-SC 实施进度
 
-更新时间：2026-10-26
+更新时间：2026-10-27
 
 当前分支：`main`
 
@@ -34,7 +34,7 @@
 
 ### Docker 真实端到端
 
-Docker Desktop 已安装并启动。当前本机已通过以下两条真实验证：
+Docker Desktop 已在本机启动并完成过真实验证；当前远程 Ubuntu 24.04 CI 也已通过完整 Docker 流程：
 
 ```powershell
 npm run test:docker
@@ -145,5 +145,5 @@ V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考�
 - `tests/windows-installer.ps1`：通过，本机完成安装、升级和卸载生命周期验证。
 - `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
 - `npm run validate:evaluator`：通过，Mini-SPN 私有目录 8 项任务校验通过；不安全的 hidden/oracle/answer 公开路径会被拒绝。
-- GitHub Actions Docker 任务曾在网络初始化阶段失败；已加入 Docker 引擎预检并实现旧版 Docker 代理网络回退，等待新 CI 运行确认。
+- GitHub Actions run 43：通过 Ubuntu Docker sandbox、平台 Docker 执行、Compose 健康检查和 Windows 打包任务；CI 使用兼容代理桥接网络，Agent 仍保持 internal 网络隔离。
 
