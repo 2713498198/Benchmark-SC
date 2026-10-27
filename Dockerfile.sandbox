@@ -1,0 +1,17 @@
+# The regular image intentionally has no Docker client or socket access.
+# This opt-in image is used only by compose.sandbox.yaml, where the site is
+# deployed together with the local Docker Agent execution path.
+FROM docker:27-cli AS docker-cli
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY target/cryptobench-1.0.0-SNAPSHOT.jar /app/cryptobench.jar
+ENV SERVER_ADDRESS=0.0.0.0
+ENV PORT=4173
+EXPOSE 4173
+ENTRYPOINT ["java", "-jar", "/app/cryptobench.jar"]

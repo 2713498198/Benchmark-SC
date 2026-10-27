@@ -27,13 +27,34 @@ public class AgentHttpClient {
         return get(endpoint, "/health", token);
     }
 
+    /** Call an endpoint created by the server's Docker sandbox proxy. */
+    public ObjectNode checkSandbox(String endpoint) throws IOException, InterruptedException {
+        return get(endpoint, "/health", null, true);
+    }
+
     public ObjectNode capabilities(String endpoint, String token) throws IOException, InterruptedException {
         return get(endpoint, "/capabilities", token);
     }
 
+    /** Call an endpoint created by the server's Docker sandbox proxy. */
+    public ObjectNode capabilitiesSandbox(String endpoint) throws IOException, InterruptedException {
+        return get(endpoint, "/capabilities", null, true);
+    }
+
     public ObjectNode analyze(String endpoint, String token, ObjectNode request, Duration timeout)
             throws IOException, InterruptedException {
-        URI uri = URI.create(normalize(endpoint) + "/analyze");
+        return analyze(endpoint, token, request, timeout, false);
+    }
+
+    /** Analyze through an endpoint created by the server's Docker sandbox proxy. */
+    public ObjectNode analyzeSandbox(String endpoint, ObjectNode request, Duration timeout)
+            throws IOException, InterruptedException {
+        return analyze(endpoint, null, request, timeout, true);
+    }
+
+    private ObjectNode analyze(String endpoint, String token, ObjectNode request, Duration timeout,
+                               boolean allowNonLoopback) throws IOException, InterruptedException {
+        URI uri = URI.create(normalize(endpoint, allowNonLoopback) + "/analyze");
         HttpRequest.Builder builder = HttpRequest.newBuilder(uri).timeout(timeout)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request)));
@@ -49,6 +70,10 @@ public class AgentHttpClient {
     }
 
     public static String normalize(String endpoint) {
+        return normalize(endpoint, false);
+    }
+
+    private static String normalize(String endpoint, boolean allowNonLoopback) {
         String value = endpoint == null ? "" : endpoint.trim();
         if (value.endsWith("/")) value = value.substring(0, value.length() - 1);
         URI uri;
@@ -68,7 +93,7 @@ public class AgentHttpClient {
         }
         try {
             InetAddress address = InetAddress.getByName(uri.getHost());
-            if (!address.isLoopbackAddress()) {
+            if (!allowNonLoopback && !address.isLoopbackAddress()) {
                 throw new IllegalArgumentException("本地执行只允许连接回环地址");
             }
         } catch (IOException | SecurityException exception) {
@@ -78,7 +103,12 @@ public class AgentHttpClient {
     }
 
     private ObjectNode get(String endpoint, String path, String token) throws IOException, InterruptedException {
-        URI uri = URI.create(normalize(endpoint) + path);
+        return get(endpoint, path, token, false);
+    }
+
+    private ObjectNode get(String endpoint, String path, String token, boolean allowNonLoopback)
+            throws IOException, InterruptedException {
+        URI uri = URI.create(normalize(endpoint, allowNonLoopback) + path);
         HttpRequest.Builder builder = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(8)).GET();
         if (token != null && !token.isBlank()) builder.header("Authorization", "Bearer " + token);
         HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());

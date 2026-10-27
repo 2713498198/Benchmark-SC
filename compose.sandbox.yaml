@@ -1,0 +1,46 @@
+# Opt-in, self-contained local deployment. The regular compose.yaml keeps the
+# website isolated from Docker. This profile adds the narrowly scoped local
+# execution path and builds the two images that the server creates per run.
+services:
+  cryptobench:
+    profiles: [sandbox]
+    build:
+      context: .
+      dockerfile: Dockerfile.sandbox
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SERVER_ADDRESS: 0.0.0.0
+      PORT: 4173
+      DB_URL: jdbc:h2:mem:cryptobench-compose-sandbox;MODE=MySQL;DB_CLOSE_DELAY=-1
+      CRYPTOBENCH_DOCKER_ENABLED: "true"
+      CRYPTOBENCH_DOCKER_ENDPOINT_HOST: host.docker.internal
+      CRYPTOBENCH_DOCKER_PROXY_BIND_ADDRESS: 0.0.0.0
+      CRYPTOBENCH_DOCKER_MOCK_IMAGE: cryptobench-mock-agent:compose
+      CRYPTOBENCH_DOCKER_PROXY_IMAGE: cryptobench-agent-proxy:compose
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      mock-agent-image:
+        condition: service_completed_successfully
+      agent-proxy-image:
+        condition: service_completed_successfully
+
+  mock-agent-image:
+    profiles: [sandbox]
+    image: cryptobench-mock-agent:compose
+    build:
+      context: ./tests/fixtures
+      dockerfile: mock-agent.Dockerfile
+    entrypoint: ["sh", "-c"]
+    command: ["exit 0"]
+
+  agent-proxy-image:
+    profiles: [sandbox]
+    image: cryptobench-agent-proxy:compose
+    build:
+      context: ./docker
+      dockerfile: agent-proxy.Dockerfile
+    entrypoint: ["sh", "-c"]
+    command: ["exit 0"]

@@ -105,8 +105,8 @@ public class RunService {
         DockerSandboxExecutor.Sandbox sandbox = null;
         try {
             sandbox = docker.start(image);
-            ObjectNode health = agent.check(sandbox.endpoint(), null);
-            ObjectNode capabilities = agent.capabilities(sandbox.endpoint(), null);
+            ObjectNode health = agent.checkSandbox(sandbox.endpoint());
+            ObjectNode capabilities = agent.capabilitiesSandbox(sandbox.endpoint());
             ObjectNode result = mapper.createObjectNode();
             result.put("reachable", true);
             result.put("source", "docker");
@@ -323,8 +323,12 @@ public class RunService {
             for (Participant participant : participants) {
                 String participantEndpoint = endpointFor(source, endpoint, participant.endpoint());
                 log(id, "INFO", "检查 " + participant.label() + " 的 Agent 能力");
-                ObjectNode health = agent.check(participantEndpoint, participant.token());
-                ObjectNode capabilities = agent.capabilities(participantEndpoint, participant.token());
+                ObjectNode health = "docker".equals(source)
+                        ? agent.checkSandbox(participantEndpoint)
+                        : agent.check(participantEndpoint, participant.token());
+                ObjectNode capabilities = "docker".equals(source)
+                        ? agent.capabilitiesSandbox(participantEndpoint)
+                        : agent.capabilities(participantEndpoint, participant.token());
                 validateModel(participant.model(), capabilities);
                 validateDataset(datasetId, version, capabilities);
                 validateTaskCapabilities(tasks, capabilities);
@@ -357,8 +361,11 @@ public class RunService {
                         ObjectNode limits = request.putObject("budget");
                         limits.put("timeoutSeconds", "extended".equals(budget) ? 600 : 300);
                         limits.put("maxAgentCalls", "extended".equals(budget) ? 40 : 20);
-                        ObjectNode response = agent.analyze(participantEndpoint, participant.token(), request,
-                                Duration.ofSeconds("extended".equals(budget) ? 600 : 300));
+                        ObjectNode response = "docker".equals(source)
+                                ? agent.analyzeSandbox(participantEndpoint, request,
+                                        Duration.ofSeconds("extended".equals(budget) ? 600 : 300))
+                                : agent.analyze(participantEndpoint, participant.token(), request,
+                                        Duration.ofSeconds("extended".equals(budget) ? 600 : 300));
                         long elapsed = elapsedMillis(nano);
                         ObjectNode verification = catalog.evaluate(datasetId, version, task, response);
                         boolean taskPassed = verification.path("passed").asBoolean(false);

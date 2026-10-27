@@ -11,5 +11,7 @@ benchmark:
   docker:
     enabled: ${CRYPTOBENCH_DOCKER_ENABLED:true}
     proxy-image: ${CRYPTOBENCH_DOCKER_PROXY_IMAGE:cryptobench-agent-proxy:local}
+    endpoint-host: ${CRYPTOBENCH_DOCKER_ENDPOINT_HOST:127.0.0.1}
+    proxy-bind-address: ${CRYPTOBENCH_DOCKER_PROXY_BIND_ADDRESS:127.0.0.1}
     allowed-images:
       - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}

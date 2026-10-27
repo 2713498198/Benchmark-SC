@@ -88,7 +88,7 @@ public class DockerSandboxExecutor {
                     image), Duration.ofSeconds(30)).trim();
             if (agentContainerId.isBlank()) throw new IOException("Docker 未返回 Agent 容器 ID");
             proxyContainerId = command(List.of("docker", "create", "--rm", "--network", proxyNetwork,
-                    "--publish", "127.0.0.1::8000", "--cpus", "0.25", "--memory", "128m",
+                    "--publish", properties.proxyBindAddressOrDefault() + "::8000", "--cpus", "0.25", "--memory", "128m",
                     "--memory-swap", "128m", "--ulimit", "nofile=1024:1024", "--pids-limit", "32",
                     "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
                     "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--env", "TARGET_HOST=agent",
@@ -101,7 +101,7 @@ public class DockerSandboxExecutor {
             String port = command(List.of("docker", "port", proxyContainerId, "8000/tcp"), Duration.ofSeconds(10)).trim();
             int colon = port.lastIndexOf(':');
             if (colon < 0) throw new IOException("无法读取 Docker Agent 映射端口");
-            String endpoint = "http://127.0.0.1:" + port.substring(colon + 1).trim();
+            String endpoint = "http://" + properties.endpointHostOrDefault() + ":" + port.substring(colon + 1).trim();
             waitForPort(endpoint, Duration.ofSeconds(10));
             waitForAgentReady(endpoint, Duration.ofSeconds(15));
             return new Sandbox(agentContainerId, proxyContainerId, agentNetwork, proxyNetwork, endpoint);
@@ -239,7 +239,7 @@ public class DockerSandboxExecutor {
         long deadline = System.nanoTime() + timeout.toNanos();
         while (System.nanoTime() < deadline) {
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress("127.0.0.1", port), 250);
+                socket.connect(new InetSocketAddress(uri.getHost(), port), 250);
                 return;
             } catch (IOException exception) {
                 Thread.sleep(100);
