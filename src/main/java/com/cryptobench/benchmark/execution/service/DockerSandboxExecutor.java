@@ -171,6 +171,12 @@ public class DockerSandboxExecutor {
                 network);
         try {
             command(advanced, Duration.ofSeconds(20));
+            String options = command(List.of("docker", "network", "inspect", "--format", "{{json .Options}}", network),
+                    Duration.ofSeconds(10)).trim();
+            if (!options.contains("com.docker.network.bridge.gateway_mode_ipv4\":\"routed")
+                    || !options.contains("com.docker.network.bridge.enable_ip_masquerade\":\"false")) {
+                throw new IOException("Docker 未保留代理网络选项");
+            }
         } catch (IOException unsupported) {
             removeNetwork(network);
             command(List.of("docker", "network", "create", "--driver", "bridge",
