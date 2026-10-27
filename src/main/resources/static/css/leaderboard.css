@@ -14,7 +14,11 @@
 .rank-legend-point{display:inline-block;width:8px;height:8px;border-radius:50%;background:#86868b}
 .rank-chart-stage{position:relative;width:100%;height:420px;margin-top:16px;isolation:isolate}
 .rank-chart-stage canvas{display:block;width:100%;height:100%}
+.rank-chart-points,.rank-chart-labels{position:absolute;inset:0;pointer-events:none}
+.rank-chart-points{z-index:2}
+.rank-chart-labels{overflow:hidden}
 .rank-chart-point{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:transparent;z-index:2;outline-offset:1px;padding:0;touch-action:manipulation}
+.rank-chart-point{pointer-events:auto}
 .rank-chart-point:hover,.rank-chart-point.is-active{box-shadow:0 0 0 1px #11111166;background:#1111110a}
 .rank-chart-point:focus-visible{outline:2px solid var(--blue)}
 .rank-chart-label{position:absolute;max-width:190px;pointer-events:none;line-height:1.4;color:#6e6e73;padding:5px 8px;background:#ffffffeb;border-radius:6px}

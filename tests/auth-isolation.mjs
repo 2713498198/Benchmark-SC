@@ -67,9 +67,10 @@ const databaseFile=await anonymous.request('/data/runtime/db.json');
 assert.ok(databaseFile.response.status>=400,'runtime database must not be exposed as a static asset');
 
 await a.json(`/api/reports/${encodeURIComponent(report.id)}/sync`,{method:'POST'});
-await a.json(`/api/reports/${encodeURIComponent(report.id)}/publish`,{method:'POST'});
-const publicReport=await anonymous.json(`/api/reports/${encodeURIComponent(report.id)}`);
-assert.equal(publicReport.id,report.id,'published reports must be publicly readable');
+const publishUnverified=await a.request(`/api/reports/${encodeURIComponent(report.id)}/publish`,{method:'POST'});
+assert.equal(publishUnverified.response.status,400,'unverified client reports must not be published');
+const privateReport=await anonymous.request(`/api/reports/${encodeURIComponent(report.id)}`);
+assert.equal(privateReport.response.status,401,'unverified reports must remain private');
 
 await a.json('/api/auth/logout',{method:'POST'});
 const afterLogout=await a.request('/api/connections');

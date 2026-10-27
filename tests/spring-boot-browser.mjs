@@ -52,6 +52,9 @@ try{
 
   await go('/evaluate?dataset=mini-spn&version=1.0.0&new=1');
   await page.locator('[data-check-connection]').click();
+  // Connection checks call the Agent asynchronously. Wait for the UI state
+  // before advancing, otherwise a fast sequence of clicks races the request.
+  await page.locator('#connection-status').filter({hasText:'已连接'}).waitFor();
   const runCreated=page.waitForResponse(response=>response.url().endsWith('/api/runs')&&response.request().method()==='POST');
   for(let step=0;step<3;step++)await page.locator('[data-eval-next]').click();
   assert.equal((await runCreated).status(),202);
