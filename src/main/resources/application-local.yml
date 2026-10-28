@@ -8,6 +8,10 @@ spring:
 benchmark:
   # 研究者和管理员体验入口仅供本地使用。
   demo-enabled: true
+  password-reset:
+    # 本地没有邮件服务时，将重置邮件写入项目数据目录，便于联调。
+    # 需要真实邮件投递时可通过 PASSWORD_RESET_OUTBOX 覆盖，或配置 PASSWORD_RESET_DELIVERY_URL。
+    outbox: ${PASSWORD_RESET_OUTBOX:./var/data/password-reset.outbox.jsonl}
   docker:
     enabled: ${CRYPTOBENCH_DOCKER_ENABLED:true}
     proxy-image: ${CRYPTOBENCH_DOCKER_PROXY_IMAGE:cryptobench-agent-proxy:local}
