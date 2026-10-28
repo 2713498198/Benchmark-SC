@@ -16,6 +16,11 @@
 
 运行安装器时会显示安装目录选择页。安装器默认使用当前 Windows 用户范围安装，
 不需要管理员权限；可在该页面改为其他有写入权限的本地目录。
+安装器还会创建开始菜单和桌面快捷方式；便携 ZIP 不创建快捷方式，也不写入卸载注册表。
+
+Release 资产包括安装器、便携 ZIP、`SHA256SUMS.csv`、`release-manifest.json` 和
+[`docs/INSTALL-WINDOWS.md`](../docs/INSTALL-WINDOWS.md)。升级时请继续使用原安装目录，
+以保留该目录下的本地数据库和报告。
 
 构建后可运行桌面包健康检查：
 

@@ -32,6 +32,11 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Verify source before packaging
+        shell: pwsh
+        run: |
+          npm run check
+          mvn --batch-mode verify
       - name: Prepare WiX
         shell: pwsh
         run: |
@@ -53,11 +58,16 @@ jobs:
           .\scripts\package-windows.ps1 -Installer -AppVersion $version -AllowExternalOutput -OutputDir $root
           .\scripts\package-windows.ps1 -AppVersion $version -AllowExternalOutput -OutputDir $portable
           Compress-Archive -Path (Join-Path $portable 'CryptoBench') -DestinationPath (Join-Path $root "CryptoBench-$tag-portable.zip") -Force
-      - name: Create checksums
+          Copy-Item (Join-Path $env:GITHUB_WORKSPACE 'docs\INSTALL-WINDOWS.md') (Join-Path $root 'INSTALL-WINDOWS.md')
+          .\scripts\create-release-manifest.ps1 -ReleaseDir $root -Version $version -Tag $tag -Commit $env:GITHUB_SHA
+      - name: Verify release assets
         shell: pwsh
         run: |
           $root = Join-Path $env:RUNNER_TEMP 'cryptobench-release'
-          Get-ChildItem $root -Recurse -File | Get-FileHash -Algorithm SHA256 | ConvertTo-Csv -NoTypeInformation | Set-Content (Join-Path $root 'SHA256SUMS.csv')
+          $version = $env:RELEASE_TAG.Substring(1)
+          foreach ($file in @("CryptoBench-$version.exe", "CryptoBench-$($env:RELEASE_TAG)-portable.zip", 'SHA256SUMS.csv', 'release-manifest.json', 'INSTALL-WINDOWS.md')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $root $file))) { throw "Missing release asset: $file" }
+          }
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -67,3 +77,5 @@ jobs:
             ${{ runner.temp }}/cryptobench-release/**/*.exe
             ${{ runner.temp }}/cryptobench-release/**/*.zip
             ${{ runner.temp }}/cryptobench-release/SHA256SUMS.csv
+            ${{ runner.temp }}/cryptobench-release/release-manifest.json
+            ${{ runner.temp }}/cryptobench-release/INSTALL-WINDOWS.md

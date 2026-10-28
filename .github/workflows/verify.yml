@@ -143,4 +143,5 @@ jobs:
           .\tests\windows-installer.ps1 `
             -InitialInstaller "$env:RUNNER_TEMP\cryptobench-installer\CryptoBench-1.0.0.exe" `
             -UpgradeInstaller "$env:RUNNER_TEMP\cryptobench-installer-upgrade\CryptoBench-1.0.1.exe" `
+            -InstallRoot "$env:RUNNER_TEMP\cryptobench-custom-install" `
             -LogDirectory "$env:RUNNER_TEMP\cryptobench-installer-logs"

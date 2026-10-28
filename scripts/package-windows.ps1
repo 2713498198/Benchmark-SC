@@ -68,7 +68,10 @@ if ($Installer) {
 $installerArguments = if ($Installer) {
     # Show the Windows install-directory page so users can choose where the
     # per-user application is installed instead of accepting the default.
-    @('--win-per-user-install', '--win-dir-chooser', '--win-upgrade-uuid', 'f7b2f3a6-9f8a-4e2d-8e0a-4a89b9d6c2f1')
+    # Create both Start-menu and desktop launchers so an installed user can
+    # start the local web application without opening a terminal.
+    @('--win-per-user-install', '--win-dir-chooser', '--win-menu', '--win-menu-group', 'CryptoBench',
+      '--win-shortcut', '--win-upgrade-uuid', 'f7b2f3a6-9f8a-4e2d-8e0a-4a89b9d6c2f1')
 } else {
     @()
 }
