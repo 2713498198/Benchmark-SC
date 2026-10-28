@@ -66,7 +66,9 @@ if ($Installer) {
 }
 
 $installerArguments = if ($Installer) {
-    @('--win-per-user-install', '--win-upgrade-uuid', 'f7b2f3a6-9f8a-4e2d-8e0a-4a89b9d6c2f1')
+    # Show the Windows install-directory page so users can choose where the
+    # per-user application is installed instead of accepting the default.
+    @('--win-per-user-install', '--win-dir-chooser', '--win-upgrade-uuid', 'f7b2f3a6-9f8a-4e2d-8e0a-4a89b9d6c2f1')
 } else {
     @()
 }

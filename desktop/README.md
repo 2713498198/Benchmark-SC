@@ -14,6 +14,9 @@
 .\scripts\package-windows.ps1 -Installer
 ```
 
+运行安装器时会显示安装目录选择页。安装器默认使用当前 Windows 用户范围安装，
+不需要管理员权限；可在该页面改为其他有写入权限的本地目录。
+
 构建后可运行桌面包健康检查：
 
 ```powershell
