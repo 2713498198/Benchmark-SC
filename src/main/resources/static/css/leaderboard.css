@@ -284,3 +284,39 @@
  .rank-chart-zoom{font-size:12px;min-height:44px}
  .rank-chart-foot{padding-left:0;padding-right:0}
 }
+
+/* Ranking surfaces: calm research UI with blue evidence accents. */
+.leaderboard-page .page-header h1{font-family:var(--display);font-weight:700;letter-spacing:0}
+.leaderboard-page .rank-context{padding-bottom:24px}
+.rank-context-main strong{color:var(--ink)}
+.rank-type select,.rank-filter select{border-color:#dfe7f0;background:#f3f7fc;color:var(--ink)}
+.rank-type select:focus,.rank-filter select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,124,246,.12);outline:0}
+.rank-summary{padding:28px 0 24px}
+.rank-summary strong{font-family:var(--display);font-weight:700;color:var(--ink)}
+.rank-summary>div:first-child strong{color:var(--blue)}
+.rank-viewbar{border-bottom-color:#dfe7f0}
+.rank-tabs button[aria-selected="true"]{color:var(--blue);border-bottom-color:var(--blue)}
+.rank-toolbar .input,.rank-search input,.rank-toolbar .btn{border-color:#dfe7f0;background:#f3f7fc}
+.rank-toolbar .input:focus,.rank-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,124,246,.12);outline:0}
+.leaderboard-page .leaderboard-table th{background:#f4f7fb;color:#52627a;border-bottom-color:#dfe7f0}
+.leaderboard-page .leaderboard-table td{border-bottom-color:#e5eaf1}
+.leaderboard-page .leaderboard-table tbody tr:hover{background:#f7faff}
+.leaderboard-page .leaderboard-table .rank-number.top{color:var(--blue)}
+.leaderboard-page .leaderboard-table .score{color:var(--blue);font-family:var(--display)}
+.rank-name:hover,.rank-evidence-data summary{color:var(--blue)}
+.leaderboard-page [data-rank-record]:focus{outline-color:var(--blue);background:#eef5ff}
+.leaderboard-page .leaderboard-details>td{background:#eef5ff}
+.rank-evidence-heading h3{font-family:var(--display);letter-spacing:0}
+.rank-evidence-data .code-block{background:#f7f9fc}
+.compare-bar{background:#102a50;box-shadow:0 16px 34px rgba(16,42,80,.2)}
+.rank-chart{background:#fff;border:1px solid #dfe7f0;border-radius:16px;padding:30px 28px 22px;box-shadow:0 10px 28px rgba(25,58,104,.05)}
+.rank-chart-heading h2{font-family:var(--display);letter-spacing:0}
+.rank-chart-point:hover,.rank-chart-point.is-active{box-shadow:0 0 0 2px rgba(47,124,246,.35);background:rgba(47,124,246,.08)}
+.rank-chart-point:focus-visible{outline-color:var(--blue)}
+.rank-chart-label.is-frontier{color:var(--blue)}
+.rank-chart-tooltip{border-color:#cbdcf1;box-shadow:0 16px 36px rgba(25,58,104,.14)}
+.rank-tooltip-status{color:var(--blue)}
+.rank-chart-foot{border-top:1px solid #e5eaf1;padding-top:16px;margin-top:10px}
+.rank-chart-foot summary{color:var(--blue)}
+.rank-chart-empty{background:#f7faff;border:1px dashed #cbdcf1;border-radius:12px}
+@media(max-width:640px){.rank-chart{padding:22px 16px 16px;border-radius:14px}.leaderboard-page .rank-summary{padding:16px 0 12px}.compare-bar{border-radius:14px}}
