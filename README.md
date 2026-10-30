@@ -6,23 +6,30 @@
 
 ## 快速启动
 
-环境要求：JDK 21、Maven 3.6.3 或以上。启动脚本依次从系统 `PATH`、`MAVEN_HOME`、`M2_HOME`、项目 `.tools/apache-maven-*`、`D:\develop\apache-maven-*` 和 VS Code 的 Oracle Java 扩展中查找 Maven，不再依赖固定版本的安装路径；仍兼容 `D:\develop\jdk`。Maven 依赖缓存保存在项目的 `.mvn/repository/` 中。
+根据使用方式选择入口，无需修改个人电脑路径：
+
+| 使用方式 | 启动入口 | 需要准备 |
+| --- | --- | --- |
+| Windows 直接使用 | 下载本仓库 GitHub Releases 的 EXE 或便携 ZIP | 安装包内置 Java，无需 Maven、Node.js；见 [安装说明](docs/INSTALL-WINDOWS.md) |
+| 拉取源码运行网站 | `docker compose up -d --build` | Docker + Compose v2，无需本机 Java 或预先构建 JAR |
+| 修改源码或 IDE 调试 | Windows `start.cmd`；macOS/Linux `bash start.sh` | 脚本检查 JDK 21，缺少时自动下载并校验；Maven Wrapper 固定 Maven 3.9.11 |
 
 在项目根目录双击 `start.cmd`，或运行：
 
 ```powershell
-cd D:\develop\Benchmark
-mvn spring-boot:run
+.\start.cmd
 ```
 
-浏览器访问 http://127.0.0.1:4173 。首次运行需要联网下载 Maven 依赖。本地默认使用 H2 文件数据库，启动时自动创建表，无需额外安装数据库；数据保存在 `var/data/cryptobench.mv.db`，重启后保留。
+macOS/Linux 在项目根目录执行 `bash start.sh`。首次源码启动需要联网下载缺少的 JDK、Maven 和依赖；Linux/macOS 需要 Bash、curl、tar、unzip 和 SHA-256 工具。工具缓存位于 `.tools/`，依赖缓存在 `.mvn/repository/`，不会更改系统 Java。完整环境、代理、离线准备与排错说明见 [跨机器启动指南](docs/SETUP.md)。
+
+浏览器访问 http://127.0.0.1:4173 。本地默认使用 H2 文件数据库，启动时自动创建表，无需额外安装数据库；数据保存在 `var/data/cryptobench.mv.db`，重启后保留。普通 Compose 仅启动网站，需要 Docker Agent 测评时使用 [sandbox 配置](docker/README.md)。
 
 前端 Vue 运行时已随项目放在 `src/main/resources/static/vendor/vue/`，启动网站不需要 Node.js 或 npm。
 
 ## 在 IntelliJ IDEA 中运行
 
 1. 使用 IDEA 打开项目根目录的 `pom.xml`，选择作为 Maven 项目加载；已有项目可在 Maven 面板点击“添加 Maven 项目”并选择该文件。
-2. 在 Project Structure 中将 Project SDK 与语言级别设置为 Java 21；Maven 的 Runner JRE 也选用该 JDK。
+2. 先执行 `start.cmd -PrepareOnly`（macOS/Linux：`bash start.sh --prepare-only`），按输出的 `JAVA_HOME` 在 Project Structure 中设置 Java 21；Maven Runner JRE 选同一 JDK，Maven 使用项目 Wrapper。
 3. 等待 Maven 同步完成，运行 `src/main/java/com/cryptobench/benchmark/CryptoBenchApplication.java` 的 `main` 方法。项目也提供了共享运行配置 `CryptoBench`。
 4. 工作目录使用项目根目录。可在 Run Configuration 的 Environment variables 中设置 `PORT`、`SPRING_PROFILES_ACTIVE` 等参数。
 
@@ -30,20 +37,19 @@ mvn spring-boot:run
 
 ## 在 VS Code 中运行
 
-安装 `Language Support for Java(TM) by Red Hat`（`redhat.java`）和 `Debugger for Java`（`vscjava.vscode-java-debug`），并在本工作区禁用 Oracle Java 扩展，避免两个 Java 语言服务同时处理项目。项目提供配套的 `.vscode/launch.json`，在“运行和调试”中选择 `CryptoBench (Spring Boot)`，按 F5 调试或 Ctrl+F5 运行。当前工作区和项目目录分别提供配置，支持打开 `Benchmark-SC2` 或其下的 `Benchmark-SC`。
+安装 `Language Support for Java(TM) by Red Hat`（`redhat.java`）和 `Debugger for Java`（`vscjava.vscode-java-debug`），避免同时启用多个 Java 语言服务。打开项目根目录，在“运行和调试”中选择共享配置 `CryptoBench (Spring Boot)`，按 F5 调试或 Ctrl+F5 运行。
 
-本机项目运行环境使用 `.tools/jdk-21`，该目录由现有 JDK 21 的全部模块生成，不提交 Git；语言服务通过 `java.jdt.ls.java.home` 显式使用 Red Hat 扩展 Windows 平台版本自带的 Java 25，项目编译和运行仍使用 `java.configuration.runtimes` 中的 Java 21。若提示“Java 25 or more recent is required”，检查 `java.jdt.ls.java.home` 是否指向可用的 Java 25 或更新版本，并执行 `Developer: Reload Window`；扩展升级后如自带运行时路径改变，也需更新该设置。Maven 依赖通过 `.mvn/vscode-settings.xml` 复用现有 `.mvn/repository` 缓存。若移动到其他机器，请更新上述 Java 路径，以及该 Maven 设置文件中的 `localRepository` 绝对路径。
+先运行上述准备工具命令，将输出的 JDK 路径配置到 VS Code **用户设置**的 `java.configuration.runtimes`，不要把个人路径提交到工作区。Java 语言服务优先使用扩展自带的运行时；它可能需要比 Java 21 更新的版本，项目编译和运行仍使用 JDK 21。IDE 的 Maven 缓存可以使用默认位置，无需复制个人缓存路径。
 
-本机 Oracle Java 27.0.0 曾出现 Maven 模块加载异常，导致 `Cannot find run action!`，并将 Spring Boot 导入误报为“程序包不存在”；命令行 Maven 编译仍可成功。切换扩展后执行 `Developer: Reload Window`，等待 Maven 项目导入完成再运行。若仍显示旧诊断，执行 `Java: Clean Java Language Server Workspace` 并重启语言服务。
+切换 JDK 或扩展后执行 `Developer: Reload Window`，等待 Maven 项目导入完成。若仍显示旧诊断，执行 `Java: Clean Java Language Server Workspace`。启动脚本设置的环境仅对启动进程生效，不会自动重配已经打开的 IDE。
 
 ## 打包部署
 
 ```powershell
-mvn clean verify
-java -jar target/cryptobench-1.0.0-SNAPSHOT.jar
+.\start.cmd clean verify
 ```
 
-可执行 JAR 包含前端、公开题库和后端。启动工作目录决定本地数据库相对路径，请固定工作目录；关闭程序后再备份 H2 数据文件。健康检查地址为 `/actuator/health`。
+生成的 `target/cryptobench-1.0.0-SNAPSHOT.jar` 包含前端、公开题库和后端。推荐通过上述 Docker 入口部署；如果直接执行 `java -jar target/cryptobench-1.0.0-SNAPSHOT.jar`，运行该命令的终端必须已配置 Java 21，构建脚本不会修改父终端环境。启动工作目录决定本地数据库相对路径，请固定工作目录；关闭程序后再备份 H2 数据文件。健康检查地址为 `/actuator/health`。
 
 ## MySQL 配置
 
@@ -149,8 +155,8 @@ target/                                 编译和打包产物，不提交 Git
 
 ```powershell
 $env:LEGACY_IMPORT_ENABLED = 'true'
-$env:CRYPTOBENCH_DB_FILE = 'D:/develop/Benchmark/data/runtime/db.json'
-mvn spring-boot:run
+$env:CRYPTOBENCH_DB_FILE = '<old-project>/data/runtime/db.json'
+.\start.cmd
 ```
 
 导入用户、连接、报告和已发布测评集，保留旧版 scrypt 密码兼容；原文件不修改，旧会话不导入，用户重新登录。目标数据库已有用户时拒绝导入。完成后必须移除 `LEGACY_IMPORT_ENABLED` 或将其设为 `false`，再正常启动。请先备份源文件；H2 切换 MySQL 不会自动迁移已有数据。
@@ -166,7 +172,7 @@ npm run check
 node tests/leaderboard-model.mjs
 node tests/leaderboard-chart-model.mjs
 python -B -X utf8 tests/verify-import.py
-mvn verify
+.\start.cmd verify
 ```
 
 浏览器验收需要 npm 安装的 Playwright 与本机 Chrome。先启动一个隔离的测试服务，设置 `TEST_URL`，再依次运行：

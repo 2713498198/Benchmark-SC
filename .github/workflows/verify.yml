@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '21.0.13+9'
           cache: maven
 
       - name: Set up Node.js 22
@@ -53,7 +53,10 @@ jobs:
         run: npm run test:v4-materials
 
       - name: Run backend tests and package
-        run: mvn --batch-mode verify
+        run: bash start.sh --batch-mode verify
+
+      - name: Verify source launcher
+        run: node tests/source-start.mjs
 
       - name: Verify Docker engine
         run: |
@@ -77,9 +80,6 @@ jobs:
       - name: Run platform Docker execution E2E
         run: npm run test:docker:e2e
 
-      - name: Run Docker Compose deployment smoke test
-        run: npm run test:compose
-
   windows-package:
     runs-on: windows-latest
     timeout-minutes: 20
@@ -91,7 +91,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '21.0.13+9'
           cache: maven
 
       - name: Build Windows app image

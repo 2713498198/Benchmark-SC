@@ -28,4 +28,4 @@ Release 资产包括安装器、便携 ZIP、`SHA256SUMS.csv`、`release-manifes
 npm run test:desktop
 ```
 
-脚本会先执行 Maven 打包，并要求 JDK 21 自带的 `jpackage`。当前仓库不提交生成的桌面产物；发布前需在 Windows 机器上运行脚本并做启动、升级和卸载验证。
+脚本会复用源码启动器准备 JDK 21，通过项目 Maven Wrapper 打包，再使用 JDK 自带的 `jpackage`。生成的安装器和便携包包含 Java，最终用户无需安装 JDK、Maven 或 Node.js。当前仓库不提交生成产物；发布前需在 Windows 机器上做启动、升级和卸载验证。下载、代理和手动安装说明见 [启动指南](../docs/SETUP.md)。

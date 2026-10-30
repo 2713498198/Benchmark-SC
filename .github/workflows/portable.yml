@@ -1,0 +1,50 @@
+name: Portable startup
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test missing and incorrect Java, download verification and portable paths
+        run: node tests/bootstrap.mjs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: bootstrap-diagnostics-${{ matrix.os }}
+          path: tmp/**/*.log
+          if-no-files-found: ignore
+
+  compose-from-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DOCKER_PROXY_NETWORK_MODE: compatibility
+      CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE: compatibility
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify clean checkout has no prebuilt JAR or local tools
+        run: test ! -e target && test ! -e .tools
+      - name: Build Compose directly from source and verify persistent data
+        run: node tests/compose-smoke.mjs
+      - name: Build sandbox directly from source and run Agent evaluation
+        run: node tests/compose-sandbox-smoke.mjs

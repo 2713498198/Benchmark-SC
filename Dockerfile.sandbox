@@ -1,8 +1,19 @@
+FROM eclipse-temurin:21.0.13_9-jdk-jammy AS build
+RUN apt-get update && apt-get install -y --no-install-recommends unzip && rm -rf /var/lib/apt/lists/*
+WORKDIR /workspace
+ENV MAVEN_USER_HOME=/root/.m2
+COPY .mvn/maven.config .mvn/maven.config
+COPY .mvn/wrapper/maven-wrapper.properties .mvn/wrapper/maven-wrapper.properties
+COPY mvnw pom.xml ./
+COPY src ./src
+RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/workspace/.mvn/repository \
+    sh ./mvnw --batch-mode -DskipTests package
+
 # The regular image intentionally has no Docker client or socket access.
 # This opt-in image is used only by compose.sandbox.yaml, where the site is
 # deployed together with the local Docker Agent execution path.
 FROM docker:27-cli AS docker-cli
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21.0.13_9-jre-jammy
 WORKDIR /app
 
 RUN apt-get update \
@@ -10,7 +21,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
-COPY target/cryptobench-1.0.0-SNAPSHOT.jar /app/cryptobench.jar
+COPY --from=build /workspace/target/cryptobench-1.0.0-SNAPSHOT.jar /app/cryptobench.jar
 ENV SERVER_ADDRESS=0.0.0.0
 ENV PORT=4173
 EXPOSE 4173

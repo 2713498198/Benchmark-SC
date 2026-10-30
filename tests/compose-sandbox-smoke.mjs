@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {spawn} from 'node:child_process';
+import {mkdtemp, mkdir} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {availablePort} from './portable-test-utils.mjs';
 
 const root = process.cwd();
 const suffix = randomUUID().slice(0, 8);
 const project = `cryptobench-sandbox-${suffix}`;
-const base = 'http://127.0.0.1:4173';
+await mkdir('tmp', {recursive: true});
+const dataDir = resolve(await mkdtemp('tmp/compose-sandbox-data-'));
+const port = await availablePort();
+const base = `http://127.0.0.1:${port}`;
 const image = 'cryptobench-mock-agent:compose';
 const proxyImage = 'cryptobench-agent-proxy:compose';
 const compose = ['compose', '-p', project, '-f', 'compose.yaml', '-f', 'compose.sandbox.yaml', '--profile', 'sandbox'];
@@ -15,7 +21,7 @@ let started = false;
 
 function command(args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(args[0], args.slice(1), {cwd: root, env: process.env, stdio: ['ignore', 'pipe', 'pipe']});
+    const child = spawn(args[0], args.slice(1), {cwd: root, env: {...process.env, HOST_PORT: String(port), CRYPTOBENCH_DATA_DIR: dataDir}, stdio: ['ignore', 'pipe', 'pipe']});
     let stdout = '', stderr = '';
     child.stdout.on('data', chunk => stdout += chunk);
     child.stderr.on('data', chunk => stderr += chunk);
@@ -88,8 +94,8 @@ async function cleanupRunResources() {
 }
 
 try {
-  await command(['docker', ...compose, 'up', '-d', '--build']);
   started = true;
+  await command(['docker', ...compose, 'up', '-d', '--build']);
   await waitFor(`${base}/actuator/health`);
 
   const dockerInfo = await command(['docker', ...compose, 'exec', '-T', 'cryptobench', 'docker', 'info', '--format', '{{.ServerVersion}}']);

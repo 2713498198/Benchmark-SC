@@ -4,14 +4,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "4173:4173"
+      - "${HOST_PORT:-4173}:4173"
     environment:
       SPRING_PROFILES_ACTIVE: local
       SERVER_ADDRESS: 0.0.0.0
       PORT: 4173
       CRYPTOBENCH_DOCKER_ENABLED: "false"
     volumes:
-      - ./var:/app/var
+      - ${CRYPTOBENCH_DATA_DIR:-./var}:/app/var
     healthcheck:
       test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:4173/actuator/health"]
       interval: 10s

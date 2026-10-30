@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '21.0.13+9'
           cache: maven
       - uses: actions/setup-node@v4
         with:
@@ -36,7 +36,9 @@ jobs:
         shell: pwsh
         run: |
           npm run check
-          mvn --batch-mode verify
+          if ($LASTEXITCODE -ne 0) { throw "Frontend verification failed" }
+          .\start.cmd --batch-mode verify
+          if ($LASTEXITCODE -ne 0) { throw "Backend verification failed" }
       - name: Prepare WiX
         shell: pwsh
         run: |

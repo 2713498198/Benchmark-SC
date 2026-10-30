@@ -1,0 +1,10 @@
+# Only source and the pinned build configuration enter the image context.
+**
+!pom.xml
+!mvnw
+!.mvn/
+!.mvn/maven.config
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+!src/
+!src/**

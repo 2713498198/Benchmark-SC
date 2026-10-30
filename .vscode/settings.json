@@ -1,15 +1,5 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
-    "jdk.jdkhome": "D:/develop/jdk",
-    "jdk.project.jdkhome": "D:/develop/jdk",
-    "java.jdt.ls.java.home": "D:/develop/jdk",
-    "java.configuration.maven.userSettings": "${workspaceFolder}/.mvn/vscode-settings.xml",
-    "java.configuration.runtimes": [
-        {
-            "name": "JavaSE-21",
-            "path": "D:/develop/jdk",
-            "default": true
-        }
-    ],
-    "jdk.runConfig.cwd": "${workspaceFolder}"
+    "jdk.runConfig.cwd": "${workspaceFolder}",
+    "java.compile.nullAnalysis.mode": "automatic"
 }
