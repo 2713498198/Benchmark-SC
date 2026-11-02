@@ -17,7 +17,10 @@ if (process.env.GITHUB_ACTIONS === 'true') {
 
 const windows = process.platform === 'win32';
 await mkdir('tmp', {recursive: true});
-const root = path.resolve(await mkdtemp('tmp/bootstrap space 中文-'));
+const root = path.resolve(await mkdtemp('tmp/bootstrap space 中文-📦-'));
+// Isolate Windows' automatic per-user cache fallback; never use the real user cache.
+const localCache = windows ? path.resolve(await mkdtemp('tmp/bootstrap-cache-')) : null;
+const toolsRoot = windows ? path.join(localCache, 'CryptoBench', 'tools') : path.join(root, '.tools');
 for (const file of ['start.cmd', 'start.sh', 'mvnw', 'mvnw.cmd', 'scripts/java-env.ps1', 'scripts/java-env.sh',
   'scripts/run.ps1', 'scripts/local-mail.ps1', 'scripts/jdk-distributions.tsv', '.mvn/wrapper/maven-wrapper.properties', '.mvn/maven.config']) {
   await mkdir(path.dirname(path.join(root, file)), {recursive: true});
@@ -26,7 +29,9 @@ for (const file of ['start.cmd', 'start.sh', 'mvnw', 'mvnw.cmd', 'scripts/java-e
 let commandNumber = 0;
 function run(command, args, env = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {cwd: root, windowsHide: true, env: {...process.env, ...env}, stdio: ['ignore', 'pipe', 'pipe']});
+    const child = spawn(command, args, {cwd: root, windowsHide: true,
+      env: {...process.env, ...(windows ? {LOCALAPPDATA: localCache, CRYPTOBENCH_TOOLS_DIR: ''} : {}), ...env},
+      stdio: ['ignore', 'pipe', 'pipe']});
     let output = '';
     child.stdout.on('data', chunk => { output += chunk; });
     child.stderr.on('data', chunk => { output += chunk; });
@@ -104,7 +109,7 @@ try {
   const corrupt = await probe({HTTPS_PROXY: '', https_proxy: '', HTTP_PROXY: '', http_proxy: '', ALL_PROXY: '', all_proxy: ''});
   assert.notEqual(corrupt.code, 0);
   assert.match(corrupt.output, /SHA-256 verification failed/);
-  assert.deepEqual((await readdir(path.join(root, '.tools'))).filter(name => name.startsWith('.jdk-download-')), []);
+  assert.deepEqual((await readdir(toolsRoot)).filter(name => name.startsWith('.jdk-download-')), []);
 } finally {
   await new Promise(resolve => server.close(resolve));
   await writeFile(manifestPath, manifest);
@@ -131,17 +136,25 @@ assert.notEqual(invalidOptions.code, 0, invalidOptions.output);
 console.log('PASS harmless JVM stderr is accepted and invalid JVM options are rejected');
 
 // A user-supplied valid JDK must work without a project JDK cache or download.
-const cachedName = (await readdir(path.join(root, '.tools'))).find(name => name.startsWith('temurin-'));
-const javaHome = path.join(root, '.tools', cachedName, ...(process.platform === 'darwin' ? ['Contents', 'Home'] : []));
+const cachedName = (await readdir(toolsRoot)).find(name => name.startsWith('temurin-'));
+const javaHome = path.join(toolsRoot, cachedName, ...(process.platform === 'darwin' ? ['Contents', 'Home'] : []));
 await mkdir(path.join(root, 'existing only/scripts'), {recursive: true});
 await cp(manifestPath, path.join(root, 'existing only/scripts/jdk-distributions.tsv'));
 const existingArgs = windows
   ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', '. ./scripts/java-env.ps1; Initialize-CryptoBenchJava (Join-Path $PWD "existing only")']
   : ['-c', 'set -euo pipefail; source ./scripts/java-env.sh; initialize_cryptobench_java "$PWD/existing only"'];
-const existing = await run(command, existingArgs, {JAVA_HOME: javaHome, CRYPTOBENCH_NO_JDK_DOWNLOAD: '1'});
+const existing = await run(command, existingArgs, {JAVA_HOME: javaHome, CRYPTOBENCH_NO_JDK_DOWNLOAD: '1',
+  ...(windows ? {CRYPTOBENCH_TOOLS_DIR: path.join(localCache, 'existing-only-tools')} : {})});
 assert.equal(existing.code, 0, existing.output);
 assert.doesNotMatch(existing.output, /Downloading Temurin/);
 assert.equal((await readdir(path.join(root, 'existing only'))).includes('.tools'), false);
+if (windows) {
+  assert.equal((await readdir(root)).includes('.tools'), false, 'Unicode project uses the isolated ASCII tool cache');
+  assert.equal((await readdir(localCache)).includes('existing-only-tools'), false, 'Explicit JAVA_HOME needs no JDK download');
+  const unsupported = await probe({CRYPTOBENCH_TOOLS_DIR: path.join(root, 'unsupported-tools'), CRYPTOBENCH_NO_JDK_DOWNLOAD: '1'});
+  assert.notEqual(unsupported.code, 0);
+  assert.match(unsupported.output, /ASCII-only path/);
+}
 
 // Exercise the user-facing entry point from a non-ASCII, space-containing path.
 const launcherArgs = windows
