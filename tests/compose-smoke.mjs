@@ -5,8 +5,8 @@ import {apiClient, assertDemoPolicy, composeTest} from './compose-test-utils.mjs
 
 const test = await composeTest();
 const researcher = apiClient(test.base), admin = apiClient(test.base);
-const email = `${test.project}@example.com`, password = 'compose-persistence-password';
-const adminEmail = `${test.project}-admin@example.com`, adminPassword = 'compose-admin-test-password';
+const email = `${test.project}@example.com`, password = 'compose-user-password';
+const adminEmail = `${test.project}-admin@example.com`, adminPassword = 'compose-admin-password';
 let started = false;
 try {
   await test.docker(['info', '--format', '{{.ServerVersion}}']);

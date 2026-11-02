@@ -495,6 +495,7 @@ public class RunService {
                 if (run.config().has("gateway")) gatewayPolicy(run.config());
                 sandbox = docker.start(optionalText(run.config(), "image"), id);
                 endpoint = sandbox.endpoint();
+                log(id, "INFO", "Docker Agent 容器已启动");
                 if (run.config().has("gateway")) gateway = gateways.openRun(id, sandbox,
                         run.config().path("gateway").path("providerId").asText(), credentials.getOrDefault(id, Map.of()).get("gateway"));
             }

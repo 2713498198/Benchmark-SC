@@ -10,7 +10,7 @@ const windows = process.platform === 'win32';
 await mkdir('tmp', {recursive: true});
 const root = path.resolve(await mkdtemp('tmp/bootstrap space 中文-'));
 for (const file of ['start.cmd', 'start.sh', 'mvnw', 'mvnw.cmd', 'scripts/java-env.ps1', 'scripts/java-env.sh',
-  'scripts/run.ps1', 'scripts/jdk-distributions.tsv', '.mvn/wrapper/maven-wrapper.properties', '.mvn/maven.config']) {
+  'scripts/run.ps1', 'scripts/local-mail.ps1', 'scripts/jdk-distributions.tsv', '.mvn/wrapper/maven-wrapper.properties', '.mvn/maven.config']) {
   await mkdir(path.dirname(path.join(root, file)), {recursive: true});
   await cp(file, path.join(root, file));
 }

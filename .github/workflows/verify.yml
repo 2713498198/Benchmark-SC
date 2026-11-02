@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21.0.13+9'
+          java-version: '21.0.13'
           cache: maven
 
       - name: Set up Node.js 22
@@ -100,7 +100,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21.0.13+9'
+          java-version: '21.0.13'
           cache: maven
 
       - name: Build Windows app image
