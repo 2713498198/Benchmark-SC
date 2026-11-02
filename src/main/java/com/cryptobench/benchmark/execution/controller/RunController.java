@@ -26,8 +26,8 @@ public class RunController {
     }
 
     @PostMapping(value = "/agent/check", consumes = "application/json")
-    public ObjectNode check(@RequestBody ObjectNode input) {
-        return runs.checkAgent(input);
+    public ObjectNode check(@AuthenticationPrincipal BenchmarkUser user, @RequestBody ObjectNode input) {
+        return runs.checkAgent(user, input);
     }
 
     @GetMapping("/agent/runtime")
@@ -69,5 +69,11 @@ public class RunController {
     public ObjectNode retry(@AuthenticationPrincipal BenchmarkUser user, @PathVariable String id,
                             @RequestBody(required = false) ObjectNode input) {
         return runs.retry(user, id, input);
+    }
+
+    @PostMapping("/runs/{id}/resume")
+    public ObjectNode resume(@AuthenticationPrincipal BenchmarkUser user, @PathVariable String id,
+                             @RequestBody(required = false) ObjectNode input) {
+        return runs.resume(user, id, input);
     }
 }

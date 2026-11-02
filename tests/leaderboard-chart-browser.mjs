@@ -95,7 +95,7 @@ try{
  await page.locator('a[href="#/datasets"]').first().click();await page.waitForFunction(()=>document.querySelector('#main').dataset.route==='/datasets');check('Route change disposes chart observer',await page.evaluate(()=>window.activeChartObservers===0));
 
  const dataset=datasets.find(d=>d.id!=='mini-spn'&&d.id!=='cryptobench-sc-v4');
- const row={datasetId:dataset.id,version:dataset.version,budget:'standard',scope:'full',source:'local',agent:'A & B',model:'Model <Alpha>',total:10,passed:8,score:80,time:32,cost:null,demo:true};
+ const row={datasetId:dataset.id,version:dataset.version,budget:'standard',scope:'full',source:'local',agent:'A & B',model:'Model <Alpha>',total:10,passed:8,score:80,time:32,averageTimeSeconds:32,totalTimeSeconds:320,cost:null,demo:true};
  publicReports=[{...row,id:'chart-missing'}];await go('/leaderboard?dataset='+dataset.id+'&version='+dataset.version);
  check('Missing fee record stays in rankings',await page.locator('[data-compare]').count()===1);await view('analysis');check('All-missing cost state is honest',/暂无可绘制的费用数据/.test(await page.locator('.rank-chart-empty').innerText()));await shot('missing-cost-1440');
  await page.locator('[data-chart-metric="time"]').click();check('Missing-cost record appears in time mode',await page.locator('[data-chart-point]').count()===1);

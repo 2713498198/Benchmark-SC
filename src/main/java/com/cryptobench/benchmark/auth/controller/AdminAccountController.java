@@ -2,6 +2,7 @@ package com.cryptobench.benchmark.auth.controller;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.auth.service.AdminAccountService;
+import com.cryptobench.benchmark.mail.MailDeliveryService;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -41,6 +42,27 @@ public class AdminAccountController {
                                                         @Valid @RequestBody InviteRequest input) {
         return accounts.invite(actor, input.email(), input.name());
     }
+
+    @GetMapping("/invitations")
+    public AdminAccountService.Page<AdminAccountService.InvitationView> invitations(
+            @RequestParam(required = false) String status, @RequestParam(required = false) String deliveryStatus,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return accounts.invitations(status, deliveryStatus, page, size);
+    }
+
+    @PostMapping("/invitations/{id}/resend")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public AdminAccountService.InvitationView resend(@AuthenticationPrincipal BenchmarkUser actor, @PathVariable String id) {
+        return accounts.resendInvitation(actor, id);
+    }
+
+    @PostMapping("/invitations/{id}/revoke")
+    public AdminAccountService.InvitationView revokeInvitation(@AuthenticationPrincipal BenchmarkUser actor, @PathVariable String id) {
+        return accounts.revokeInvitation(actor, id);
+    }
+
+    @GetMapping("/mail/status")
+    public MailDeliveryService.Status mailStatus() { return accounts.mailStatus(); }
 
     @PatchMapping(value = "/users/{id}/role", consumes = "application/json")
     public AdminAccountService.AccountView role(@AuthenticationPrincipal BenchmarkUser actor,

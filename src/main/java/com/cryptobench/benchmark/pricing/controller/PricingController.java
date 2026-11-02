@@ -29,8 +29,16 @@ public class PricingController {
         return pricing.create(actor, input.version(), input.prices());
     }
 
+    @GetMapping("/admin/pricing/{version}/diff")
+    public PricingService.ActivationPreview preview(@PathVariable String version) { return pricing.preview(version); }
+
     @PostMapping("/admin/pricing/{version}/activate")
-    public PricingService.PriceTableView activate(@PathVariable String version) { return pricing.activate(version); }
+    public PricingService.PriceTableView activate(@AuthenticationPrincipal BenchmarkUser actor, @PathVariable String version,
+                                                 @RequestBody(required = false) ActivationRequest input) {
+        return pricing.activate(actor, version, input == null ? null : input.expectedRevision(),
+                input == null ? null : input.expectedTableRevision());
+    }
 
     public record CreateRequest(String version, List<PricingService.ModelPriceInput> prices) {}
+    public record ActivationRequest(Long expectedRevision, Long expectedTableRevision) {}
 }

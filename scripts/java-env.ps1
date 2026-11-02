@@ -1,28 +1,86 @@
 # Shared by the source launcher and Windows packaging. Process-local settings only.
-function Test-CryptoBenchJdk([string]$Candidate) {
+function Get-CryptoBenchJdkVersion([string]$Executable) {
+    # Windows PowerShell treats redirected native stderr as an error record.
+    # Java can write harmless launcher notices there and still exit successfully.
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $process.StartInfo.FileName = $Executable
+    $process.StartInfo.Arguments = '--version'
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.CreateNoWindow = $true
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    try {
+        $process.Start() | Out-Null
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(15000)) {
+            $process.Kill()
+            throw 'JDK version check timed out.'
+        }
+        return [PSCustomObject]@{
+            ExitCode = $process.ExitCode
+            Output = $stdout.GetAwaiter().GetResult() + "`n" + $stderr.GetAwaiter().GetResult()
+        }
+    } finally { $process.Dispose() }
+}
+
+function Test-CryptoBenchJdk([string]$Candidate, [switch]$ExplainFailure) {
     if (-not $Candidate) { return $false }
     $java = Join-Path $Candidate 'bin\java.exe'
     $javac = Join-Path $Candidate 'bin\javac.exe'
-    if (-not (Test-Path -LiteralPath $java) -or -not (Test-Path -LiteralPath $javac)) { return $false }
+    if (-not (Test-Path -LiteralPath $java) -or -not (Test-Path -LiteralPath $javac)) {
+        if ($ExplainFailure) { Write-Warning "JDK executables are missing under: $Candidate" }
+        return $false
+    }
     try {
-        $runtimeVersion = & $java --version 2>$null
-        if ($LASTEXITCODE -ne 0 -or ($runtimeVersion -join "`n") -notmatch '(?m)^(openjdk|java) 21[.\s]') { return $false }
-        $compilerVersion = & $javac --version 2>$null
-        return ($LASTEXITCODE -eq 0 -and ($compilerVersion -join "`n") -match '^javac 21[.\s]')
-    } catch { return $false }
+        foreach ($name in @('java', 'javac')) {
+            $version = Get-CryptoBenchJdkVersion (Join-Path $Candidate "bin\$name.exe")
+            $pattern = if ($name -eq 'java') { '(?m)^(openjdk|java) 21[.\s]' } else { '(?m)^javac 21[.\s]' }
+            if ($version.ExitCode -ne 0 -or $version.Output -notmatch $pattern) {
+                if ($ExplainFailure) {
+                    Write-Warning "$name --version failed in $Candidate (exit $($version.ExitCode)): $($version.Output.Trim())"
+                }
+                return $false
+            }
+        }
+        return $true
+    } catch {
+        if ($ExplainFailure) { Write-Warning "JDK probe failed in ${Candidate}: $($_.Exception.Message)" }
+        return $false
+    }
+}
+
+function Get-CryptoBenchToolsDirectory([string]$ProjectRoot) {
+    $explicit = -not [string]::IsNullOrWhiteSpace($env:CRYPTOBENCH_TOOLS_DIR)
+    $directory = if ($explicit) { $env:CRYPTOBENCH_TOOLS_DIR } else { Join-Path $ProjectRoot '.tools' }
+    $directory = [IO.Path]::GetFullPath($directory)
+    # JDK 21's Windows launcher resolves java.dll using the system ANSI code page.
+    # An ASCII cache also keeps Maven Wrapper's batch/PowerShell handoff portable.
+    if (-not $explicit -and $directory -match '[^\x00-\x7F]' -and $env:LOCALAPPDATA) {
+        $directory = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'CryptoBench\tools'))
+    }
+    if ($directory -match '[^\x00-\x7F]') {
+        throw 'Set CRYPTOBENCH_TOOLS_DIR to a writable ASCII-only path (for example D:\CryptoBenchTools). JDK 21 cannot reliably load java.dll from non-ASCII Windows paths.'
+    }
+    return $directory
 }
 
 function Initialize-CryptoBenchJava([string]$ProjectRoot) {
+    # Use the modules shipped with this PowerShell host. CI can launch Windows
+    # PowerShell with a PowerShell 7 module path, breaking command auto-loading.
+    Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility') -ErrorAction Stop
+    Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Archive') -ErrorAction Stop
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     $arch = switch ($architecture) { 'AMD64' { 'x64' } 'ARM64' { 'aarch64' } default { $architecture } }
     $entry = Import-Csv -LiteralPath (Join-Path $ProjectRoot 'scripts\jdk-distributions.tsv') -Delimiter "`t" |
         Where-Object { $_.os -eq 'windows' -and $_.arch -eq $arch } | Select-Object -First 1
-    $toolsDir = Join-Path $ProjectRoot '.tools'
+    $toolsDir = Get-CryptoBenchToolsDirectory $ProjectRoot
     $cached = if ($entry) { Join-Path $toolsDir "temurin-$($entry.version)-windows-$arch" } else { $null }
     $systemJava = Get-Command java.exe -ErrorAction SilentlyContinue
     $systemHome = if ($systemJava) { Split-Path (Split-Path $systemJava.Source) } else { $null }
     $selected = $null
-    foreach ($candidate in @((Join-Path $toolsDir 'jdk-21'), $cached, $env:JAVA_HOME, $systemHome)) {
+    foreach ($candidate in @((Join-Path $ProjectRoot '.tools\jdk-21'), (Join-Path $toolsDir 'jdk-21'), $cached, $env:JAVA_HOME, $systemHome)) {
         if (Test-CryptoBenchJdk $candidate) { $selected = $candidate; break }
     }
     if (-not $selected) {
@@ -34,7 +92,7 @@ function Initialize-CryptoBenchJava([string]$ProjectRoot) {
         New-Item -ItemType Directory -Path $staging | Out-Null
         try {
             $archive = Join-Path $staging 'jdk.zip'
-            Write-Host "Downloading Temurin $($entry.version) ($arch) into .tools..."
+            Write-Host "Downloading Temurin $($entry.version) ($arch) into $toolsDir..."
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             $downloadParameters = @{ Uri = $entry.url; OutFile = $archive; UseBasicParsing = $true }
             if ($env:HTTPS_PROXY) { $downloadParameters.Proxy = $env:HTTPS_PROXY }
@@ -43,7 +101,7 @@ function Initialize-CryptoBenchJava([string]$ProjectRoot) {
             if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.sha256) { throw 'JDK SHA-256 verification failed; the archive will not be used.' }
             Expand-Archive -LiteralPath $archive -DestinationPath (Join-Path $staging 'expanded')
             $jdk = Get-ChildItem -LiteralPath (Join-Path $staging 'expanded') -Directory | Select-Object -First 1
-            if (-not $jdk -or -not (Test-CryptoBenchJdk $jdk.FullName)) { throw 'Downloaded archive does not contain a working JDK 21.' }
+            if (-not $jdk -or -not (Test-CryptoBenchJdk $jdk.FullName -ExplainFailure)) { throw 'Downloaded archive does not contain a working JDK 21.' }
             Move-Item -LiteralPath $jdk.FullName -Destination $cached
             $selected = $cached
         } catch {
@@ -58,7 +116,7 @@ function Initialize-CryptoBenchJava([string]$ProjectRoot) {
     }
     $env:JAVA_HOME = [IO.Path]::GetFullPath($selected)
     $env:PATH = (Join-Path $env:JAVA_HOME 'bin') + ';' + $env:PATH
-    $env:MAVEN_USER_HOME = Join-Path $ProjectRoot '.tools\maven-user-home'
+    $env:MAVEN_USER_HOME = Join-Path $toolsDir 'maven-user-home'
     Write-Host "JAVA_HOME: $env:JAVA_HOME"
     & (Join-Path $env:JAVA_HOME 'bin\java.exe') --version | Out-Host
 }

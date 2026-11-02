@@ -126,7 +126,8 @@ export async function runScenarios({page,check,go,shot}) {
  await page.locator('[name="name"]').fill('测试研究员');await page.locator('[name="email"]').fill('test-'+Date.now()+'@example.com');await page.locator('[name="password"]').fill('test-only-password');await page.locator('#auth-form button[type="submit"]').click();await page.locator('[data-logout]').waitFor();
  check('registration interface',await page.locator('#main h1').innerText().then(t=>t.includes('测试研究员')));
  check('password not persisted',await page.evaluate(()=>!localStorage.getItem('cryptobench.v1').includes('test-only-password')));
- await go('/forgot-password');await page.locator('[name="email"]').fill('test-'+Date.now()+'@example.com');await page.locator('#auth-form button[type="submit"]').click();await page.getByRole('heading',{name:'欢迎回来',exact:true}).waitFor();
- check('password reset interface',await page.locator('#main h1').innerText()==='欢迎回来');
+ await go('/forgot-password');await page.locator('#recovery-email').fill('test-'+Date.now()+'@example.com');await page.locator('[data-recovery-send]').click();await page.locator('#recovery-code').waitFor();
+ check('password reset interface',await page.locator('#main h1').innerText()==='找回密码'&&await page.locator('[data-recovery-notice]').innerText().then(text=>text.includes('如果')));
+ await go('/login');
  await page.locator('[data-demo-user="admin"]').click();await page.locator('[data-template]').waitFor();
 }

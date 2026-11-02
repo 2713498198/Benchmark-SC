@@ -23,7 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 通过 MockMvc 和 test profile 验证真实 Spring 过滤器链、业务接口及数据库持久化。
  * 每个 Client 独立维护 Cookie，模拟不同浏览器账号，使用随机 ID 避免测试间数据冲突。
  */
-@SpringBootTest
+@SpringBootTest(properties = {"benchmark.mail.mode=outbox", "benchmark.mail.outbox=target/test-mail/benchmark-api.jsonl",
+        "benchmark.mail.worker-enabled=false", "benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class BenchmarkApiIntegrationTest {
@@ -157,13 +158,14 @@ class BenchmarkApiIntegrationTest {
         Client researcher = registeredClient();
         Client admin = new Client();
         String id = "suite-" + UUID.randomUUID();
-        Map<String, Object> dataset = Map.of("id", id, "version", "1.0.0", "tasks", new Object[]{Map.of("id", "task-1")});
+        var dataset = CustomDatasetRulesTest.fixture(mapper, id);
         assertThat(researcher.send("POST", "/api/datasets/custom", dataset).getResponse().getStatus()).isEqualTo(403);
         assertThat(admin.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
         MvcResult published = admin.send("POST", "/api/datasets/custom", dataset);
         assertThat(published.getResponse().getStatus()).isEqualTo(201);
         assertThat(admin.json(published).path("tasks").asInt()).isEqualTo(1);
-        assertThat(admin.json(published).path("taskPackage").size()).isEqualTo(1);
+        assertThat(admin.json(published).has("taskPackage")).isFalse();
+        assertThat(admin.json(published).path("executionReady").asBoolean()).isTrue();
         assertThat(admin.send("POST", "/api/datasets/custom", dataset).getResponse().getStatus()).isEqualTo(409);
         assertThat(new Client().json(new Client().send("GET", "/api/bootstrap", null)).path("customDatasets").toString()).contains(id);
     }

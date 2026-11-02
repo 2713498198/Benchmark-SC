@@ -32,6 +32,11 @@ public class PasswordResetRepository {
                 System.currentTimeMillis(), hash);
     }
 
+    /** Keep consumed-token evidence while invalidating every outstanding legacy link. */
+    public void invalidateByUser(String userId, long now) {
+        jdbc.update("UPDATE benchmark_password_reset_tokens SET used_at=? WHERE user_id=? AND used_at IS NULL", now, userId);
+    }
+
     /** 原子地占用令牌，避免两个并发请求同时重置密码。 */
     public int consume(String hash, long now) {
         return jdbc.update("UPDATE benchmark_password_reset_tokens SET used_at=? "

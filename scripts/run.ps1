@@ -5,7 +5,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'java-env.ps1')
+. (Join-Path $PSScriptRoot 'local-mail.ps1')
 try {
+    if (-not $PrepareOnly -and -not $MavenArguments) { Import-CryptoBenchLocalMail $root }
     Initialize-CryptoBenchJava $root
     Push-Location $root
     try {

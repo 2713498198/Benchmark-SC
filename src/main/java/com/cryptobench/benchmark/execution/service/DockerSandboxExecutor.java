@@ -10,10 +10,12 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import com.cryptobench.benchmark.config.DockerProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 启动受限的 Agent 容器。容器镜像需要在 8000/tcp 提供同一套 Agent HTTP 协议。
@@ -26,9 +28,30 @@ import org.springframework.stereotype.Component;
 @Component
 public class DockerSandboxExecutor {
     private final DockerProperties properties;
+    private final String instanceId;
 
+    @Autowired
     public DockerSandboxExecutor(DockerProperties properties) {
+        this(properties, defaultInstanceId());
+    }
+
+    /** Scope cleanup to this installation so separate local instances cannot reap each other's resources. */
+    public DockerSandboxExecutor(DockerProperties properties, String instanceId) {
         this.properties = properties;
+        if (instanceId == null || !instanceId.matches("[a-zA-Z0-9_.-]{1,100}")) throw new IllegalArgumentException("Docker 实例标识无效");
+        this.instanceId = instanceId;
+    }
+
+    public String instanceId() { return instanceId; }
+
+    private static String defaultInstanceId() {
+        String configured = System.getProperty("cryptobench.instance-id", System.getenv("CRYPTOBENCH_INSTANCE_ID"));
+        if (configured != null && !configured.isBlank()) return configured;
+        try {
+            String location = java.nio.file.Path.of("").toAbsolutePath().normalize().toString();
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(location.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return "server-" + java.util.HexFormat.of().formatHex(hash).substring(0, 24);
+        } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
     public DockerRuntimeStatus status() {
@@ -131,19 +154,41 @@ public class DockerSandboxExecutor {
 
     /** 只回收本应用标签的遗留资源，避免影响其他 Docker 项目。 */
     public void reapOwnedResources() {
+        reapInactiveResources(Set.of());
+    }
+
+    /** Preserve resources for runs whose leases are still valid on this instance. */
+    public void reapInactiveResources(Set<String> activeRunIds) {
         if (!properties.enabled()) return;
+        Set<String> protectedRuns = activeRunIds == null ? Set.of() : activeRunIds.stream().map(this::safeLabel).collect(java.util.stream.Collectors.toUnmodifiableSet());
         try {
-            String containers = command(List.of("docker", "ps", "-aq", "--filter", "label=com.cryptobench.owner=cryptobench"), Duration.ofSeconds(10));
+            String containers = command(List.of("docker", "ps", "-aq", "--filter", "label=com.cryptobench.owner=cryptobench",
+                    "--filter", "label=com.cryptobench.instance=" + instanceId), Duration.ofSeconds(10));
             for (String id : containers.split("\\R")) if (!id.isBlank()) {
+                if (resourceProtected("container", id.trim(), protectedRuns)) continue;
                 try { command(List.of("docker", "rm", "-f", id.trim()), Duration.ofSeconds(10)); } catch (Exception ignored) { }
             }
-            String networks = command(List.of("docker", "network", "ls", "-q", "--filter", "label=com.cryptobench.owner=cryptobench"), Duration.ofSeconds(10));
+            String networks = command(List.of("docker", "network", "ls", "-q", "--filter", "label=com.cryptobench.owner=cryptobench",
+                    "--filter", "label=com.cryptobench.instance=" + instanceId), Duration.ofSeconds(10));
             for (String id : networks.split("\\R")) if (!id.isBlank()) {
+                if (resourceProtected("network", id.trim(), protectedRuns)) continue;
                 try { command(List.of("docker", "network", "rm", id.trim()), Duration.ofSeconds(10)); } catch (Exception ignored) { }
             }
         } catch (Exception ignored) {
             // Docker may be unavailable during application startup; the next startup can retry.
         }
+    }
+
+    private boolean resourceProtected(String kind, String id, Set<String> protectedRuns) {
+        try {
+            List<String> inspect = kind.equals("container") ? List.of("docker", "inspect", id) : List.of("docker", "network", "inspect", id);
+            var row = new com.fasterxml.jackson.databind.ObjectMapper().readTree(command(inspect, Duration.ofSeconds(8))).path(0);
+            var labels = kind.equals("container") ? row.path("Config").path("Labels") : row.path("Labels");
+            // Only remove resources whose ownership can be positively re-confirmed.
+            if (!"cryptobench".equals(labels.path("com.cryptobench.owner").asText())
+                    || !instanceId.equals(labels.path("com.cryptobench.instance").asText())) return true;
+            return protectedRuns.contains(labels.path("com.cryptobench.run-id").asText());
+        } catch (Exception unavailable) { return true; }
     }
 
     private String safeLabel(String value) {
@@ -214,6 +259,12 @@ public class DockerSandboxExecutor {
     }
 
     private String command(List<String> command, Duration timeout) throws IOException, InterruptedException {
+        if (command.size() > 2 && (command.get(1).equals("run") || command.get(1).equals("create")
+                || command.get(1).equals("network") && command.get(2).equals("create"))) {
+            command = new ArrayList<>(command);
+            command.add(command.size() - 1, "--label");
+            command.add(command.size() - 1, "com.cryptobench.instance=" + instanceId);
+        }
         Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
         StringBuilder output = new StringBuilder();
         Thread reader = Thread.startVirtualThread(() -> {

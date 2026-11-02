@@ -1,3 +1,7 @@
+.recovery-steps{display:flex;gap:24px;list-style:none;margin:24px 0;padding:0;color:var(--muted);font-size:14px}.recovery-steps li{display:flex;align-items:center;gap:8px}.recovery-steps li[aria-current="step"]{color:var(--blue);font-weight:650}.recovery-steps span{display:grid;place-items:center;width:26px;height:26px;border:1px solid currentColor;border-radius:50%;flex-shrink:0}.password-recovery .error-text{font-size:14px;color:#a32028;line-height:1.6}.password-recovery strong{overflow-wrap:anywhere}.recovery-password-input{display:flex;gap:8px;align-items:center}.recovery-password-input input{flex:1;min-width:0}.recovery-password-input button{white-space:nowrap;flex-shrink:0;font-size:12px}.password-recovery .inline-note{line-height:1.7}.password-recovery>.btn{margin:0 0 16px}
+@media(max-width:420px){.recovery-steps{gap:16px}.recovery-password-input{flex-wrap:wrap}.recovery-password-input input{flex-basis:100%}.recovery-password-input button{margin-left:auto}}
+.password-recovery button.text-link{background:transparent;border:0;padding:0;min-height:40px;align-self:flex-start;text-align:left}
+
 /* Home: one quiet introduction, followed by the data. */
 .home-hero{background:#fff;overflow:hidden}
 .hero-layout{max-width:1440px;min-height:calc(100svh - 64px);display:flex;align-items:center;justify-content:center;padding:48px 64px}

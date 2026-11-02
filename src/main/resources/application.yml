@@ -44,6 +44,13 @@ benchmark:
     proxy-bind-address: ${CRYPTOBENCH_DOCKER_PROXY_BIND_ADDRESS:127.0.0.1}
     allowed-images:
       - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}
+  gateway:
+    enabled: ${CRYPTOBENCH_GATEWAY_ENABLED:false}
+    image: ${CRYPTOBENCH_GATEWAY_IMAGE:cryptobench-model-gateway:local}
+    # Public provider routing only; user API keys are never configuration values.
+    # A nonempty providers list in an administrator YAML file takes precedence.
+    providers: []
+    providers-json: ${CRYPTOBENCH_GATEWAY_PROVIDERS:[]}
   # prod 默认启用 Secure Cookie，本地 HTTP 开发默认关闭。
   secure-cookie: ${SECURE_COOKIE:false}
   # 旧数据导入必须显式启用；相对源路径以应用工作目录为基准。
@@ -59,6 +66,18 @@ benchmark:
     delivery-url: ${PASSWORD_RESET_DELIVERY_URL:}
     outbox: ${PASSWORD_RESET_OUTBOX:}
     base-url: ${PASSWORD_RESET_BASE_URL:http://127.0.0.1:4173}
+  mail:
+    # auto preserves existing HTTP gateway/outbox deployments; SMTP is explicit.
+    mode: ${CRYPTOBENCH_MAIL_MODE:auto}
+    key-file: ${CRYPTOBENCH_MAIL_KEY_FILE:var/secrets/mail.key}
+    worker-enabled: ${CRYPTOBENCH_MAIL_WORKER_ENABLED:true}
+    smtp-host: ${CRYPTOBENCH_SMTP_HOST:}
+    smtp-port: ${CRYPTOBENCH_SMTP_PORT:587}
+    smtp-username: ${CRYPTOBENCH_SMTP_USERNAME:}
+    smtp-password: ${CRYPTOBENCH_SMTP_PASSWORD:}
+    from: ${CRYPTOBENCH_MAIL_FROM:}
+    smtp-starttls: ${CRYPTOBENCH_SMTP_STARTTLS:true}
+    smtp-ssl: ${CRYPTOBENCH_SMTP_SSL:false}
   pricing:
     version: ${CRYPTOBENCH_PRICING_VERSION:cryptobench-price-table-1.0.0}
     models:

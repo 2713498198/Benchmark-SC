@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21.0.13+9'
+          java-version: '21.0.13'
           cache: maven
 
       - name: Set up Node.js 22
@@ -43,6 +43,9 @@ jobs:
       - name: Check frontend JavaScript and Vue templates
         run: npm run check
 
+      - name: Verify report timing, categories, leaderboard and exports
+        run: npm run test:report-metrics
+
       - name: Validate private evaluator catalog contract
         run: npm run validate:evaluator
 
@@ -54,6 +57,12 @@ jobs:
 
       - name: Run backend tests and package
         run: bash start.sh --batch-mode verify
+
+      - name: Install browser for isolated report workflow
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify report and PK metrics through real APIs and browser
+        run: npm run test:workflow:integration
 
       - name: Verify source launcher
         run: node tests/source-start.mjs
@@ -91,12 +100,15 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21.0.13+9'
+          java-version: '21.0.13'
           cache: maven
 
       - name: Build Windows app image
         shell: pwsh
-        run: .\scripts\package-windows.ps1 -AllowExternalOutput -OutputDir "$env:RUNNER_TEMP\cryptobench-app"
+        run: |
+          New-Item -ItemType Directory -Force -Path target/packaging-contamination | Out-Null
+          Set-Content target/packaging-contamination/outbox.jsonl 'fixture-only; must not ship'
+          .\scripts\package-windows.ps1 -AllowExternalOutput -OutputDir "$env:RUNNER_TEMP\cryptobench-app"
 
       - name: Verify app image layout
         shell: pwsh
@@ -105,6 +117,8 @@ jobs:
           if (-not (Test-Path -LiteralPath $app)) { throw "App image was not created: $app" }
           if (-not (Test-Path -LiteralPath (Join-Path $app 'CryptoBench.exe'))) { throw 'Desktop launcher executable is missing' }
           if (-not (Test-Path -LiteralPath (Join-Path $app 'runtime'))) { throw 'Bundled runtime is missing' }
+          node tests/windows-package-content.mjs $app
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop payload verification failed' }
 
       - name: Smoke test Windows app image
         shell: pwsh

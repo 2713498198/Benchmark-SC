@@ -1,0 +1,23 @@
+import {computed} from '/vendor/vue/vue.esm-browser.prod.js';
+import {SvgIcon} from './shared.js';
+
+export default {components:{SvgIcon},props:{run:Object,logs:Array,networkError:String,credentials:Object,busy:Boolean},emits:['cancel','resume','retry','new','refresh'],setup(props){
+ const active=computed(()=>['queued','running'].includes(props.run?.status));
+ const executorRemoved=computed(()=>props.run?.pauseReason==='executor_removed'||!!(props.run?.config?.executorType&&props.run.config.executorType!=='server'));
+ const names={queued:'等待执行',running:'任务正在执行',paused:'执行已暂停',completed:'测评已完成',cancelled:'任务已取消',failed:'执行失败',timeout:'任务执行超时'};
+ const needed=computed(()=>{const required=new Set(props.run?.credentialsRequired||[]);if(!active.value){for(const p of props.run?.config?.participants||[])if(p.credentialRequired)required.add(p.key);if(props.run?.config?.gateway?.credentialRequired)required.add('gateway');}return [...required];});
+ const interrupted=computed(()=>(props.run?.tasks||[]).filter(task=>task.status==='interrupted'));
+ const participantName=key=>props.run?.config?.participants?.find(p=>p.key===key)?.label||({main:'Agent',a:'参赛方 A',b:'参赛方 B',gateway:'模型网关'}[key]||key);
+ return {active,executorRemoved,names,needed,participantName,interrupted};
+},template:`<section class="stack" data-run-progress>
+ <div class="run-heading"><div class="result-state"><span><SvgIcon :name="run.status==='completed'?'check':'activity'" :size="22"/></span><div><h3>{{names[run.status]||run.status}}</h3><p>{{run.runId}} · {{executorRemoved?'历史执行方式（已移除）':'本机执行'}}</p></div></div><span class="badge" :class="run.status==='completed'?'green':'blue'">{{names[run.status]||run.status}}</span></div>
+ <div v-if="networkError" class="callout" role="alert">{{networkError}}<button class="btn small" @click="$emit('refresh')">重新连接</button></div>
+ <div v-if="executorRemoved" class="callout" data-executor-removed>此实验使用的执行方式已移除，无法继续或按原配置重试。可以新建实验，重新配置本机 Agent。</div>
+ <div class="progress"><span :style="{width:(run.progressPercent||0)+'%'}"></span></div>
+ <div class="three-col run-metrics"><div class="card stat-card"><div class="label">执行进度</div><div class="value">{{run.progressPercent||0}}%</div></div><div class="card stat-card"><div class="label">已处理任务</div><div class="value">{{run.progressStats?.completed||0}} / {{run.progressStats?.total||run.totalTasks||0}}</div></div><div class="card stat-card"><div class="label">随机种子</div><div class="value" data-run-seed>{{run.seed??'未记录'}}</div></div></div>
+ <div v-if="run.status==='paused'" class="callout" data-run-paused>{{run.errorMessage||'运行已暂停，请检查所需条件后继续。'}}<span v-if="run.canResume===false">当前任务或 Agent 条件已变化，请重新配置实验。</span></div>
+ <section v-if="interrupted.length" class="card card-pad stack" data-interrupted-tasks><h4>结果尚未确认的任务</h4><p>这些任务的外部请求可能已经执行或产生费用。继续时会重新尝试，可能再次计费；已确认的任务不会重复执行。</p><div class="table-scroll"><table><thead><tr><th>任务</th><th>尝试次数</th><th>状态</th></tr></thead><tbody><tr v-for="task in interrupted" :key="task.taskId||task.id"><td>{{task.taskId||task.id}}</td><td>{{task.attempt??'未记录'}}</td><td>结果未确认</td></tr></tbody></table></div></section>
+ <div v-if="!executorRemoved&&!active&&needed.length" class="card card-pad stack" data-run-credentials><p>凭证只用于本次继续或重试，离开页面后清空。</p><div class="field" v-for="key in needed" :key="key"><label :for="'run-credential-'+key">{{participantName(key)}} 访问凭证</label><input :id="'run-credential-'+key" :data-run-credential="key" type="password" autocomplete="off" v-model="credentials[key]"></div></div>
+ <div class="run-console"><div class="console-muted">run_id = {{run.runId}}</div><div>[config] {{run.datasetId}} · v{{run.version}} · {{run.budget}} · seed={{run.seed??'未记录'}}</div><div v-if="!logs?.length" class="console-ok">等待服务端日志</div><div v-for="entry in logs" :key="entry.sequence" :class="entry.level==='ERROR'?'console-error':entry.level==='WARN'?'console-warn':'console-ok'">[{{entry.level}}] {{entry.message}}</div><div v-if="run.errorMessage" class="console-error">{{run.errorMessage}}</div></div>
+ <div class="row"><button v-if="active||run.status==='paused'" class="btn danger" data-cancel-run :disabled="busy" @click="$emit('cancel')">取消执行</button><button v-if="!executorRemoved&&run.status==='paused'&&run.canResume!==false" class="btn primary" data-resume-run :disabled="busy" @click="$emit('resume')">继续执行</button><a v-if="run.status==='completed'&&run.reportId" class="btn primary" :href="'#/report/'+run.reportId">查看完整报告</a><button v-if="!executorRemoved&&['completed','failed','timeout','cancelled'].includes(run.status)" class="btn" data-retry-run :disabled="busy" @click="$emit('retry')">按原配置重试</button><button class="btn" data-new-run :disabled="busy" @click="$emit('new')">新建实验</button></div>
+</section>`};

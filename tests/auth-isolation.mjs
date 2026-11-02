@@ -58,7 +58,7 @@ assert.equal(researcherDataset.response.status,403,'researchers must not publish
 
 const admin=new Client();
 await admin.json('/api/auth/demo',{method:'POST',body:{role:'admin'}});
-const dataset=await admin.json('/api/datasets/custom',{method:'POST',body:{id:`admin-${suffix}`,version:'1.0.0',name:'Admin dataset',tasks:[{id:'task-1'}]}});
+const dataset=await admin.json('/api/datasets/custom',{method:'POST',body:{schema:'cryptobench-custom-dataset-v1',id:`admin-${suffix}`,version:'1.0.0',name:'Admin dataset',type:'分组密码',algorithm:'Teaching SPN',description:'Isolated public task fixture',tasks:[{id:'task-1',question:'Return the number of rounds.',input:{rounds:4},verification:{type:'exact-json-v1',expected:4}}]}});
 assert.equal(dataset.published,true,'admin publication must be public');
 const anonymous=new Client();
 const publicBootstrap=await anonymous.json('/api/bootstrap');

@@ -2,6 +2,7 @@ package com.cryptobench.benchmark.auth.service;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.auth.repository.PasswordResetRepository;
+import com.cryptobench.benchmark.auth.repository.PasswordResetCodeRepository;
 import com.cryptobench.benchmark.auth.repository.SessionRepository;
 import com.cryptobench.benchmark.auth.repository.UserRepository;
 import java.util.Optional;
@@ -21,9 +22,11 @@ class PasswordResetServiceTest {
     @Mock SessionRepository sessions;
     @Mock PasswordResetRepository tokens;
     @Mock PasswordResetNotifier notifier;
+    @Mock PasswordResetCodeRepository codes;
 
     @Test
     void issuesOpaqueTokenAndConsumesItOnce() {
+        when(notifier.ready()).thenReturn(true);
         BenchmarkUser user = new BenchmarkUser("u1", "a@example.com", "A", "researcher", "old", null, "now");
         when(users.findByEmail("a@example.com")).thenReturn(Optional.of(user));
         when(users.findById("u1")).thenReturn(Optional.of(user));
@@ -31,7 +34,7 @@ class PasswordResetServiceTest {
         when(tokens.find(any())).thenReturn(Optional.of(new PasswordResetRepository.Token("hash", "u1",
                 System.currentTimeMillis() + 60_000, null)));
         when(tokens.consume(eq("hash"), anyLong())).thenReturn(1);
-        PasswordResetService service = new PasswordResetService(users, passwords, sessions, tokens, notifier);
+        PasswordResetService service = new PasswordResetService(users, passwords, sessions, tokens, notifier, codes);
 
         service.request("a@example.com");
         verify(tokens).insert(anyString(), eq("u1"), anyLong(), anyString());
@@ -41,13 +44,15 @@ class PasswordResetServiceTest {
         service.reset("a".repeat(64), "new-password");
         verify(users).updatePassword("u1", "encoded");
         verify(sessions).deleteByUser("u1");
+        verify(tokens).invalidateByUser(eq("u1"), anyLong());
+        verify(codes, times(3)).invalidateUser(eq("u1"), anyLong());
     }
 
     @Test
     void rejectsExpiredOrAlreadyUsedToken() {
         when(tokens.find(any())).thenReturn(Optional.of(new PasswordResetRepository.Token("hash", "u1",
                 System.currentTimeMillis() - 1, null)));
-        PasswordResetService service = new PasswordResetService(users, passwords, sessions, tokens, notifier);
+        PasswordResetService service = new PasswordResetService(users, passwords, sessions, tokens, notifier, codes);
         assertThatThrownBy(() -> service.reset("a".repeat(64), "new-password"))
                 .hasMessageContaining("无效或已过期");
         verifyNoInteractions(users, passwords, sessions);

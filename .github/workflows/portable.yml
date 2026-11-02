@@ -44,7 +44,9 @@ jobs:
           node-version: '22'
       - name: Verify clean checkout has no prebuilt JAR or local tools
         run: test ! -e target && test ! -e .tools
-      - name: Build Compose directly from source and verify persistent data
+      - name: Verify Compose defaults, opt-in and merged persistent configuration
+        run: node tests/compose-config.mjs
+      - name: Verify Compose authentication and persistent accounts
         run: node tests/compose-smoke.mjs
-      - name: Build sandbox directly from source and run Agent evaluation
+      - name: Verify sandbox reports survive restart, recreation and switching to basic Compose
         run: node tests/compose-sandbox-smoke.mjs

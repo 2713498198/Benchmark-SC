@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class RunRepository {
@@ -69,7 +70,7 @@ public class RunRepository {
         List<Object> args = new java.util.ArrayList<>();
         args.add(ownerId);
         if (statuses != null && !statuses.isEmpty()) {
-            List<String> allowed = statuses.stream().filter(List.of("queued", "running", "completed", "failed", "timeout", "cancelled")::contains).toList();
+            List<String> allowed = statuses.stream().filter(List.of("queued", "running", "paused", "completed", "failed", "timeout", "cancelled")::contains).toList();
             if (!allowed.isEmpty()) {
                 sql.append(" AND status IN (").append("?,".repeat(allowed.size()).replaceAll(",$", "")).append(")");
                 args.addAll(allowed);
@@ -101,7 +102,7 @@ public class RunRepository {
     }
 
     public void requestCancel(String id) {
-        jdbc.update("UPDATE benchmark_runs SET cancel_requested=TRUE WHERE run_id=? AND status IN ('queued','running')", id);
+        jdbc.update("UPDATE benchmark_runs SET cancel_requested=TRUE WHERE run_id=? AND status IN ('queued','running','paused')", id);
     }
 
     public boolean cancelRequested(String id) {
@@ -114,14 +115,158 @@ public class RunRepository {
                 java.time.Instant.now().toString());
     }
 
-    /** Re-queues interrupted work and clears in-flight task results before a new worker claims it. */
+    /** Preserve committed results. A lost worker needs an explicit resume; untouched queued jobs stay queued. */
+    @Transactional
     public List<Run> recoverInterruptedRuns() {
-        List<Run> interrupted = jdbc.query("SELECT * FROM benchmark_runs WHERE status IN ('queued','running') AND cancel_requested=FALSE",
-                runMapper);
-        if (interrupted.isEmpty()) return interrupted;
-        jdbc.update("UPDATE benchmark_runs SET status='queued', error_code='worker_restarted', error_message='应用重启后已重新排队', started_at=NULL, finished_at=NULL WHERE status IN ('queued','running') AND cancel_requested=FALSE");
-        interrupted.forEach(run -> jdbc.update("UPDATE benchmark_run_tasks SET status='queued', agent_response=NULL, verification_result=NULL, passed=NULL, score=NULL, cost_usd=NULL, elapsed_ms=NULL, started_at=NULL, finished_at=NULL WHERE run_id=? AND status NOT IN ('queued')", run.id()));
-        return interrupted;
+        List<Run> interrupted = jdbc.query("SELECT * FROM benchmark_runs WHERE status='running' AND (lease_until IS NULL OR lease_until<?) FOR UPDATE",
+                runMapper, System.currentTimeMillis());
+        for (Run run : interrupted) {
+            if (run.cancelRequested()) cancel(run.id());
+            else pause(run.id(), "worker_restarted", "执行中断，已保存完成题目，请确认后继续");
+        }
+        return findQueued(100);
+    }
+
+    public List<Run> findQueued(int limit) {
+        return jdbc.query("SELECT * FROM benchmark_runs WHERE status='queued' AND cancel_requested=FALSE ORDER BY created_at,run_id LIMIT ?",
+                runMapper, Math.min(100, Math.max(1, limit)));
+    }
+
+    /** Other live workers may share this database; cleanup must preserve their leases. */
+    public java.util.Set<String> activeClaimIds() {
+        return new java.util.HashSet<>(jdbc.query("SELECT run_id FROM benchmark_runs WHERE status='running' AND lease_until>? AND cancel_requested=FALSE",
+                (row, index) -> row.getString(1), System.currentTimeMillis()));
+    }
+
+    @Transactional
+    public long claim(String id, String worker, long leaseUntil) {
+        int changed = jdbc.update("""
+                UPDATE benchmark_runs SET status='running', execution_generation=execution_generation+1,
+                claim_owner=?, lease_until=?, started_at=COALESCE(started_at,?), error_code=NULL, error_message=NULL
+                WHERE run_id=? AND status='queued' AND cancel_requested=FALSE
+                """, worker, leaseUntil, java.time.Instant.now().toString(), id);
+        return changed == 1 ? generation(id) : -1;
+    }
+
+    public long generation(String id) {
+        Long value = jdbc.queryForObject("SELECT execution_generation FROM benchmark_runs WHERE run_id=?", Long.class, id);
+        return value == null ? -1 : value;
+    }
+
+    public boolean isCurrent(String id, long generation) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE run_id=? AND execution_generation=? AND status='running' AND cancel_requested=FALSE",
+                Integer.class, id, generation);
+        return count != null && count == 1;
+    }
+
+    public void renewLease(String id, String worker, long until) {
+        jdbc.update("UPDATE benchmark_runs SET lease_until=? WHERE run_id=? AND claim_owner=? AND status='running' AND cancel_requested=FALSE", until, id, worker);
+    }
+
+    public void updateConfig(String id, ObjectNode config) {
+        jdbc.update("UPDATE benchmark_runs SET config_payload=? WHERE run_id=?", json.write(config), id);
+    }
+
+    public boolean updateConfig(String id, long generation, ObjectNode config) {
+        return jdbc.update("UPDATE benchmark_runs SET config_payload=? WHERE run_id=? AND execution_generation=? AND status='running' AND cancel_requested=FALSE",
+                json.write(config), id, generation) == 1;
+    }
+
+    @Transactional
+    public boolean resume(String id) {
+        Run run = find(id, true).orElseThrow();
+        if (!"paused".equals(run.status()) || run.cancelRequested()) return false;
+        jdbc.update("UPDATE benchmark_run_tasks SET status='queued' WHERE run_id=? AND status IN ('running','interrupted')", id);
+        recount(id);
+        return jdbc.update("UPDATE benchmark_runs SET status='queued',error_code=NULL,error_message=NULL,finished_at=NULL,claim_owner=NULL,lease_until=NULL WHERE run_id=? AND status='paused' AND cancel_requested=FALSE", id) == 1;
+    }
+
+    @Transactional
+    public void pause(String id, String reason, String message) {
+        Run run = find(id, true).orElseThrow();
+        if (!List.of("queued", "running").contains(run.status()) || run.cancelRequested()) return;
+        jdbc.update("UPDATE benchmark_runs SET status='paused',error_code=?,error_message=?,execution_generation=execution_generation+1,claim_owner=NULL,lease_until=NULL WHERE run_id=?", reason, message, id);
+        interruptAttempts(id);
+        recount(id);
+    }
+
+    @Transactional
+    public boolean pause(String id, long generation, String reason, String message) {
+        find(id, true).orElseThrow();
+        if (!isCurrent(id, generation)) return false;
+        pause(id, reason, message);
+        return true;
+    }
+
+    @Transactional
+    public boolean cancel(String id) {
+        Run run = find(id, true).orElseThrow();
+        if (!List.of("queued", "running", "paused").contains(run.status())) return false;
+        jdbc.update("UPDATE benchmark_runs SET status='cancelled',cancel_requested=TRUE,error_code='cancelled',error_message='用户取消运行',finished_at=?,execution_generation=execution_generation+1,claim_owner=NULL,lease_until=NULL WHERE run_id=?", java.time.Instant.now().toString(), id);
+        interruptAttempts(id);
+        recount(id);
+        return true;
+    }
+
+    private void interruptAttempts(String id) {
+        String now = java.time.Instant.now().toString();
+        jdbc.update("UPDATE benchmark_run_task_attempts SET status='interrupted',finished_at=? WHERE run_id=? AND status='running'", now, id);
+        jdbc.update("UPDATE benchmark_run_tasks SET status='interrupted',finished_at=? WHERE run_id=? AND status='running'", now, id);
+    }
+
+    @Transactional
+    public int beginTask(String id, String task, long generation) {
+        find(id, true).orElseThrow();
+        if (!isCurrent(id, generation)) return -1;
+        List<RunTask> existing = jdbc.query("SELECT * FROM benchmark_run_tasks WHERE run_id=? AND task_id=?", taskMapper, id, task);
+        if (existing.isEmpty() || List.of("passed", "failed").contains(existing.getFirst().status())) return -1;
+        Integer previous = jdbc.queryForObject("SELECT COALESCE(MAX(attempt),0) FROM benchmark_run_task_attempts WHERE run_id=? AND task_id=?", Integer.class, id, task);
+        int attempt = (previous == null ? 0 : previous) + 1;
+        String now = java.time.Instant.now().toString();
+        jdbc.update("INSERT INTO benchmark_run_task_attempts(run_id,task_id,attempt,execution_generation,status,started_at) VALUES(?,?,?,?,'running',?)", id, task, attempt, generation, now);
+        jdbc.update("UPDATE benchmark_run_tasks SET status='running',attempt=?,started_at=?,finished_at=NULL WHERE run_id=? AND task_id=?", attempt, now, id, task);
+        return attempt;
+    }
+
+    @Transactional
+    public boolean finishTask(String id, String task, long generation, int attempt, String status,
+                              ObjectNode response, ObjectNode verification, Boolean passed, Double score,
+                              Double cost, Long elapsed) {
+        find(id, true).orElseThrow();
+        if (!isCurrent(id, generation)) return false;
+        String now = java.time.Instant.now().toString();
+        int changed = jdbc.update("UPDATE benchmark_run_task_attempts SET status=?,finished_at=? WHERE run_id=? AND task_id=? AND attempt=? AND execution_generation=? AND status='running'",
+                status, now, id, task, attempt, generation);
+        if (changed != 1) return false;
+        jdbc.update("UPDATE benchmark_run_tasks SET status=?,agent_response=?,verification_result=?,passed=?,score=?,cost_usd=?,elapsed_ms=?,finished_at=? WHERE run_id=? AND task_id=? AND attempt=?",
+                status, response == null ? null : json.write(response), verification == null ? null : json.write(verification), passed, score, cost, elapsed, now, id, task, attempt);
+        recount(id);
+        return true;
+    }
+
+    public void recount(String id) {
+        List<RunTask> tasks = findTasks(id);
+        int completed = 0, passed = 0, failed = 0;
+        for (RunTask task : tasks) {
+            if (List.of("passed", "failed", "invalid", "timeout").contains(task.status())) {
+                completed++;
+                if (Boolean.TRUE.equals(task.passed())) passed++; else failed++;
+            }
+        }
+        jdbc.update("UPDATE benchmark_runs SET completed_tasks=?,passed_tasks=?,failed_tasks=? WHERE run_id=?", completed, passed, failed, id);
+    }
+
+    public boolean finish(String id, long generation, String status, String errorCode, String errorMessage, String reportId) {
+        return jdbc.update("UPDATE benchmark_runs SET status=?,error_code=?,error_message=?,report_id=?,finished_at=?,claim_owner=NULL,lease_until=NULL WHERE run_id=? AND execution_generation=? AND status='running' AND cancel_requested=FALSE",
+                status, errorCode, errorMessage, reportId, java.time.Instant.now().toString(), id, generation) == 1;
+    }
+
+    @Transactional
+    public void appendLog(String id, String level, String message) {
+        if (find(id, true).isEmpty()) return;
+        Long seq = jdbc.queryForObject("SELECT next_log_sequence FROM benchmark_runs WHERE run_id=?", Long.class, id);
+        jdbc.update("UPDATE benchmark_runs SET next_log_sequence=next_log_sequence+1 WHERE run_id=?", id);
+        insertLog(new RunLog(id, seq == null ? 1 : seq, level, message, java.time.Instant.now().toString()));
     }
 
     public void insertTask(String runId, String taskId, int ordinal) {

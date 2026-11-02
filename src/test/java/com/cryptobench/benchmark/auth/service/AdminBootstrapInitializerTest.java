@@ -33,11 +33,11 @@ class AdminBootstrapInitializerTest {
     @Test
     void rejectsBootstrapPasswordShorterThanTwelveCharacters() {
         AdminBootstrapInitializer initializer = new AdminBootstrapInitializer(users, passwords,
-                new AdminBootstrapProperties("admin@example.com", "Admin", "short-password".substring(0, 11)));
+                new AdminBootstrapProperties("admin@example.com", "Admin", "short"));
 
         assertThatThrownBy(() -> initializer.run(null))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("at least 12 characters");
+                .hasMessageContaining("8 to 24 characters");
         verifyNoInteractions(users, passwords);
     }
 

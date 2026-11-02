@@ -30,6 +30,8 @@ bash start.sh
 
 Maven Wrapper 固定使用 Maven 3.9.11，并校验 ZIP 的 SHA-256。启动器把 Maven 发行包缓存到 `.tools/maven-user-home`，依赖缓存位于 `.mvn/repository`。直接运行 Wrapper 默认使用用户的 Maven 缓存，需要自行设置正确的 `JAVA_HOME`。这些缓存和 JDK 均不提交 Git。脚本仅修改启动进程的环境，不更改系统环境变量。
 
+Windows 的 JDK 21 原生启动器在英文系统上可能无法从中文目录加载 `java.dll`。因此，项目路径含非 ASCII 字符时，Windows 源码启动器会把 JDK 和 Maven 发行包缓存到 `%LOCALAPPDATA%\CryptoBench\tools`；项目代码和账号数据库仍在原目录。如果用户目录也含非 ASCII 字符，可设置 `$env:CRYPTOBENCH_TOOLS_DIR = 'D:\CryptoBenchTools'`，指定有写入权限的纯 ASCII 工具缓存路径。此变量也适用于 Windows 打包脚本；下载仍校验 SHA-256，后续启动复用缓存。
+
 首次运行需要联网访问 GitHub 和 Maven Central；后续复用缓存。新分支引入的依赖仍可能需要下载。前端已随项目打包，启动网站不需要 Node.js。
 
 仅准备工具并显示版本：

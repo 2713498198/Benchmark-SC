@@ -92,6 +92,7 @@ class ExecutionApiIntegrationTest {
         JsonNode report = client.json(client.send("GET", "/api/reports/" + state.path("reportId").asText(), null));
         assertThat(report.path("verified").asBoolean()).isTrue();
         assertThat(report.path("verificationStatus").asText()).isEqualTo("verified");
+        assertReportMetrics(report, report.path("results"), "main");
         assertThat(report.path("score").asDouble()).isEqualTo(100);
         assertThat(report.path("cost").isNull()).isTrue();
         assertThat(report.path("usage").path("inputTokens").asLong()).isEqualTo(80);
@@ -117,6 +118,55 @@ class ExecutionApiIntegrationTest {
         Client client = registeredClient();
         MvcResult result = client.send("POST", "/api/agent/check", Map.of("endpoint", "http://example.com"));
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    void refusesRetiredDeviceExecutionInsteadOfFallingBackToLocalAgent() throws Exception {
+        Client client = registeredClient();
+        Map<String, Object> input = new HashMap<>(Map.of(
+                "datasetId", "mini-spn", "version", "1.0.0", "scope", "sample", "budget", "standard",
+                "source", "local", "endpoint", "http://127.0.0.1:" + agent.getAddress().getPort(),
+                "model", "test-model", "executorType", "bridge"));
+        input.put("bridgeId", "retired-device");
+        input.put("localAgentId", "retired-agent");
+        assertThat(client.send("POST", "/api/agent/check", input).getResponse().getStatus()).isEqualTo(400);
+        assertThat(client.send("POST", "/api/runs", input).getResponse().getStatus()).isEqualTo(400);
+        String owner = client.json(client.send("GET", "/api/auth/me", null)).path("user").path("id").asText();
+        assertThat(runRepository.findByOwner(owner)).isEmpty();
+    }
+
+    @Test
+    void historicalDeviceRunsRemainReadableAndCancelableButCannotResumeOrRetryLocally() throws Exception {
+        Client client = registeredClient();
+        String owner = client.json(client.send("GET", "/api/auth/me", null)).path("user").path("id").asText();
+        String id = "retired-device-run-" + UUID.randomUUID();
+        String now = Instant.now().toString();
+        ObjectNode config = mapper.createObjectNode().put("executorType", "bridge").put("bridgeId", "retired-device")
+                .put("localAgentId", "retired-agent").put("endpoint", "http://127.0.0.1:" + agent.getAddress().getPort());
+        runRepository.insert(new Run(id, owner, "evaluation", "local", "mini-spn", "1.0.0", "standard", "sample",
+                "test-model", null, 987, "paused", 1, 0, 0, 0, config, "device_offline", "Device offline",
+                null, null, false, now, now, null));
+        assertThat(client.send("POST", "/api/runs/" + id + "/resume", Map.of()).getResponse().getStatus()).isEqualTo(409);
+        assertThat(client.json(client.send("GET", "/api/runs/" + id, null)).path("status").asText()).isEqualTo("paused");
+        assertThat(client.send("POST", "/api/runs/" + id + "/cancel", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.send("POST", "/api/runs/" + id + "/retry", null).getResponse().getStatus()).isEqualTo(409);
+        assertThat(runRepository.findByOwner(owner)).hasSize(1);
+        assertThat(runRepository.find(id, false).orElseThrow().config()).isEqualTo(config);
+    }
+
+    @Test
+    void retiredDeviceEndpointsAreUnavailableEvenToAuthenticatedUsers() throws Exception {
+        Client client = registeredClient();
+        for (String path : java.util.List.of("/api/bridges", "/api/bridge-device/jobs/next")) {
+            MvcResult result = client.send("GET", path, null);
+            assertThat(result.getResponse().getStatus()).isEqualTo(403);
+            assertThat(result.getHandler()).isNull();
+        }
+        for (String path : java.util.List.of("/api/bridges/pairing", "/api/bridge-device/pair", "/api/bridge-device/heartbeat")) {
+            MvcResult result = client.send("POST", path, Map.of());
+            assertThat(result.getResponse().getStatus()).isEqualTo(403);
+            assertThat(result.getHandler()).isNull();
+        }
     }
 
     @Test
@@ -172,7 +222,7 @@ class ExecutionApiIntegrationTest {
     }
 
     @Test
-    void requeuesRecoverableRunsAndLeavesCancelledRunsTerminal() throws Exception {
+    void pausesInterruptedTasksAndPreservesCompletedResultsAndCancelledRuns() throws Exception {
         Client client = registeredClient();
         String ownerId = client.json(client.send("GET", "/api/auth/me", null)).path("user").path("id").asText();
         String now = Instant.now().toString();
@@ -190,17 +240,23 @@ class ExecutionApiIntegrationTest {
         runRepository.insertTask(queuedId, "main:mini-spn-001", 1);
         runRepository.updateTask(queuedId, "main:mini-spn-001", "running", mapper.createObjectNode(),
                 mapper.createObjectNode(), true, 1d, 0.1d, 10L, now, null);
+        runRepository.insertTask(queuedId, "main:mini-spn-002", 2);
+        runRepository.updateTask(queuedId, "main:mini-spn-002", "passed", mapper.createObjectNode(),
+                mapper.createObjectNode(), true, 1d, 0.2d, 20L, now, now);
 
         runRepository.insert(new Run(cancelledId, ownerId, "evaluation", "local", "mini-spn", "1.0.0",
                 "standard", "sample", "test-model", null, 42, "cancelled", 1, 0, 0, 0,
                 config, "cancelled", "用户取消运行", null, null, true, now, now, now));
 
-        assertThat(runRepository.recoverInterruptedRuns()).extracting(Run::id).containsExactly(queuedId);
+        runRepository.recoverInterruptedRuns();
         Run recovered = runRepository.find(queuedId, false).orElseThrow();
-        assertThat(recovered.status()).isEqualTo("queued");
+        assertThat(recovered.status()).isEqualTo("paused");
         assertThat(recovered.errorCode()).isEqualTo("worker_restarted");
-        assertThat(recovered.startedAt()).isNull();
-        assertThat(runRepository.findTasks(queuedId).get(0).status()).isEqualTo("queued");
+        assertThat(recovered.startedAt()).isEqualTo(now);
+        assertThat(runRepository.findTasks(queuedId).get(0).status()).isEqualTo("interrupted");
+        assertThat(runRepository.findTasks(queuedId).get(1).status()).isEqualTo("passed");
+        assertThat(runRepository.findTasks(queuedId).get(1).costUsd()).isEqualTo(0.2d);
+        assertThat(recovered.completedTasks()).isEqualTo(1);
         assertThat(runRepository.find(cancelledId, false).orElseThrow().status()).isEqualTo("cancelled");
         // Keep the shared test database independent of method execution order.
         runRepository.updateStatus(queuedId, "failed", 0, 0, 0, "test_cleanup", null, null,
@@ -274,11 +330,37 @@ class ExecutionApiIntegrationTest {
         assertThat(report.path("kind").asText()).isEqualTo("pk");
         assertThat(report.path("verified").asBoolean()).isTrue();
         assertThat(report.path("competitors")).hasSize(2);
+        for (JsonNode competitor : report.path("competitors")) {
+            assertReportMetrics(competitor, report.path("results"), competitor.path("participantKey").asText());
+        }
+        assertThat(report.path("categories")).isEqualTo(report.at("/competitors/0/categories"));
         assertThat(report.path("competitors").get(0).path("score").asDouble()).isEqualTo(100);
         assertThat(report.path("competitors").get(0).path("usage").path("inputTokens").asLong()).isEqualTo(80);
         assertThat(report.path("competitors").get(0).path("usage").path("outputTokens").asLong()).isEqualTo(80);
         assertThat(report.path("competitors").get(0).path("usage").path("totalTokens").asLong()).isEqualTo(160);
         assertThat(report.path("competitors").get(1).path("usage").path("knownTasks").asInt()).isEqualTo(8);
+    }
+
+    private void assertReportMetrics(JsonNode summary, JsonNode results, String participant) {
+        double elapsed = 0;
+        int count = 0;
+        for (JsonNode row : results) {
+            assertThat(row.path("category").asText()).isNotBlank();
+            assertThat(row.path("participantKey").asText()).isNotBlank();
+            if (participant.equals(row.path("participantKey").asText())) {
+                elapsed += row.path("elapsedMs").asLong() / 1000d;
+                count++;
+            }
+        }
+        assertThat(count).isEqualTo(summary.path("total").asInt());
+        assertThat(summary.path("totalTimeSeconds").asDouble()).isCloseTo(elapsed, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(summary.path("averageTimeSeconds").asDouble()).isCloseTo(elapsed / count, org.assertj.core.data.Offset.offset(1e-9));
+        int categoryTotal = 0;
+        for (JsonNode category : summary.path("categories")) {
+            categoryTotal += category.path("total").asInt();
+            assertThat(category.has("score")).isTrue();
+        }
+        assertThat(categoryTotal).isEqualTo(count);
     }
 
     private Client registeredClient() throws Exception {

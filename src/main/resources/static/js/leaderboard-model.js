@@ -1,3 +1,4 @@
+import {averageTime,timeMetrics} from './report-metrics.js';
 import {executionSourceKey} from './execution-sources.js';
 
 export const validNumber=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
@@ -28,13 +29,14 @@ export function leaderboardModel(builtins,publicReports,ownReports,filters,query
  const visible=cohort.filter(({record:r})=>!search||[r.agent,r.model].some(value=>String(value??'').toLocaleLowerCase().includes(search)));
  if(filters.sort!=='score')visible.sort((a,b)=>{
   const key=filters.sort==='cost'?'cost':'time';
-  const av=validNumber(a.record[key])?a.record[key]:Infinity,bv=validNumber(b.record[key])?b.record[key]:Infinity;
+  const aValue=key==='time'?averageTime(a.record):a.record.cost,bValue=key==='time'?averageTime(b.record):b.record.cost;
+  const av=validNumber(aValue)?aValue:Infinity,bv=validNumber(bValue)?bValue:Infinity;
   return av-bv||stable(a,b);
  });
  return {cohort,visible,leaders:cohort.filter(entry=>entry.place===1),costCount:cohort.filter(({record:r})=>validNumber(r.cost)).length};
 }
 
 export function leaderboardCsvRows(entries){
- return [['demo','agent','model','dataset','version','budget','passed','total','pass_rate','time_s','cost_usd','source'],
-  ...entries.map(({record:r})=>[typeof r.demo==='boolean'?r.demo:'',r.agent,r.model,r.datasetId,r.version,r.budget,r.passed,r.total,r.score,r.time,r.cost,r.source])];
+ return [['demo','agent','model','dataset','version','budget','passed','total','pass_rate','time_s','cost_usd','source','total_time_s','average_time_s'],
+  ...entries.map(({record:r})=>[typeof r.demo==='boolean'?r.demo:'',r.agent,r.model,r.datasetId,r.version,r.budget,r.passed,r.total,r.score,r.time,r.cost,r.source,timeMetrics(r).totalTimeSeconds,averageTime(r)])];
 }

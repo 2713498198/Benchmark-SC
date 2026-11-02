@@ -25,7 +25,16 @@ Release 资产包括安装器、便携 ZIP、`SHA256SUMS.csv`、`release-manifes
 构建后可运行桌面包健康检查：
 
 ```powershell
+npm run test:desktop:contents
 npm run test:desktop
 ```
+
+打包使用独立临时输入目录，只复制主应用 JAR。`PropertiesLauncher` 加载桌面入口，服务就绪后使用实际绑定端口打开系统浏览器；默认端口为 4173。无法打开浏览器时会记录可手动访问的地址，服务继续运行。普通 `java -jar` 启动入口不变。
+
+自动验证包括桌面入口、实际随机端口、就绪后调用浏览器适配器一次、浏览器失败后服务仍可访问，以及无效 `JAVA_HOME` 下使用内置运行时。内容检查要求应用载荷中只有主 JAR 和 jpackage 元数据，排除构建目录中的测试类、日志、数据库和 outbox。CI 还验证 EXE 安装、升级、卸载、H2 账号在升级后仍可登录，以及用户文件保留。
+
+安装器使用 jpackage 的 `CryptoBench-post-image.wsf` 构建钩子，移除默认 WiX 配置中的递归目录清理，并在维护操作中恢复用户选择的安装目录，使 MSI 能正常删除该目录下的安装文件。钩子在 WiX 结构变化时拒绝继续构建，防止升级或卸载误删用户创建的 `var`。此行为由两版安装器的完整生命周期测试验证。
+
+发布前仍需在可交互的 Windows 桌面上双击快捷方式，确认默认浏览器实际显示主页。无界面自动化不能代替这一人工检查；可用安装目录和普通 JAR 的启动日志排查问题。完整统计口径见 [报告耗时与分类成绩](../docs/report-metrics.md)。
 
 脚本会复用源码启动器准备 JDK 21，通过项目 Maven Wrapper 打包，再使用 JDK 自带的 `jpackage`。生成的安装器和便携包包含 Java，最终用户无需安装 JDK、Maven 或 Node.js。当前仓库不提交生成产物；发布前需在 Windows 机器上做启动、升级和卸载验证。下载、代理和手动安装说明见 [启动指南](../docs/SETUP.md)。

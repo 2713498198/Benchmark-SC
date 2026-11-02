@@ -1,10 +1,12 @@
+import {averageTime} from './report-metrics.js';
 import {escapeHTML as e} from './core.js';
 import {executionSourceLabel} from './execution-sources.js';
 
 const metrics={cost:{name:'费用',unit:'USD'},time:{name:'平均耗时',unit:'s'}};
 const numeric=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 const number=value=>value!==0&&(Math.abs(value)<.001||Math.abs(value)>=1e6)?value.toExponential(1):Number(value.toFixed(3)).toLocaleString('en-US',{maximumFractionDigits:3});
-const metricText=(row,metric)=>numeric(row[metric])?(metric==='cost'?'$':'')+number(row[metric])+(metric==='time'?' s':''):'未提供';
+const metricValue=(row,metric)=>metric==='time'?averageTime(row):row[metric];
+const metricText=(row,metric)=>numeric(metricValue(row,metric))?(metric==='cost'?'$':'')+number(metricValue(row,metric))+(metric==='time'?' s':''):'未知';
 
 // Clip the full segment against the label box, including a gap for the stroke.
 // Testing only the endpoints misses long lines crossing a label's background.
@@ -29,9 +31,10 @@ export function chartModel(rows,metric='cost'){
  metric=metrics[metric]?metric:'cost';
  const groups=new Map();
  for(const row of rows){
-  if(!numeric(row[metric])||!numeric(row.score)||row.score>100)continue;
-  const key=row[metric]+':'+row.score;
-  if(!groups.has(key))groups.set(key,{x:row[metric],y:row.score,rows:[],frontier:false});
+  const value=metricValue(row,metric);
+  if(!numeric(value)||!numeric(row.score)||row.score>100)continue;
+  const key=value+':'+row.score;
+  if(!groups.has(key))groups.set(key,{x:value,y:row.score,rows:[],frontier:false});
   groups.get(key).rows.push(row);
  }
  const points=[...groups.values()].sort((a,b)=>a.x-b.x||b.y-a.y);

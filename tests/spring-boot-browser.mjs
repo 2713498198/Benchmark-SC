@@ -71,7 +71,8 @@ try{
   await page.locator('#confirm-publish').click();
   await page.locator('#modal').waitFor({state:'hidden'});
   await page.reload();
-  await page.locator('[data-publish-report]:disabled').waitFor();
+  await page.locator('[data-report-json]').waitFor();
+  assert.equal(await page.locator('[data-publish-report]').count(),0);
   const published=await context.request.get(base+'/api/reports/'+reportId);
   assert.equal((await published.json()).published,true);
 

@@ -37,13 +37,14 @@ public class RequestSizeFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
-        if (request.getContentLengthLong() > MAX_BYTES) {
+        int maxBytes = request.getRequestURI().startsWith("/api/datasets/custom") ? 2_000_000 : MAX_BYTES;
+        if (request.getContentLengthLong() > maxBytes) {
             response.sendError(413);
             return;
         }
         // 最多读取上限加一字节，既可识别没有 Content-Length 的超限请求，也避免无限读取。
-        byte[] bytes = request.getInputStream().readNBytes(MAX_BYTES + 1);
-        if (bytes.length > MAX_BYTES) {
+        byte[] bytes = request.getInputStream().readNBytes(maxBytes + 1);
+        if (bytes.length > maxBytes) {
             response.sendError(413);
             return;
         }

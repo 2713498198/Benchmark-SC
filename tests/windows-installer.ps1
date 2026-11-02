@@ -13,6 +13,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$LogDirectory = [IO.Path]::GetFullPath($LogDirectory)
 $InitialInstaller = [IO.Path]::GetFullPath($InitialInstaller)
 $UpgradeInstaller = [IO.Path]::GetFullPath($UpgradeInstaller)
 if (-not (Test-Path -LiteralPath $InitialInstaller)) { throw "Initial installer was not found: $InitialInstaller" }
@@ -22,7 +23,7 @@ if ($InstallRoot) {
     $InstallRoot = [IO.Path]::GetFullPath($InstallRoot)
     New-Item -ItemType Directory -Force -Path (Split-Path $InstallRoot) | Out-Null
     if (Test-Path -LiteralPath $InstallRoot) {
-        Remove-Item -LiteralPath $InstallRoot -Recurse -Force
+        throw "Installer test requires a new, isolated directory: $InstallRoot"
     }
 }
 
@@ -51,8 +52,8 @@ function Wait-CryptoBenchEntry([int]$timeoutSeconds = 60) {
 
 function Invoke-Installer([string]$path, [string]$logName) {
     $log = Join-Path $LogDirectory $logName
-    $arguments = @('/quiet', '/norestart', '/log', $log)
-    if ($InstallRoot) { $arguments += "/D=`"$InstallRoot`"" }
+    $arguments = @('/quiet', '/norestart', '/log', ('"' + $log + '"'))
+    if ($InstallRoot) { $arguments += "INSTALLDIR=`"$InstallRoot`"" }
     $process = Start-Process -FilePath $path -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
     if ($process.ExitCode -ne 0) { throw "Installer failed with exit code $($process.ExitCode): $path" }
 }
@@ -97,27 +98,17 @@ function Assert-ShortcutsRemoved {
     }
 }
 
-function Start-AndCheckHealth([string]$executable) {
-    $process = Start-Process -FilePath $executable -WorkingDirectory (Split-Path $executable) -PassThru -WindowStyle Hidden
-    try {
-        $deadline = (Get-Date).AddSeconds(60)
-        $healthy = $false
-        do {
-            try {
-                $response = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:4173/actuator/health' -TimeoutSec 3
-                if ($response.StatusCode -eq 200) { $healthy = $true; break }
-            } catch { }
-            Start-Sleep -Seconds 1
-        } while ((Get-Date) -lt $deadline)
-        if (-not $healthy) { throw 'Installed CryptoBench did not become healthy on port 4173.' }
-    } finally {
-        if ($process -and -not $process.HasExited) {
-            & taskkill.exe /PID $process.Id /T /F | Out-Null
-            Start-Sleep -Seconds 1
-        }
-    }
+function Start-AndCheckHealth([string]$executable, [switch]$ExpectExisting) {
+    & node (Join-Path $PSScriptRoot 'windows-package-content.mjs') (Split-Path $executable)
+    if ($LASTEXITCODE -ne 0) { throw 'Installed payload verification failed.' }
+    $testData = Join-Path (Split-Path $executable) 'var\data\installer-test'
+    $extra = @()
+    if ($ExpectExisting) { $extra += '--expect-persisted-user' }
+    & node (Join-Path $PSScriptRoot 'windows-app-image.mjs') $executable $testData @extra
+    if ($LASTEXITCODE -ne 0) { throw 'Installed desktop entry/readiness check failed.' }
 }
 
+if (Get-CryptoBenchEntry) { throw 'An existing CryptoBench installation must not be replaced by this test.' }
 Invoke-Installer $InitialInstaller 'install.log'
 $installed = Wait-CryptoBenchEntry
 if ([string]$installed.DisplayVersion -ne $InitialVersion) {
@@ -140,12 +131,13 @@ if ([string]$upgraded.DisplayVersion -ne $UpgradeVersion) {
 Assert-InstalledExecutable $upgraded | Out-Null
 Assert-Shortcuts (Assert-InstalledExecutable $upgraded)
 if (-not (Test-Path -LiteralPath $sentinel)) { throw 'Upgrade removed the local data sentinel.' }
+Start-AndCheckHealth (Assert-InstalledExecutable $upgraded) -ExpectExisting
 Write-Host "Upgraded CryptoBench to $UpgradeVersion"
 
 $productCode = $upgraded.PSChildName
 $uninstallLog = Join-Path $LogDirectory 'uninstall.log'
 $uninstall = Start-Process -FilePath "$env:WINDIR\System32\msiexec.exe" `
-    -ArgumentList @('/x', $productCode, '/qn', '/norestart', '/l*v', $uninstallLog) -Wait -PassThru -WindowStyle Hidden
+    -ArgumentList @('/x', $productCode, '/qn', '/norestart', '/l*v', ('"' + $uninstallLog + '"')) -Wait -PassThru -WindowStyle Hidden
 if ($uninstall.ExitCode -ne 0) { throw "Uninstall failed with exit code $($uninstall.ExitCode)." }
 Start-Sleep -Seconds 2
 if (Get-CryptoBenchEntry) { throw 'CryptoBench is still registered after uninstall.' }
@@ -153,6 +145,10 @@ if (Test-Path -LiteralPath $executable) { throw "Installed executable remains af
 Assert-ShortcutsRemoved
 if (-not (Test-Path -LiteralPath $sentinel)) { throw 'Uninstall removed the local data sentinel.' }
 if ($InstallRoot -and (Test-Path -LiteralPath $InstallRoot)) {
-    Remove-Item -LiteralPath $InstallRoot -Recurse -Force -ErrorAction SilentlyContinue
+    $cleanupRoot = [IO.Path]::GetFullPath($InstallRoot)
+    if ($cleanupRoot -eq [IO.Path]::GetPathRoot($cleanupRoot) -or -not (Test-Path -LiteralPath $sentinel)) {
+        throw "Refusing to remove an unverified test installation: $cleanupRoot"
+    }
+    Remove-Item -LiteralPath $cleanupRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 Write-Host 'PASS Windows installer lifecycle: install, upgrade, uninstall'

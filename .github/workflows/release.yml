@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21.0.13+9'
+          java-version: '21.0.13'
           cache: maven
       - uses: actions/setup-node@v4
         with:
@@ -37,6 +37,8 @@ jobs:
         run: |
           npm run check
           if ($LASTEXITCODE -ne 0) { throw "Frontend verification failed" }
+          npm run test:report-metrics
+          if ($LASTEXITCODE -ne 0) { throw "Report metric verification failed" }
           .\start.cmd --batch-mode verify
           if ($LASTEXITCODE -ne 0) { throw "Backend verification failed" }
       - name: Prepare WiX
@@ -59,6 +61,10 @@ jobs:
           $version = $Matches[1]
           .\scripts\package-windows.ps1 -Installer -AppVersion $version -AllowExternalOutput -OutputDir $root
           .\scripts\package-windows.ps1 -AppVersion $version -AllowExternalOutput -OutputDir $portable
+          node tests/windows-package-content.mjs (Join-Path $portable 'CryptoBench')
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop payload verification failed' }
+          node tests/windows-app-image.mjs (Join-Path $portable 'CryptoBench\CryptoBench.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop readiness verification failed' }
           Compress-Archive -Path (Join-Path $portable 'CryptoBench') -DestinationPath (Join-Path $root "CryptoBench-$tag-portable.zip") -Force
           Copy-Item (Join-Path $env:GITHUB_WORKSPACE 'docs\INSTALL-WINDOWS.md') (Join-Path $root 'INSTALL-WINDOWS.md')
           .\scripts\create-release-manifest.ps1 -ReleaseDir $root -Version $version -Tag $tag -Commit $env:GITHUB_SHA

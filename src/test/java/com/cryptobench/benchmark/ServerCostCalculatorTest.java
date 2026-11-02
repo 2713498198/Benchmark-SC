@@ -56,4 +56,18 @@ class ServerCostCalculatorTest {
         assertThat(configured.pricingVersion()).isEqualTo("provider-prices-2026-01");
         assertThat(configured.calculate("GPT-4.1", response)).isNull();
     }
+
+    @Test
+    void distinguishesMissingAndInvalidCostWithoutReplacingThemWithZero() throws Exception {
+        var snapshot = calculator.snapshot();
+        assertThat(snapshot.path("snapshotHash").asText()).matches("[a-f0-9]{64}");
+        assertThat(java.time.Instant.parse(snapshot.path("capturedAt").asText())).isBeforeOrEqualTo(java.time.Instant.now());
+        assertThat(calculator.costStatus(null, "GPT-4.1", null)).isEqualTo("missing_snapshot");
+        assertThat(calculator.costStatus(snapshot, "unknown", null)).isEqualTo("missing_price");
+        assertThat(calculator.costStatus(snapshot, "GPT-4.1", mapper.readTree("{}"))).isEqualTo("missing_usage");
+        assertThat(calculator.costStatus(snapshot, "GPT-4.1", mapper.readTree("{\"usage\":{\"inputTokens\":0.5,\"outputTokens\":0}}"))).isEqualTo("invalid_usage");
+        var zero = mapper.readTree("{\"usage\":{\"inputTokens\":0,\"outputTokens\":0}}");
+        assertThat(calculator.costStatus(snapshot, "GPT-4.1", zero)).isEqualTo("calculated");
+        assertThat(calculator.calculate(snapshot, "GPT-4.1", zero)).isEqualTo(0d);
+    }
 }

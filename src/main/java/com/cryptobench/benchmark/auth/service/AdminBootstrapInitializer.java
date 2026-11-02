@@ -34,8 +34,8 @@ public class AdminBootstrapInitializer implements ApplicationRunner {
         String name = clean(properties.name());
         String password = properties.password() == null ? "" : properties.password();
         if (email.isBlank() || name.isBlank() || password.isBlank()) return;
-        if (password.length() < 12) {
-            throw new IllegalStateException("CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD must contain at least 12 characters");
+        if (password.length() < 8 || password.length() > 24) {
+            throw new IllegalStateException("CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD must contain 8 to 24 characters");
         }
         if (users.findByEmail(email).isPresent()) {
             LOG.info("Bootstrap administrator already exists; no account or password was changed");
