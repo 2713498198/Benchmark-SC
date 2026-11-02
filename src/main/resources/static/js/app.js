@@ -6,8 +6,9 @@ import ResourcesPage from './vue/ResourcesPage.js';
 import ArenaPage from './vue/ArenaPage.js';
 import CommunityPage from './vue/CommunityPage.js';
 import LeaderboardPage from './vue/LeaderboardPage.js';
+import {createRunState} from './run-state.js';
 
-const state=reactive({user:null,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null,demoEnabled:false});
+const state=reactive({user:null,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null,runLogs:[],runNetworkError:'',bootstrapError:'',demoEnabled:false});
 const labels={'/':'首页','/datasets':'测评集','/tools':'测评工具','/leaderboard':'测评榜单','/arena':'PK 竞技'};
 function parseRoute(){try{const route=decodeURI(location.hash.slice(1)||'/');return route.startsWith('/')?route:'/'+route;}catch{return '/404';}}
 async function api(path,options={}){
@@ -19,11 +20,12 @@ async function api(path,options={}){
  }
  if(init.body&&typeof init.body!=='string')init.body=JSON.stringify(init.body);
  const response=await fetch(path,init);let body;try{body=await response.json();}catch{}
- if(!response.ok)throw Error(body?.error||'请求失败');return body;
+ if(!response.ok){const error=Error(body?.error||body?.message||'请求失败');error.status=response.status;error.code=body?.code;error.details=body;throw error;}return body;
 }
 function save(){try{localStorage.setItem('cryptobench.v1',JSON.stringify({reports:state.reports,connections:state.connections,customDatasets:state.customDatasets}));}catch{}}
-function applyBootstrap(boot){state.user=boot.user||null;state.reports=(boot.reports||[]).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));state.connections=boot.connections||[];state.customDatasets=boot.customDatasets||[];state.publicReports=boot.publicReports||[];state.demoEnabled=boot.demoEnabled===true;save();}
-async function hydrate(){try{applyBootstrap(await api('/api/bootstrap'));}catch{applyBootstrap({});}}
+let bootstrapEpoch=0;
+function applyBootstrap(boot){bootstrapEpoch++;if(state.user?.id!==boot.user?.id){state.activeRun=null;state.runLogs=[];state.runNetworkError='';}state.user=boot.user||null;state.reports=(boot.reports||[]).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));state.connections=boot.connections||[];state.customDatasets=boot.customDatasets||[];state.publicReports=boot.publicReports||[];state.demoEnabled=boot.demoEnabled===true;state.bootstrapError='';save();}
+async function hydrate(){const epoch=++bootstrapEpoch;try{const boot=await api('/api/bootstrap');if(epoch!==bootstrapEpoch)return false;applyBootstrap(boot);return true;}catch(error){if(epoch===bootstrapEpoch)state.bootstrapError=error.message;return false;}}
 function navigate(path){location.hash=path;}
 
 const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,CommunityPage,LeaderboardPage},setup(){
@@ -34,14 +36,18 @@ const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,CommunityPage,Le
  function closeModal(){modal.kind='';modal.action=null;if(dialog.value?.open)dialog.value.close();}
  function confirm(title,message,kind,action){if(kind==='connection')Object.assign(connection,{id:'',name:'',url:'',model:''});Object.assign(modal,{kind,title,message,action});}
  watch(()=>modal.kind,async kind=>{await nextTick();if(kind&&!dialog.value?.open)dialog.value?.showModal();else if(!kind&&dialog.value?.open)dialog.value.close();});
- const app={state,route,modal,connection,api,save,hydrate,applyBootstrap,navigate,toast,confirm,closeModal,getDatasets:()=>[...datasets,...state.customDatasets.filter(d=>d.published)]};provide(appKey,app);
+ const runState=createRunState({state,api,onReport:report=>{state.reports=[report,...state.reports.filter(r=>r.id!==report.id)];save();}});
+ watch(()=>state.user?.id,()=>runState.reset(),{flush:'sync'});
+ document.addEventListener('visibilitychange',runState.visibility);
+ const app={state,route,modal,connection,api,save,hydrate,applyBootstrap,navigate,toast,confirm,closeModal,runState,getDatasets:()=>[...datasets,...state.customDatasets.filter(d=>d.published)]};provide(appKey,app);
  window.addEventListener('hashchange',()=>{route.value=parseRoute();menuOpen.value=false;window.scrollTo({top:0,behavior:'instant'});});hydrate();
  async function saveConnection(){if(!/^https?:\/\//i.test(connection.url)){toast('服务地址必须使用 http 或 https');return;}try{const body={name:connection.name,url:connection.url,model:connection.model};const c=connection.id?await api('/api/connections/'+encodeURIComponent(connection.id),{method:'PATCH',body}):await api('/api/connections',{method:'POST',body});if(connection.id)state.connections=state.connections.map(item=>item.id===c.id?c:item);else state.connections.push(c);save();closeModal();}catch(err){toast(err.message);}}
  async function runConfirm(){const action=modal.action;if(action)await action();closeModal();}
  function skip(event){event.preventDefault();const main=document.querySelector('#main');main.focus({preventScroll:true});main.scrollIntoView({behavior:'instant'});}
- return {state,route,page,active,labels,toastMessage,menuOpen,dialog,modal,connection,closeModal,saveConnection,runConfirm,skip,save};
+ return {state,route,page,active,labels,toastMessage,menuOpen,dialog,modal,connection,closeModal,saveConnection,runConfirm,skip,save,hydrate};
 },template:`
 <div class="app-shell"><a class="skip-link" href="#main" @click="skip">跳转到主要内容</a>
+ <div v-if="state.bootstrapError" class="callout" role="alert">无法更新账号与项目数据：{{state.bootstrapError}}<button class="btn small" @click="hydrate">重试加载</button></div>
  <header id="header" class="topbar"><div class="topbar-inner"><a class="brand" href="#/"><img src="assets/logo.svg" alt=""><span>CryptoBench</span></a><nav class="nav" :class="{open:menuOpen}" aria-label="主导航"><a v-for="(label,path) in labels" :key="path" :href="'#'+path" :class="{active:path==='/'?active==='/':active.startsWith(path)}" :aria-current="(path==='/'?active==='/':active.startsWith(path))?'page':null">{{label}}</a></nav><div class="nav-end"><a class="btn small" :class="{primary:!state.user}" :href="state.user?'#/workspace':'#/login'"><SvgIcon name="user" :size="14"/> {{state.user?'工作台':'登录'}}</a><button class="icon-button menu-toggle" aria-label="打开导航菜单" :aria-expanded="String(menuOpen)" @click="menuOpen=!menuOpen"><SvgIcon name="menu" :size="18"/></button></div></div></header>
  <main id="main" tabindex="-1" :data-route="route"><component v-if="page" :is="page" :key="route.split('?')[0]"/><div v-else class="container page"><div class="card empty"><SvgIcon name="search" :size="32"/><h1>页面未找到</h1><p>这个地址暂时不存在。</p><a class="btn primary" href="#/">返回首页</a></div></div></main>
  <footer id="footer"><div class="footer"><div class="container"><div class="footer-top"><div class="brand"><img src="assets/logo.svg" alt=""><span>CryptoBench</span></div><div class="footer-links"><a href="#/docs">接入文档</a><a href="#/download">本地部署</a><a href="#/docs?tab=methodology">测评方法</a><a href="#/docs?tab=about">关于平台</a></div></div><div class="footer-bottom"><span>© 2026 CryptoBench</span></div></div></div></footer>

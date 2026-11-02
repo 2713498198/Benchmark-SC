@@ -45,10 +45,22 @@ public class ReportService {
     public ObjectNode get(BenchmarkUser user, String id) {
         BenchmarkReport report = reports.findById(id, false).orElse(null);
         if (report != null && report.published()) {
-            return report.toResponse();
+            return detail(user, report);
         }
         requireOwner(user, report);
-        return report.toResponse();
+        return detail(user, report);
+    }
+
+    private ObjectNode detail(BenchmarkUser user, BenchmarkReport report) {
+        ObjectNode response = report.toResponse();
+        boolean owner = user != null && report.ownerId().equals(user.id());
+        ObjectNode permissions = response.putObject("permissions");
+        permissions.put("isOwner", owner);
+        permissions.put("canSync", owner && !report.published() && !response.path("synced").asBoolean());
+        boolean eligible = response.path("verified").asBoolean() || (!response.hasNonNull("runId") && response.path("demo").asBoolean());
+        permissions.put("canPublish", owner && !report.published() && response.path("synced").asBoolean()
+                && eligible && "full".equals(response.path("scope").asText()) && !"pk".equals(response.path("kind").asText()));
+        return response;
     }
 
     /**
@@ -72,6 +84,7 @@ public class ReportService {
         }
         // 忽略客户端归属和状态声明；归属来自当前用户，同步状态只能继承已有记录。
         payload.remove("ownerId");
+        payload.remove("permissions");
         payload.put("synced", existing != null && existing.payload().path("synced").asBoolean());
         payload.put("published", false);
         payload.put("verified", false);
@@ -102,7 +115,10 @@ public class ReportService {
         payload.put("verified", true);
         payload.put("verificationStatus", "verified");
         BenchmarkReport report = new BenchmarkReport(id, ownerId, false, payload);
-        if (reports.findById(id, true).isPresent()) {
+        BenchmarkReport existing = reports.findById(id, true).orElse(null);
+        if (existing != null) {
+            if (ownerId.equals(existing.ownerId()) && runId.equals(existing.payload().path("runId").asText())
+                    && existing.payload().path("verified").asBoolean()) return id;
             throw new ApiException(HttpStatus.CONFLICT, "运行报告 ID 已存在");
         }
         reports.insert(report);

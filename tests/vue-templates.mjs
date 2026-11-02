@@ -7,14 +7,15 @@ const files=[root+'/app.js',...fs.readdirSync(root+'/vue').filter(name=>name.end
 let count=0;
 for(const file of files){
  const source=fs.readFileSync(file,'utf8');
- let cursor=0;
- while((cursor=source.indexOf('template:`',cursor))!==-1){
-  const start=cursor+'template:`'.length;
+ const templates=/\btemplate\s*:\s*`/g;
+ let match;
+ while((match=templates.exec(source))!==null){
+  const start=templates.lastIndex;
   const end=source.indexOf('`',start);
   if(end===-1)throw Error(`Unclosed template in ${file}`);
   try{new vm.Script('function __test(){\n'+compile(source.slice(start,end)).code+'\n}',{filename:file});}
   catch(error){console.error(error.stack);process.exitCode=1;}
-  cursor=end+1;
+  templates.lastIndex=end+1;
   count++;
  }
 }

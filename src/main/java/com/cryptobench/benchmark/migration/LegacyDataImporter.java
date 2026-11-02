@@ -88,7 +88,7 @@ public class LegacyDataImporter implements ApplicationRunner {
             if (input.path("published").asBoolean()) {
                 ObjectNode payload = ((ObjectNode) input).deepCopy();
                 payload.remove("ownerId");
-                datasets.insert(input.path("ownerId").asText(), payload);
+                datasets.insertLegacy(input.path("ownerId").asText(), payload);
             }
         }
         LOG.info("Legacy import complete: {} users; source left unchanged; sign in again to create new sessions",

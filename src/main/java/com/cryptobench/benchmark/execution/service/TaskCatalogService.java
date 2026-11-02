@@ -1,6 +1,8 @@
 package com.cryptobench.benchmark.execution.service;
 
 import com.cryptobench.benchmark.common.ApiException;
+import com.cryptobench.benchmark.dataset.repository.DatasetRepository;
+import com.cryptobench.benchmark.dataset.service.CustomDatasetRules;
 import com.cryptobench.benchmark.execution.model.TaskDefinition;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,24 +20,24 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-/** 读取服务端私有的可执行任务；该资源不位于 static 目录，不会被浏览器直接下载。 */
+/** Resolves immutable built-in catalogs or validated database packages; metadata alone is never executable. */
 @Service
 public class TaskCatalogService {
     private final ObjectMapper mapper;
+    private final DatasetRepository datasets;
     private final Map<DatasetVersion, BenchmarkEvaluator> evaluators;
 
-    public TaskCatalogService(ObjectMapper mapper, List<BenchmarkEvaluator> evaluatorList) {
+    public TaskCatalogService(ObjectMapper mapper, List<BenchmarkEvaluator> evaluatorList, DatasetRepository datasets) {
         this.mapper = mapper;
+        this.datasets = datasets;
         this.evaluators = evaluatorList.stream().collect(Collectors.toUnmodifiableMap(
-                evaluator -> new DatasetVersion(evaluator.datasetId(), evaluator.version()),
-                Function.identity()));
+                evaluator -> new DatasetVersion(evaluator.datasetId(), evaluator.version()), Function.identity()));
     }
 
-    /**
-     * Fail fast when a server-owned evaluator is registered without a complete
-     * private task catalog. Public metadata alone must never make a dataset
-     * executable.
-     */
+    public record ExecutionCatalog(List<TaskDefinition> tasks, String evaluatorVersion, String catalogSha256) {
+        public ExecutionCatalog { tasks = List.copyOf(tasks); }
+    }
+
     @PostConstruct
     void validateRegistrations() {
         evaluators.forEach((key, evaluator) -> {
@@ -46,61 +48,65 @@ public class TaskCatalogService {
             if (resource == null || !resource.startsWith("/evaluation/") || resource.contains("/static/")) {
                 throw new IllegalStateException("Evaluator catalog must be a private evaluation resource for " + key);
             }
-            List<TaskDefinition> registeredTasks = tasks(key.datasetId(), key.version());
-            if (registeredTasks.isEmpty()) {
-                throw new IllegalStateException("Evaluator catalog is empty for " + key);
-            }
+            List<TaskDefinition> registered = snapshot(key.datasetId(), key.version()).tasks();
+            if (registered.isEmpty()) throw new IllegalStateException("Evaluator catalog is empty for " + key);
             Set<String> ids = new HashSet<>();
-            for (TaskDefinition task : registeredTasks) {
-                if (task.id() == null || task.id().isBlank() || !ids.add(task.id())) {
-                    throw new IllegalStateException("Evaluator catalog has a duplicate or blank task ID for " + key);
-                }
-                if (task.question() == null || task.question().isBlank()) {
-                    throw new IllegalStateException("Evaluator catalog has a blank question for " + key + " / " + task.id());
-                }
+            for (TaskDefinition task : registered) {
+                if (task.id() == null || task.id().isBlank() || !ids.add(task.id())) throw new IllegalStateException("Duplicate or blank task ID for " + key);
+                if (task.question() == null || task.question().isBlank()) throw new IllegalStateException("Blank question for " + key + " / " + task.id());
             }
         });
     }
 
-    public List<TaskDefinition> tasks(String datasetId, String version) {
-        BenchmarkEvaluator evaluator = evaluator(datasetId, version);
-        try (InputStream input = getClass().getResourceAsStream(evaluator.taskResource())) {
-            if (input == null) {
-                throw new IllegalStateException("Execution catalog is missing for " + datasetId + "@" + version);
+    public ExecutionCatalog snapshot(String datasetId, String version) {
+        BenchmarkEvaluator evaluator = evaluators.get(new DatasetVersion(datasetId, version));
+        JsonNode root;
+        String evaluatorVersion;
+        boolean custom = evaluator == null;
+        if (custom) {
+            ObjectNode summary = datasets.findPublic(datasetId, version).orElseThrow(this::unbound);
+            if (!summary.path("executionReady").asBoolean() || !CustomDatasetRules.SCHEMA.equals(summary.path("schema").asText())) throw unbound();
+            root = datasets.findPrivate(datasetId, version).orElseThrow(this::unbound);
+            evaluatorVersion = summary.path("evaluatorVersion").asText();
+            if (!CustomDatasetRules.EVALUATOR.equals(evaluatorVersion) || !CustomDatasetRules.publicHash((ObjectNode) root, true).equals(summary.path("catalogSha256").asText())) {
+                throw new ApiException(HttpStatus.CONFLICT, "测评集评分器或目录校验不一致，无法执行");
             }
-            JsonNode root = mapper.readTree(input);
-            List<TaskDefinition> result = new ArrayList<>();
-            for (JsonNode task : root.path("tasks")) {
-                List<String> files = new ArrayList<>();
-                task.path("publicFiles").forEach(node -> files.add(node.asText()));
-                List<String> requiredTools = new ArrayList<>();
-                task.path("requiredTools").forEach(node -> requiredTools.add(node.asText()));
-                List<String> requiredCapabilities = new ArrayList<>();
-                task.path("requiredCapabilities").forEach(node -> requiredCapabilities.add(node.asText()));
-                result.add(new TaskDefinition(task.path("id").asText(), task.path("question").asText(),
-                        task.path("expectedAnswer").asText(), files, requiredTools, requiredCapabilities));
-            }
-            return result;
-        } catch (IOException exception) {
-            throw new IllegalStateException("Cannot read execution catalog", exception);
+        } else {
+            try (InputStream input = getClass().getResourceAsStream(evaluator.taskResource())) {
+                if (input == null) throw new IllegalStateException("Execution catalog missing for " + datasetId + "@" + version);
+                root = mapper.readTree(input);
+            } catch (IOException exception) { throw new IllegalStateException("Cannot read execution catalog", exception); }
+            evaluatorVersion = evaluator.evaluatorVersion();
         }
+        List<TaskDefinition> result = new ArrayList<>();
+        for (JsonNode task : root.path("tasks")) {
+            result.add(new TaskDefinition(task.path("id").asText(), task.path("question").asText(),
+                    custom ? null : task.path("expectedAnswer").asText(), strings(task.path("publicFiles")),
+                    strings(task.path("requiredTools")), strings(task.path("requiredCapabilities")),
+                    task.path("input").isObject() ? task.path("input") : mapper.createObjectNode(),
+                    task.path("category").asText(""), task.path("verification")));
+        }
+        return new ExecutionCatalog(result, evaluatorVersion, custom ? CustomDatasetRules.publicHash((ObjectNode) root, true)
+                : CustomDatasetRules.builtInPublicHash(root, datasetId, version, evaluatorVersion));
     }
 
-    public String evaluatorVersion(String datasetId, String version) {
-        return evaluator(datasetId, version).evaluatorVersion();
-    }
+    public List<TaskDefinition> tasks(String datasetId, String version) { return snapshot(datasetId, version).tasks(); }
+    public String evaluatorVersion(String datasetId, String version) { return snapshot(datasetId, version).evaluatorVersion(); }
+    public String catalogSha256(String datasetId, String version) { return snapshot(datasetId, version).catalogSha256(); }
 
     public ObjectNode evaluate(String datasetId, String version, TaskDefinition task, ObjectNode response) {
-        return evaluator(datasetId, version).evaluate(task, response);
-    }
-
-    private BenchmarkEvaluator evaluator(String datasetId, String version) {
         BenchmarkEvaluator evaluator = evaluators.get(new DatasetVersion(datasetId, version));
-        if (evaluator == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "该测评集版本尚未绑定服务端验证器");
-        }
-        return evaluator;
+        if (evaluator != null) return evaluator.evaluate(task, response);
+        // The task was loaded from an immutable private package when this run was created.
+        if (!task.verification().has("type")) throw unbound();
+        return DeclarativeTaskEvaluator.evaluate(task, response);
     }
 
+    private List<String> strings(JsonNode values) {
+        List<String> result = new ArrayList<>();
+        if (values.isArray()) values.forEach(value -> result.add(value.asText()));
+        return result;
+    }
+    private ApiException unbound() { return new ApiException(HttpStatus.BAD_REQUEST, "该测评集版本尚未绑定服务端验证器"); }
     private record DatasetVersion(String datasetId, String version) {}
 }

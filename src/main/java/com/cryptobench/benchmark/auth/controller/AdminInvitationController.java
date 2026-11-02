@@ -29,5 +29,5 @@ public class AdminInvitationController {
         return Map.of("user", user.toResponse());
     }
 
-    public record AcceptRequest(@NotBlank String token, @NotBlank @Size(min = 12, max = 128) String password) {}
+    public record AcceptRequest(@NotBlank String token, @NotBlank @Size(min = 8, max = 24) String password) {}
 }

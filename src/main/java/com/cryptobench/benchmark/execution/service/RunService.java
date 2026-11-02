@@ -8,6 +8,8 @@ import com.cryptobench.benchmark.execution.model.RunTask;
 import com.cryptobench.benchmark.execution.model.TaskDefinition;
 import com.cryptobench.benchmark.execution.repository.RunRepository;
 import com.cryptobench.benchmark.report.service.ReportService;
+import com.cryptobench.benchmark.gateway.GatewayProperties;
+import com.cryptobench.benchmark.gateway.ModelGatewayService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -18,6 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -29,6 +37,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** 创建和执行服务端运行；凭证只在当前 worker 的内存中短暂存在，永不持久化。 */
 @Service
@@ -39,7 +49,16 @@ public class RunService {
     private final ServerCostCalculator costs;
     private final DockerSandboxExecutor docker;
     private final ReportService reports;
+    private final ModelGatewayService gateways;
+    private final GatewayProperties gatewayProperties;
     private final com.fasterxml.jackson.databind.ObjectMapper mapper;
+    private final TransactionTemplate transactions;
+    private final String workerId = UUID.randomUUID().toString();
+    private volatile boolean closing;
+    private final ScheduledExecutorService dispatcher = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "cryptobench-run-dispatcher"); thread.setDaemon(true); return thread;
+    });
+    private final ConcurrentHashMap<String, Map<String, String>> credentials = new ConcurrentHashMap<>();
     private final ExecutorService workers = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
             new ArrayBlockingQueue<>(20), runnable -> {
                 Thread thread = new Thread(runnable, "cryptobench-run-worker");
@@ -50,7 +69,9 @@ public class RunService {
 
     public RunService(RunRepository runs, TaskCatalogService catalog, AgentHttpClient agent,
                       ServerCostCalculator costs, ReportService reports,
-                      com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker) {
+                      com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker,
+                      PlatformTransactionManager transactionManager,
+                      ModelGatewayService gateways, GatewayProperties gatewayProperties) {
         this.runs = runs;
         this.catalog = catalog;
         this.agent = agent;
@@ -58,34 +79,75 @@ public class RunService {
         this.reports = reports;
         this.mapper = mapper;
         this.docker = docker;
+        this.transactions = new TransactionTemplate(transactionManager);
+        this.gateways = gateways;
+        this.gatewayProperties = gatewayProperties;
     }
 
     @PostConstruct
     void recoverInterruptedRuns() {
-        docker.reapOwnedResources();
-        for (Run run : runs.recoverInterruptedRuns()) {
-            try {
-                submitRecovered(run);
-                log(run.id(), "WARN", "应用重启后运行已重新排队");
-            } catch (Exception exception) {
-                runs.updateStatus(run.id(), "failed", 0, 0, 0, "worker_recovery_failed", safeMessage(exception), null,
-                        false, null, Instant.now().toString());
-                log(run.id(), "ERROR", "应用重启后恢复失败：" + safeMessage(exception));
-            }
-        }
+        runs.recoverInterruptedRuns();
+        docker.reapInactiveResources(runs.activeClaimIds());
+        dispatcher.scheduleWithFixedDelay(this::dispatch, 100, 500, TimeUnit.MILLISECONDS);
     }
 
     @PreDestroy
     void shutdownWorkers() {
+        closing = true;
+        dispatcher.shutdownNow();
+        for (String id : activeJobs.keySet()) {
+            try { runs.pause(id, "worker_restarted", "执行服务关闭，已保存完成题目"); } catch (RuntimeException ignored) { }
+        }
         workers.shutdownNow();
         try {
-            workers.awaitTermination(5, TimeUnit.SECONDS);
+            dispatcher.awaitTermination(5, TimeUnit.SECONDS);
+            workers.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         }
+        credentials.clear();
     }
 
-    public ObjectNode checkAgent(ObjectNode input) {
+    private void dispatch() {
+        if (closing) return;
+        try {
+            for (String id : activeJobs.keySet()) runs.renewLease(id, workerId, System.currentTimeMillis() + 90_000);
+            runs.recoverInterruptedRuns();
+            for (Run run : runs.findQueued(100)) {
+                if (closing) break;
+                if (activeJobs.containsKey(run.id())) continue;
+                if (!isLocalExecution(run.config())) {
+                    runs.pause(run.id(), "executor_removed", "原执行方式已移除，请新建本机测评"); continue;
+                }
+                if (activeJobs.size() >= 2) continue;
+                if (!"cryptobench-execution-plan-v1".equals(run.config().path("schema").asText())) {
+                    runs.pause(run.id(), "catalog_changed", "旧运行缺少完整执行快照，请基于原配置重新测评"); continue;
+                }
+                if (missingCredentials(run, credentials.getOrDefault(run.id(), Map.of())).size() > 0) {
+                    runs.pause(run.id(), "credentials_required", "请补录 Agent 凭证后继续"); continue;
+                }
+                FutureTask<Void> job = new FutureTask<>(() -> { execute(run.id()); return null; }) {
+                    @Override public void run() {
+                        try { super.run(); }
+                        finally {
+                            // Also runs when cancellation wins before the callable starts.
+                            activeJobs.remove(run.id(), this);
+                            Run latest = runs.find(run.id(), false).orElse(null);
+                            if (latest == null || !List.of("paused", "queued", "running").contains(latest.status())) credentials.remove(run.id());
+                        }
+                    }
+                };
+                if (activeJobs.putIfAbsent(run.id(), job) != null) continue;
+                try { workers.execute(job); }
+                catch (RejectedExecutionException busy) { activeJobs.remove(run.id(), job); break; }
+            }
+        } catch (RuntimeException exception) {
+            org.slf4j.LoggerFactory.getLogger(RunService.class).warn("Run dispatch will retry after a database/scheduler failure", exception);
+        }
+    }
+
+    public ObjectNode checkAgent(BenchmarkUser user, ObjectNode input) {
+        requireLocalExecution(input, HttpStatus.BAD_REQUEST);
         String source = input.path("source").asText("local").trim().toLowerCase(Locale.ROOT);
         if ("docker".equals(source)) return checkDockerAgent(input);
         String endpoint;
@@ -151,15 +213,17 @@ public class RunService {
     }
 
     public ObjectNode create(BenchmarkUser user, ObjectNode input) {
+        return create(user, input, costs.snapshot(), null);
+    }
+
+    private ObjectNode create(BenchmarkUser user, ObjectNode input, ObjectNode pricingSnapshot, String retryOf) {
+        if (user == null) throw new ApiException(HttpStatus.UNAUTHORIZED, "请先登录");
+        requireLocalExecution(input, HttpStatus.BAD_REQUEST);
         String source = input.path("source").asText("local").trim().toLowerCase(Locale.ROOT);
         String kind = input.path("kind").asText("evaluation").trim().toLowerCase(Locale.ROOT);
-        if (!List.of("local", "docker").contains(source)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "执行来源无效");
+        if (!List.of("local", "docker").contains(source) || !List.of("evaluation", "pk").contains(kind)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "运行类型或执行来源无效");
         }
-        if (!List.of("evaluation", "pk").contains(kind)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "运行类型无效");
-        }
-
         String endpoint = optionalText(input, "endpoint");
         String image = optionalText(input, "image");
         try {
@@ -168,55 +232,72 @@ public class RunService {
         } catch (IllegalArgumentException exception) {
             throw new ApiException(HttpStatus.BAD_REQUEST, exception.getMessage());
         }
-
-        String datasetId = requireText(input, "datasetId");
-        String version = requireText(input, "version");
-        String scope = input.path("scope").asText("sample");
-        String budget = input.path("budget").asText("standard");
+        String datasetId = requireText(input, "datasetId"), version = requireText(input, "version");
+        String scope = input.path("scope").asText("sample"), budget = input.path("budget").asText("standard");
         if (!List.of("sample", "full").contains(scope) || !List.of("standard", "extended").contains(budget)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "任务范围或预算方案无效");
         }
-        List<TaskDefinition> all = catalog.tasks(datasetId, version);
-        List<TaskDefinition> selected = new ArrayList<>("sample".equals(scope)
-                ? all.subList(0, Math.min(8, all.size())) : all);
+        if (input.has("seed") && (!input.get("seed").isIntegralNumber() || !input.get("seed").canConvertToLong())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "随机种子必须为有效整数");
+        }
+        long seed = input.path("seed").asLong(42);
+        var catalogSnapshot = catalog.snapshot(datasetId, version);
+        List<TaskDefinition> all = catalogSnapshot.tasks();
+        List<TaskDefinition> selected = new ArrayList<>("sample".equals(scope) ? all.subList(0, Math.min(8, all.size())) : all);
         if (selected.isEmpty()) throw new ApiException(HttpStatus.BAD_REQUEST, "测评集没有可执行任务");
-        String topToken = optionalText(input, "token");
-        List<Participant> participants = participants(input, kind, endpoint, topToken);
-        String model = modelFor(participants);
-        String id = "run_" + UUID.randomUUID();
-        String now = Instant.now().toString();
+        List<Participant> participants = participants(input, kind, endpoint, optionalText(input, "token"));
+        String model = modelFor(participants), id = "run_" + UUID.randomUUID();
         ObjectNode config = mapper.createObjectNode();
-        config.put("model", model);
-        config.put("kind", kind);
-        config.put("source", source);
-        config.put("agentName", input.path("agentName").asText("本地 Agent"));
-        config.put("evaluatorVersion", catalog.evaluatorVersion(datasetId, version));
+        config.put("schema", "cryptobench-execution-plan-v1");
+        config.put("datasetId", datasetId); config.put("version", version);
+        config.put("seed", seed); config.put("budget", budget); config.put("scope", scope);
+        config.put("model", model); config.put("kind", kind); config.put("source", source);
+        config.put("executorType", "server");
+        config.put("agentName", participants.getFirst().agent());
+        config.put("evaluatorVersion", catalogSnapshot.evaluatorVersion());
+        config.put("catalogSha256", catalogSnapshot.catalogSha256());
+        config.set("taskIds", mapper.valueToTree(selected.stream().map(TaskDefinition::id).toList()));
+        if (pricingSnapshot != null) config.set("pricingSnapshot", pricingSnapshot.deepCopy());
         if (endpoint != null) config.put("endpoint", endpoint);
         if (image != null) config.put("image", image);
         config.set("participants", publicParticipants(participants));
-        int totalTasks = selected.size() * participants.size();
-        Run run = new Run(id, user.id(), kind, source, datasetId, version, budget, scope, model, null,
-                input.path("seed").asLong(42), "queued", totalTasks, 0, 0, 0, config,
-                null, null, null, optionalText(input, "retryOf"), false, now, null, null);
-        runs.insert(run);
-        int ordinal = 1;
-        for (Participant participant : participants) {
-            for (TaskDefinition task : selected) {
-                runs.insertTask(id, taskKey(participant.key(), task.id()), ordinal++);
+        Map<String, String> secrets = new LinkedHashMap<>();
+        participants.forEach(participant -> {
+            if (participant.token() != null) secrets.put(participant.key(), participant.token());
+        });
+        JsonNode gateway = input.path("gateway");
+        if (gateway.isObject() && !gateway.path("providerId").asText().isBlank()) {
+            if (!"docker".equals(source) || !gatewayProperties.enabled()) throw new ApiException(HttpStatus.BAD_REQUEST, "模型网关仅用于已启用网关的 Docker 测评");
+            GatewayProperties.Provider provider = gatewayProperties.providersOrEmpty().stream()
+                    .filter(p -> p.id().equals(gateway.path("providerId").asText())).findFirst()
+                    .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "模型供应商不在允许列表中"));
+            ObjectNode gatewayConfig = config.putObject("gateway");
+            gatewayConfig.put("providerId", provider.id()); gatewayConfig.put("baseUrl", provider.baseUrl());
+            gatewayConfig.put("credentialRequired", true);
+            ObjectNode priceModels = gatewayConfig.putObject("priceModels");
+            for (Participant participant : participants) {
+                if (!provider.modelsOrEmpty().contains(participant.model())) throw new ApiException(HttpStatus.BAD_REQUEST, "模型不在供应商允许列表中");
+                priceModels.put(participant.key(), provider.pricingOrEmpty().getOrDefault(participant.model(), participant.model()));
             }
+            if (retryOf != null && gateway.path("priceModels").isObject()) gatewayConfig.set("priceModels", gateway.path("priceModels").deepCopy());
+            String key = optionalText(gateway, "apiKey");
+            if (key == null || key.length() > 16000 || key.contains("\n") || key.contains("\r")) throw new ApiException(HttpStatus.BAD_REQUEST, "请提供本次运行使用的模型 API Key");
+            secrets.put("gateway", key);
         }
-        log(id, "INFO", "运行已排队，共 " + totalTasks + " 个任务");
-        final String runEndpoint = endpoint;
-        final String runImage = image;
+        credentials.put(id, Map.copyOf(secrets));
+        Run run = new Run(id, user.id(), kind, source, datasetId, version, budget, scope, model, null,
+                seed, "queued", selected.size() * participants.size(), 0, 0, 0, config,
+                null, null, null, retryOf, false, Instant.now().toString(), null, null);
         try {
-            Future<?> future = workers.submit(() -> execute(id, kind, source, runImage, runEndpoint, datasetId, version,
-                    input.path("seed").asLong(42), budget, scope, selected, participants));
-            activeJobs.put(id, future);
-        } catch (RejectedExecutionException exception) {
-            runs.updateStatus(id, "failed", 0, 0, 0, "worker_unavailable", "运行队列暂不可用", null,
-                    false, null, Instant.now().toString());
-            log(id, "ERROR", "运行队列暂不可用");
-        }
+            transactions.executeWithoutResult(transaction -> {
+                runs.insert(run);
+                int ordinal = 1;
+                for (Participant participant : participants) for (TaskDefinition task : selected) {
+                    runs.insertTask(id, taskKey(participant.key(), task.id()), ordinal++);
+                }
+                log(id, "INFO", "运行已排队，共 " + run.totalTasks() + " 个任务");
+            });
+        } catch (RuntimeException error) { credentials.remove(id); throw error; }
         return view(runs.find(id, false).orElseThrow());
     }
 
@@ -248,7 +329,7 @@ public class RunService {
                         .map(value -> value.trim().toLowerCase(Locale.ROOT))
                         .filter(value -> !value.isBlank())
                         .toList();
-        List<String> allowed = List.of("queued", "running", "completed", "failed", "timeout", "cancelled");
+        List<String> allowed = List.of("queued", "running", "paused", "completed", "failed", "timeout", "cancelled");
         if (statuses.stream().anyMatch(value -> !allowed.contains(value))) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "运行状态筛选条件无效");
         }
@@ -262,226 +343,344 @@ public class RunService {
 
     public ObjectNode cancel(BenchmarkUser user, String id) {
         Run run = owned(user, id, false);
-        if (!List.of("queued", "running").contains(run.status())) {
+        if ("cancelled".equals(run.status())) return get(user, id);
+        if (!List.of("queued", "running", "paused").contains(run.status())) {
             throw new ApiException(HttpStatus.CONFLICT, "当前运行已经结束，不能取消");
         }
-        runs.requestCancel(id);
+        if (!runs.cancel(id)) return get(user, id);
         Future<?> job = activeJobs.get(id);
-        if ("queued".equals(run.status())) {
-            runs.updateStatus(id, "cancelled", 0, 0, 0, "cancelled", "用户取消运行", null,
-                    true, null, Instant.now().toString());
-            if (job != null) job.cancel(false);
-            activeJobs.remove(id);
-        } else if (job != null) {
-            job.cancel(true);
-        }
-        log(id, "WARN", "已请求取消运行");
+        if (job != null) job.cancel(true);
+        credentials.remove(id);
+        log(id, "WARN", "已取消运行");
         return get(user, id);
     }
 
     public ObjectNode retry(BenchmarkUser user, String id, ObjectNode input) {
         Run old = owned(user, id, false);
-        if (List.of("queued", "running").contains(old.status())) {
-            throw new ApiException(HttpStatus.CONFLICT, "运行仍在执行，不能重试");
+        requireLocalExecution(old.config(), HttpStatus.CONFLICT);
+        if (List.of("queued", "running", "paused").contains(old.status())) {
+            throw new ApiException(HttpStatus.CONFLICT, "请先取消或结束原运行，再重新测评");
         }
+        if ("cryptobench-execution-plan-v1".equals(old.config().path("schema").asText())) selectedTasks(old);
+        if (old.config().has("gateway")) gatewayPolicy(old.config());
         ObjectNode next = old.config().deepCopy();
-        if (input != null) input.fields().forEachRemaining(entry -> next.set(entry.getKey(), entry.getValue()));
-        next.put("datasetId", old.datasetId());
-        next.put("version", old.version());
-        next.put("scope", old.scope());
-        next.put("budget", old.budget());
-        next.put("kind", old.kind());
-        next.put("source", old.source());
-        next.put("model", old.model());
-        if ("pk".equals(old.kind()) && old.config().has("participants")) {
-            next.set("players", old.config().get("participants").deepCopy());
-        }
-        next.put("retryOf", old.id());
-        return create(user, next);
+        next.put("datasetId", old.datasetId()); next.put("version", old.version());
+        next.put("scope", old.scope()); next.put("budget", old.budget()); next.put("kind", old.kind());
+        next.put("source", old.source()); next.put("model", old.model()); next.put("seed", old.seed());
+        Map<String, String> supplied = suppliedCredentials(input, old);
+        List<String> missing = missingCredentials(old, supplied);
+        if (!missing.isEmpty()) throw new ApiException(HttpStatus.BAD_REQUEST, "请补录凭证：" + String.join(", ", missing));
+        if ("pk".equals(old.kind())) {
+            ArrayNode players = next.putArray("players");
+            for (JsonNode previous : old.config().path("participants")) {
+                ObjectNode player = ((ObjectNode) previous).deepCopy();
+                player.remove("token");
+                String token = supplied.get(player.path("key").asText());
+                if (token != null) player.put("token", token);
+                players.add(player);
+            }
+        } else if (supplied.containsKey("main")) next.put("token", supplied.get("main"));
+        if (supplied.containsKey("gateway")) next.withObject("/gateway").put("apiKey", supplied.get("gateway"));
+        ObjectNode snapshot = old.config().get("pricingSnapshot") instanceof ObjectNode node ? node.deepCopy() : null;
+        return create(user, next, snapshot, old.id());
     }
 
-    private void execute(String id, String kind, String source, String image, String endpoint,
-                         String datasetId, String version, long seed, String budget, String scope,
-                         List<TaskDefinition> tasks, List<Participant> participants) {
-        String started = Instant.now().toString();
-        int completed = 0;
-        int passed = 0;
-        int failed = 0;
-        boolean valid = true;
-        boolean timedOut = false;
-        boolean executionFailed = false;
-        DockerSandboxExecutor.Sandbox sandbox = null;
-        List<ParticipantRuntime> runtimeParticipants = new ArrayList<>();
-        try {
-            if (runs.cancelRequested(id)) {
-                finishCancelled(id, started, completed, passed, failed);
-                return;
-            }
-            if ("docker".equals(source)) {
-                sandbox = docker.start(image, id);
-                endpoint = sandbox.endpoint();
-                log(id, "INFO", "Docker Agent 容器已启动");
-            }
-            if (!runs.markRunning(id, started)) {
-                if (runs.cancelRequested(id)) {
-                    finishCancelled(id, started, completed, passed, failed);
-                    return;
+    public ObjectNode resume(BenchmarkUser user, String id, ObjectNode input) {
+        Run initial = owned(user, id, false);
+        requireLocalExecution(initial.config(), HttpStatus.CONFLICT);
+        if (List.of("queued", "running").contains(initial.status())) return get(user, id);
+        if (!"paused".equals(initial.status())) throw new ApiException(HttpStatus.CONFLICT, "只有暂停的运行可以继续");
+        selectedTasks(initial);
+        if ("agent_changed".equals(initial.errorCode())) {
+            throw new ApiException(HttpStatus.CONFLICT, "该 Agent 不支持恢复原实验，请基于原配置新建实验");
+        }
+        Map<String, String> supplied = new LinkedHashMap<>(credentials.getOrDefault(id, Map.of()));
+        supplied.putAll(suppliedCredentials(input, initial));
+        if (!missingCredentials(initial, supplied).isEmpty()) throw new ApiException(HttpStatus.BAD_REQUEST, "请补录所需 Agent 凭证");
+        transactions.executeWithoutResult(transaction -> {
+            Run current = owned(user, id, true);
+            if (List.of("queued", "running").contains(current.status())) return;
+            if (!"paused".equals(current.status())) throw new ApiException(HttpStatus.CONFLICT, "运行状态已改变，请刷新");
+            credentials.put(id, Map.copyOf(supplied));
+            if (!runs.resume(id)) throw new ApiException(HttpStatus.CONFLICT, "运行状态已改变，请刷新");
+            log(id, "INFO", "用户确认继续实验，保留已保存的任务结果");
+        });
+        return get(user, id);
+    }
+
+    private static boolean isLocalExecution(ObjectNode config) {
+        return "server".equals(config.path("executorType").asText("server"))
+                && !config.hasNonNull("bridgeId") && !config.hasNonNull("localAgentId");
+    }
+
+    private static void requireLocalExecution(ObjectNode config, HttpStatus status) {
+        if (!isLocalExecution(config)) {
+            throw new ApiException(status, "仅支持本机执行，原设备执行方式已移除，请新建本机测评");
+        }
+    }
+
+    private Map<String, String> suppliedCredentials(ObjectNode input, Run run) {
+        Map<String, String> values = new LinkedHashMap<>();
+        if (input == null) return values;
+        Set<String> allowed = new java.util.HashSet<>();
+        run.config().path("participants").forEach(p -> allowed.add(p.path("key").asText()));
+        if (run.config().path("gateway").path("credentialRequired").asBoolean()) allowed.add("gateway");
+        JsonNode node = input.get("credentials");
+        if (node != null) {
+            if (!node.isObject()) throw new ApiException(HttpStatus.BAD_REQUEST, "credentials 格式无效");
+            node.fields().forEachRemaining(entry -> {
+                if (!allowed.contains(entry.getKey()) || !entry.getValue().isObject()) throw new ApiException(HttpStatus.BAD_REQUEST, "凭证参赛方无效");
+                String token = optionalText(entry.getValue(), "token");
+                if (token != null) {
+                    if (token.length() > 16000 || token.contains("\n") || token.contains("\r")) throw new ApiException(HttpStatus.BAD_REQUEST, "凭证格式无效");
+                    values.put(entry.getKey(), token);
                 }
-                throw new IllegalStateException("运行无法从队列转为执行状态");
+            });
+        }
+        String legacy = optionalText(input, "token");
+        if (legacy != null && "evaluation".equals(run.kind())) values.put("main", legacy);
+        return values;
+    }
+
+    private List<String> missingCredentials(Run run, Map<String, String> supplied) {
+        List<String> result = new ArrayList<>();
+        run.config().path("participants").forEach(p -> {
+            String key = p.path("key").asText();
+            if (p.path("credentialRequired").asBoolean() && !supplied.containsKey(key)) result.add(key);
+        });
+        if (run.config().path("gateway").path("credentialRequired").asBoolean() && !supplied.containsKey("gateway")) result.add("gateway");
+        return result;
+    }
+
+    private List<TaskDefinition> selectedTasks(Run run) {
+        if (!"cryptobench-execution-plan-v1".equals(run.config().path("schema").asText())) {
+            throw new ApiException(HttpStatus.CONFLICT, "旧运行缺少执行快照，请基于原配置新建实验");
+        }
+        var current = catalog.snapshot(run.datasetId(), run.version());
+        if (!current.catalogSha256().equals(run.config().path("catalogSha256").asText())
+                || !current.evaluatorVersion().equals(run.config().path("evaluatorVersion").asText())) {
+            throw new ApiException(HttpStatus.CONFLICT, "题库或评分器版本已改变，不能继续原实验");
+        }
+        Map<String, TaskDefinition> byId = new LinkedHashMap<>();
+        current.tasks().forEach(task -> byId.put(task.id(), task));
+        List<TaskDefinition> selected = new ArrayList<>();
+        for (JsonNode id : run.config().path("taskIds")) {
+            TaskDefinition task = byId.get(id.asText());
+            if (task == null) throw new ApiException(HttpStatus.CONFLICT, "原实验任务已不可用");
+            selected.add(task);
+        }
+        if (selected.isEmpty()) throw new ApiException(HttpStatus.CONFLICT, "原实验缺少任务快照");
+        return selected;
+    }
+
+    private void execute(String id) {
+        DockerSandboxExecutor.Sandbox sandbox = null;
+        ModelGatewayService.Session gateway = null;
+        long generation = -1;
+        try {
+            if (closing) return;
+            generation = runs.claim(id, workerId, System.currentTimeMillis() + 90_000);
+            if (generation < 0) return;
+            Run run = runs.find(id, false).orElseThrow();
+            if (!isLocalExecution(run.config())) {
+                runs.pause(id, generation, "executor_removed", "原执行方式已移除，请新建本机测评"); return;
             }
+            List<TaskDefinition> tasks;
+            try { tasks = selectedTasks(run); }
+            catch (RuntimeException unavailable) { runs.pause(id, generation, "catalog_changed", "题库快照无法匹配，请基于原配置新建实验"); return; }
+            List<Participant> participants = recoveredParticipants(run.config(), credentials.getOrDefault(id, Map.of()));
+            String endpoint = optionalText(run.config(), "endpoint");
+            String source = run.source();
+            if ("docker".equals(source)) {
+                if (run.config().has("gateway")) gatewayPolicy(run.config());
+                sandbox = docker.start(optionalText(run.config(), "image"), id);
+                endpoint = sandbox.endpoint();
+                if (run.config().has("gateway")) gateway = gateways.openRun(id, sandbox,
+                        run.config().path("gateway").path("providerId").asText(), credentials.getOrDefault(id, Map.of()).get("gateway"));
+            }
+            ObjectNode price = run.config().get("pricingSnapshot") instanceof ObjectNode node ? node : null;
+            List<ParticipantRuntime> runtime = new ArrayList<>();
+            boolean continuing = runs.findTasks(id).stream().anyMatch(t -> !"queued".equals(t.status()) || t.attempt() > 1)
+                    || run.config().path("hasStarted").asBoolean();
             for (Participant participant : participants) {
-                String participantEndpoint = endpointFor(source, endpoint, participant.endpoint());
-                log(id, "INFO", "检查 " + participant.label() + " 的 Agent 能力");
-                ObjectNode health = "docker".equals(source)
-                        ? agent.checkSandbox(participantEndpoint)
-                        : agent.check(participantEndpoint, participant.token());
-                ObjectNode capabilities = "docker".equals(source)
-                        ? agent.capabilitiesSandbox(participantEndpoint)
-                        : agent.capabilities(participantEndpoint, participant.token());
-                validateModel(participant.model(), capabilities);
-                validateDataset(datasetId, version, capabilities);
-                validateTaskCapabilities(tasks, capabilities);
-                String agentVersion = health.path("version").asText(
-                        capabilities.path("agentVersion").asText(participant.agentVersion()));
-                runtimeParticipants.add(new ParticipantRuntime(participant, agentVersion));
-                log(id, "INFO", participant.label() + " 已连接，版本 " + agentVersion);
+                if (!runs.isCurrent(id, generation)) return;
+                String target = endpointFor(source, endpoint, participant.endpoint());
+                ObjectNode health = "docker".equals(source) ? agent.checkSandbox(target) : agent.check(target, participant.token());
+                ObjectNode capabilities = "docker".equals(source) ? agent.capabilitiesSandbox(target) : agent.capabilities(target, participant.token());
+                try {
+                    validateModel(participant.model(), capabilities);
+                    validateDataset(run.datasetId(), run.version(), capabilities);
+                    validateTaskCapabilities(tasks, capabilities);
+                } catch (IllegalArgumentException changed) {
+                    if (!continuing) throw changed;
+                    runs.pause(id, generation, "agent_changed", "Agent 的模型、题库或工具能力已改变，请基于原配置新建实验"); return;
+                }
+                String version = health.path("version").asText(capabilities.path("agentVersion").asText(participant.agentVersion()));
+                ObjectNode savedCapabilities = run.config().withObject("/agentCapabilities");
+                JsonNode previous = savedCapabilities.path(participant.key());
+                if (continuing && (!capabilities.path("independentTasks").asBoolean() || !capabilities.path("idempotency").asBoolean()
+                        || (!previous.path("version").asText("").isBlank() && !version.equals(previous.path("version").asText())))) {
+                    runs.pause(id, generation, "agent_changed", "Agent 未声明独立任务和幂等恢复能力，或版本已改变；请基于原配置新建实验"); return;
+                }
+                ObjectNode capability = savedCapabilities.putObject(participant.key());
+                capability.put("version", version);
+                capability.put("independentTasks", capabilities.path("independentTasks").asBoolean());
+                capability.put("idempotency", capabilities.path("idempotency").asBoolean());
+                run.config().put("hasStarted", true);
+                if (!runs.updateConfig(id, generation, run.config())) return;
+                runtime.add(new ParticipantRuntime(participant, version));
                 for (TaskDefinition task : tasks) {
-                    if (runs.cancelRequested(id)) {
-                        finishCancelled(id, started, completed, passed, failed);
-                        return;
-                    }
-                    String storageTaskId = taskKey(participant.key(), task.id());
-                    String taskStarted = Instant.now().toString();
+                    if (!runs.isCurrent(id, generation)) return;
+                    String key = taskKey(participant.key(), task.id());
+                    RunTask stored = runs.findTasks(id).stream().filter(t -> t.taskId().equals(key)).findFirst().orElseThrow();
+                    if (List.of("passed", "failed").contains(stored.status())) continue;
+                    int attempt = runs.beginTask(id, key, generation);
+                    if (attempt < 0) return;
                     long nano = System.nanoTime();
                     try {
                         ObjectNode request = mapper.createObjectNode();
-                        request.put("runId", id);
-                        request.put("taskId", task.id());
-                        request.put("participant", participant.key());
-                        request.put("model", participant.model());
-                        request.put("seed", seed);
+                        request.put("runId", id); request.put("taskId", task.id()); request.put("participant", participant.key());
+                        request.put("attempt", attempt); request.put("idempotencyKey", id + ":" + key);
+                        request.put("model", participant.model()); request.put("seed", run.seed());
                         ObjectNode dataset = request.putObject("dataset");
-                        dataset.put("id", datasetId);
-                        dataset.put("version", version);
-                        ObjectNode taskInput = request.putObject("task");
-                        taskInput.put("question", task.question());
-                        ArrayNode files = taskInput.putArray("publicFiles");
-                        task.publicFiles().forEach(files::add);
+                        dataset.put("id", run.datasetId()); dataset.put("version", run.version());
+                        ObjectNode publicTask = request.putObject("task");
+                        publicTask.put("question", task.question()); publicTask.set("input", task.input());
+                        publicTask.put("category", task.category()); publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
+                        int timeout = "extended".equals(run.budget()) ? 600 : 300;
+                        request.put("deadline", Instant.now().plusSeconds(timeout).toString());
                         ObjectNode limits = request.putObject("budget");
-                        limits.put("timeoutSeconds", "extended".equals(budget) ? 600 : 300);
-                        limits.put("maxAgentCalls", "extended".equals(budget) ? 40 : 20);
-                        ObjectNode response = "docker".equals(source)
-                                ? agent.analyzeSandbox(participantEndpoint, request,
-                                        Duration.ofSeconds("extended".equals(budget) ? 600 : 300))
-                                : agent.analyze(participantEndpoint, participant.token(), request,
-                                        Duration.ofSeconds("extended".equals(budget) ? 600 : 300));
-                        long elapsed = elapsedMillis(nano);
-                        ObjectNode verification = catalog.evaluate(datasetId, version, task, response);
-                        boolean taskPassed = verification.path("passed").asBoolean(false);
-                        String status = verification.path("status").asText("invalid");
-                        Double cost = costs.calculate(participant.model(), response);
-                        runs.updateTask(id, storageTaskId, status, response, verification, taskPassed,
-                                verification.path("score").asDouble(0), cost, elapsed, taskStarted,
-                                Instant.now().toString());
-                        completed++;
-                        if (taskPassed) passed++; else failed++;
-                        if (!("passed".equals(status) || "failed".equals(status))) valid = false;
-                        log(id, taskPassed ? "INFO" : "WARN", participant.label() + " / " + task.id() + " 完成：" + status);
-                    } catch (HttpTimeoutException exception) {
-                        runs.updateTask(id, storageTaskId, "timeout", null, errorResult("timeout", "Agent 响应超时"),
-                                false, 0d, null, elapsedMillis(nano), taskStarted, Instant.now().toString());
-                        completed++;
-                        failed++;
-                        valid = false;
-                        timedOut = true;
-                        executionFailed = true;
-                        log(id, "WARN", participant.label() + " / " + task.id() + " 超时");
-                    } catch (InterruptedException exception) {
-                        if (runs.cancelRequested(id)) {
-                            finishCancelled(id, started, completed, passed, failed);
-                            return;
+                        limits.put("timeoutSeconds", timeout); limits.put("maxAgentCalls", "extended".equals(run.budget()) ? 40 : 20);
+                        ObjectNode gatewayTask = gateway == null ? null : gateway.beginTask(key, participant.model(), "extended".equals(run.budget()) ? 40 : 20, Instant.now().plusSeconds(timeout));
+                        if (gatewayTask != null) request.set("modelGateway", gatewayTask);
+                        ObjectNode response = "docker".equals(source) ? agent.analyzeSandbox(target, request, Duration.ofSeconds(timeout))
+                                : agent.analyze(target, participant.token(), request, Duration.ofSeconds(timeout));
+                        if (gateway != null) {
+                            ObjectNode accounting = gateway.finishTask(key);
+                            response.set("gatewayAccounting", accounting);
+                            response.set("usage", accounting.path("usageComplete").asBoolean() ? accounting.deepCopy() : mapper.createObjectNode());
+                            response.put("usageSource", "provider_gateway");
                         }
-                        Thread.currentThread().interrupt();
-                        executionFailed = true;
-                        valid = false;
-                        log(id, "ERROR", participant.label() + " / " + task.id() + " 被中断");
-                        break;
-                    } catch (Exception exception) {
-                        runs.updateTask(id, storageTaskId, "invalid", null,
-                                errorResult("invalid", safeMessage(exception)), false, 0d, null,
-                                elapsedMillis(nano), taskStarted, Instant.now().toString());
-                        completed++;
-                        failed++;
-                        valid = false;
-                        executionFailed = true;
-                        log(id, "ERROR", participant.label() + " / " + task.id() + " 执行失败");
+                        else response.put("usageSource", "agent_reported");
+                        response = redactResponse(response, credentials.getOrDefault(id, Map.of()).values());
+                        if (gatewayTask != null) response = redactResponse(response, List.of(gatewayTask.path("token").asText()));
+                        ObjectNode verification = catalog.evaluate(run.datasetId(), run.version(), task, response);
+                        String status = verification.path("status").asText("invalid");
+                        if (!List.of("passed", "failed").contains(status)) status = "invalid";
+                        String pricingModel = run.config().path("gateway").path("priceModels").path(participant.key()).asText(participant.model());
+                        Double cost = costs.calculate(price, pricingModel, response);
+                        if (!runs.finishTask(id, key, generation, attempt, status, response, verification,
+                                verification.path("passed").asBoolean(false), verification.path("score").asDouble(0), cost, elapsedMillis(nano))) return;
+                        log(id, "INFO", participant.label() + " / " + task.id() + " 完成：" + status);
+                        if ("invalid".equals(status)) { runs.finish(id, generation, "failed", "agent_execution_failed", "Agent 未生成有效结果", null); return; }
+                    } catch (HttpTimeoutException timeout) {
+                        runs.finishTask(id, key, generation, attempt, "timeout", null, errorResult("timeout", "Agent 响应超时"), false, 0d, null, elapsedMillis(nano));
+                        runs.finish(id, generation, "timeout", "agent_timeout", "Agent 未在单题预算内完成", null); return;
                     }
-                    runs.updateStatus(id, "running", completed, passed, failed, null, null, null, false, started, null);
                 }
-                if (executionFailed) break;
             }
-            if (runs.cancelRequested(id)) {
-                finishCancelled(id, started, completed, passed, failed);
-                return;
-            }
-            if (!valid || executionFailed || timedOut) {
-                String status = timedOut ? "timeout" : "failed";
-                runs.updateStatus(id, status, completed, passed, failed,
-                        timedOut ? "agent_timeout" : "agent_execution_failed",
-                        timedOut ? "Agent 在预算时间内未完成任务" : "Agent 任务未能生成完整的可验证结果",
-                        null, false, started, Instant.now().toString());
-                log(id, "ERROR", "运行结束：" + status);
-                return;
-            }
-            ObjectNode report = report(id, kind, source, datasetId, version, tasks, runtimeParticipants,
-                    passed, completed, scope, budget, seed, modelFor(participants));
-            String ownerId = runs.find(id, false).orElseThrow().ownerId();
-            String reportId = reports.createVerified(ownerId, id, report);
-            runs.updateStatus(id, "completed", completed, passed, failed, null, null, reportId, false,
-                    started, Instant.now().toString());
-            log(id, "INFO", "运行完成，报告 " + reportId + " 已生成");
-        } catch (HttpTimeoutException exception) {
-            runs.updateStatus(id, "timeout", completed, passed, failed, "agent_timeout",
-                    "Agent 健康检查或能力查询超时", null, false, started, Instant.now().toString());
-            log(id, "ERROR", "运行超时：Agent 未及时响应");
-        } catch (InterruptedException exception) {
+            long claimedGeneration = generation;
+            transactions.executeWithoutResult(transaction -> {
+                Run current = runs.find(id, true).orElseThrow();
+                if (!runs.isCurrent(id, claimedGeneration)) return;
+                runs.recount(id);
+                current = runs.find(id, false).orElseThrow();
+                ObjectNode report = report(id, current.kind(), current.source(), current.datasetId(), current.version(), tasks, runtime,
+                        current.passedTasks(), current.completedTasks(), current.scope(), current.budget(), current.seed(), current.model());
+                String reportId = reports.createVerified(current.ownerId(), id, report);
+                if (!runs.finish(id, claimedGeneration, "completed", null, null, reportId)) throw new IllegalStateException("Run completion lost its claim");
+                log(id, "INFO", "运行完成，报告已保存");
+            });
+        } catch (InterruptedException interrupted) {
+            if (generation >= 0) runs.pause(id, generation, "worker_restarted", "执行被中断，已完成题目已保存");
             Thread.currentThread().interrupt();
-            finishCancelled(id, started, completed, passed, failed);
-        } catch (Exception exception) {
-            runs.updateStatus(id, "failed", completed, passed, failed, "agent_unavailable", safeMessage(exception),
-                    null, false, started, Instant.now().toString());
-            log(id, "ERROR", "运行失败：" + safeMessage(exception));
+        } catch (Exception error) {
+            if (generation >= 0) {
+                if (runs.cancelRequested(id)) runs.cancel(id);
+                else if (error instanceof ExecutionPaused paused) runs.pause(id, generation, paused.reason, paused.getMessage());
+                else if (error instanceof java.io.IOException) {
+                    boolean authentication = safeMessage(error).contains("HTTP 401") || safeMessage(error).contains("HTTP 403");
+                    if (authentication) credentials.remove(id);
+                    boolean started = runs.find(id, false).orElseThrow().config().path("hasStarted").asBoolean();
+                    if (authentication || started) runs.pause(id, generation, authentication ? "credentials_required" : "worker_restarted",
+                            authentication ? "Agent 凭证已失效，请补录后继续" : "Agent 连接中断，请确认后继续或重新测评");
+                    else runs.finish(id, generation, "failed", "agent_unreachable", "无法启动或连接 Agent，请检查本机服务或 Docker 配置", null);
+                }
+                else runs.finish(id, generation, "failed", "agent_execution_failed", redactText(safeMessage(error), credentials.getOrDefault(id, Map.of()).values()), null);
+            }
         } finally {
-            if (sandbox != null) docker.stop(sandbox);
-            activeJobs.remove(id);
+            boolean interrupted = Thread.interrupted();
+            try {
+                if (gateway != null) gateway.close();
+                if (sandbox != null) docker.stop(sandbox);
+            } finally {
+                if (interrupted) Thread.currentThread().interrupt();
+            }
         }
     }
 
-    private void submitRecovered(Run run) {
-        if ("local".equals(run.source()) && (run.config() == null || run.config().path("endpoint").asText("").isBlank())) {
-            throw new IllegalStateException("本地 Agent 地址未保存，无法恢复运行");
+    private void gatewayPolicy(ObjectNode config) {
+        JsonNode saved = config.path("gateway");
+        GatewayProperties.Provider provider = gatewayProperties.providersOrEmpty().stream()
+                .filter(p -> p.id().equals(saved.path("providerId").asText())).findFirst()
+                .orElseThrow(() -> new ExecutionPaused("agent_changed", "原模型供应商配置已不可用"));
+        if (!gatewayProperties.enabled() || !provider.baseUrl().equals(saved.path("baseUrl").asText(provider.baseUrl()))) {
+            throw new ExecutionPaused("agent_changed", "模型网关配置已改变，请基于原配置新建实验");
         }
-        List<TaskDefinition> all = catalog.tasks(run.datasetId(), run.version());
-        List<TaskDefinition> selected = "sample".equals(run.scope())
-                ? all.subList(0, Math.min(8, all.size())) : all;
-        List<Participant> participants = recoveredParticipants(run.config());
-        String endpoint = run.config() == null ? null : optionalText(run.config(), "endpoint");
-        String image = run.config() == null ? null : optionalText(run.config(), "image");
-        Future<?> future = workers.submit(() -> execute(run.id(), run.kind(), run.source(), image, endpoint,
-                run.datasetId(), run.version(), run.seed(), run.budget(), run.scope(), selected, participants));
-        activeJobs.put(run.id(), future);
     }
 
-    private List<Participant> recoveredParticipants(ObjectNode config) {
-        JsonNode node = config == null ? null : config.get("participants");
-        if (node == null || !node.isArray() || node.isEmpty()) throw new IllegalStateException("运行配置缺少参赛方");
+    private static final class ExecutionPaused extends RuntimeException {
+        private final String reason;
+        ExecutionPaused(String reason, String message) { super(message); this.reason = reason; }
+    }
+
+    private ObjectNode redactResponse(ObjectNode response, java.util.Collection<String> secrets) {
+        ObjectNode copy = response.deepCopy();
+        redactNode(copy, secrets);
+        return copy;
+    }
+
+    private void redactNode(JsonNode node, java.util.Collection<String> secrets) {
+        if (node.isObject()) {
+            ObjectNode object = (ObjectNode) node;
+            List<String> keys = new ArrayList<>(); object.fieldNames().forEachRemaining(keys::add);
+            for (String key : keys) {
+                JsonNode value = object.get(key);
+                if (List.of("token", "apiKey", "api_key", "authorization", "accessToken").contains(key)) object.put(key, "[redacted]");
+                else if (value.isTextual()) {
+                    String text = value.asText();
+                    for (String secret : secrets) if (!secret.isBlank()) text = text.replace(secret, "[redacted]");
+                    object.put(key, text);
+                } else redactNode(value, secrets);
+                String publicKey = redactText(key, secrets);
+                if (!publicKey.equals(key)) object.set(publicKey, object.remove(key));
+            }
+        } else if (node.isArray()) {
+            ArrayNode array = (ArrayNode) node;
+            for (int i = 0; i < array.size(); i++) {
+                if (array.get(i).isTextual()) {
+                    String text = array.get(i).asText();
+                    for (String secret : secrets) if (!secret.isBlank()) text = text.replace(secret, "[redacted]");
+                    array.set(i, mapper.getNodeFactory().textNode(text));
+                } else redactNode(array.get(i), secrets);
+            }
+        }
+    }
+
+    private String redactText(String text, java.util.Collection<String> secrets) {
+        for (String secret : secrets) if (secret != null && !secret.isBlank()) text = text.replace(secret, "[redacted]");
+        return text;
+    }
+
+    private List<Participant> recoveredParticipants(ObjectNode config, Map<String, String> supplied) {
         List<Participant> result = new ArrayList<>();
-        for (JsonNode item : node) {
-            result.add(new Participant(item.path("key").asText("main"), item.path("label").asText("Agent"),
-                    item.path("agent").asText("Agent"), item.path("model").asText("unknown"),
-                    item.path("agentVersion").asText("unknown"), strings(item.get("tools")),
-                    optionalText(item, "endpoint"), null));
+        for (JsonNode item : config.path("participants")) {
+            String key = item.path("key").asText();
+            result.add(new Participant(key, item.path("label").asText("Agent"), item.path("agent").asText("Agent"),
+                    item.path("model").asText("unknown"), item.path("agentVersion").asText("unknown"), strings(item.get("tools")),
+                    optionalText(item, "endpoint"), supplied.get(key)));
         }
+        if (result.isEmpty()) throw new IllegalStateException("运行配置缺少参赛方");
         return result;
     }
 
@@ -507,14 +706,25 @@ public class RunService {
                 : (completed == 0 ? 0 : Math.round(passed * 1000d / completed) / 10d));
         result.put("verified", true);
         result.put("verificationStatus", "verified");
-        result.put("evaluatorVersion", catalog.evaluatorVersion(datasetId, version));
-        result.put("pricingVersion", costs.pricingVersion());
+        ObjectNode plan = runs.find(id, false).orElseThrow().config();
+        ObjectNode price = plan.get("pricingSnapshot") instanceof ObjectNode snapshot ? snapshot : null;
+        result.put("evaluatorVersion", plan.path("evaluatorVersion").asText());
+        result.put("catalogSha256", plan.path("catalogSha256").asText());
+        result.put("pricingVersion", price == null ? null : price.path("version").asText());
+        result.put("pricingSnapshotHash", price == null ? null : price.path("snapshotHash").asText());
+        result.put("costCurrency", "USD");
+        if (price != null) result.set("pricingSnapshot", price.deepCopy());
+        result.put("executorType", plan.path("executorType").asText("server"));
+        List<String> usageSources = stored.stream().map(t -> t.agentResponse() == null ? "unknown"
+                : t.agentResponse().path("usageSource").asText("agent_reported")).distinct().toList();
+        result.put("usageSource", usageSources.size() == 1 ? usageSources.getFirst() : "mixed");
+        result.put("executionClaimsVerified", false);
         result.put("demo", false);
         result.put("createdAt", Instant.now().toString());
         result.put("date", Instant.now().toString());
         result.set("usage", usageSummary(stored));
         if (kind.equals("pk")) {
-            addPkSummary(result, participants, stored, tasks.size());
+            addPkSummary(result, participants, stored, tasks);
             result.put("agent", participants.stream().map(p -> p.participant().agent()).reduce((a, b) -> a + " vs " + b).orElse("Agent"));
         } else {
             ParticipantRuntime p = participants.get(0);
@@ -523,16 +733,25 @@ public class RunService {
             result.put("time", totalElapsed(stored) / 1000d);
             Double cost = completeCost(stored);
             if (cost == null) result.putNull("cost"); else result.put("cost", cost);
-            ArrayNode categories = result.putArray("categories");
-            ObjectNode all = categories.addObject();
-            all.put("name", "全部任务");
-            all.put("total", completed);
-            all.put("passed", passed);
+            ReportMetrics.add(result, tasks, participantTasks(p, stored));
         }
         ArrayNode records = result.putArray("results");
+        java.util.Set<String> costStatuses = new java.util.LinkedHashSet<>();
         for (RunTask task : stored) {
             ObjectNode item = records.addObject();
             item.put("taskId", task.taskId());
+            String participantKey = task.taskId().split("::", 2)[0];
+            item.put("participantKey", participantKey);
+            tasks.stream().filter(selected -> selected.id().equals(ReportMetrics.taskId(task)))
+                    .findFirst().ifPresent(selected -> item.put("category", ReportMetrics.category(selected)));
+            String taskModel = participants.stream().filter(p -> p.participant().key().equals(participantKey))
+                    .map(p -> p.participant().model()).findFirst().orElse(model);
+            String pricingModel = plan.path("gateway").path("priceModels").path(participantKey).asText(taskModel);
+            String costStatus = costs.costStatus(price, pricingModel, task.agentResponse());
+            item.put("pricingModel", pricingModel);
+            item.put("usageSource", task.agentResponse() == null ? "unknown" : task.agentResponse().path("usageSource").asText("agent_reported"));
+            item.put("costStatus", costStatus);
+            costStatuses.add(costStatus);
             item.put("status", task.status());
             if (task.passed() != null) item.put("passed", task.passed());
             if (task.verificationResult() != null) item.set("verification", task.verificationResult());
@@ -541,11 +760,14 @@ public class RunService {
             ObjectNode usage = usageView(task.agentResponse());
             if (usage != null) item.set("usage", usage);
         }
+        result.set("costStatuses", mapper.valueToTree(costStatuses));
+        result.put("costStatus", price == null ? "missing_snapshot" : costStatuses.size() == 1 ? costStatuses.iterator().next() : "partial");
         return result;
     }
 
     private void addPkSummary(ObjectNode result, List<ParticipantRuntime> participants,
-                              List<RunTask> stored, int total) {
+                              List<RunTask> stored, List<TaskDefinition> tasks) {
+        int total = tasks.size();
         ArrayNode competitors = result.putArray("competitors");
         List<Double> scores = new ArrayList<>();
         for (ParticipantRuntime runtime : participants) {
@@ -553,6 +775,7 @@ public class RunService {
             double score = total == 0 ? 0 : Math.round(participantPassed * 1000d / total) / 10d;
             scores.add(score);
             ObjectNode item = competitors.addObject();
+            item.put("participantKey", runtime.participant().key());
             item.put("label", runtime.participant().label());
             item.put("agent", runtime.participant().agent());
             item.put("model", runtime.participant().model());
@@ -563,6 +786,7 @@ public class RunService {
             item.put("score", score);
             item.put("time", runtime.elapsed(stored) / 1000d);
             List<RunTask> ownTasks = participantTasks(runtime, stored);
+            ReportMetrics.add(item, tasks, ownTasks);
             item.set("usage", usageSummary(ownTasks));
             Double cost = runtime.cost(stored);
             if (cost == null) item.putNull("cost"); else item.put("cost", cost);
@@ -571,11 +795,8 @@ public class RunService {
                 : scores.get(0) > scores.get(1) ? participants.get(0).participant().label()
                 : participants.get(1).participant().label();
         result.put("winner", winner);
-        ArrayNode categories = result.putArray("categories");
-        ObjectNode all = categories.addObject();
-        all.put("name", "全部任务");
-        all.put("total", total);
-        all.put("passed", participants.get(0).passed(stored));
+        // Retain the A-side summary at the top level for existing clients.
+        ReportMetrics.add(result, tasks, participantTasks(participants.get(0), stored));
     }
 
     private void finishCancelled(String id, String started, int completed, int passed, int failed) {
@@ -628,6 +849,7 @@ public class RunService {
             item.put("agent", participant.agent());
             item.put("model", participant.model());
             item.put("agentVersion", participant.agentVersion());
+            item.put("credentialRequired", participant.token() != null && !participant.token().isBlank());
             item.set("tools", mapper.valueToTree(participant.tools()));
             if (participant.endpoint() != null) item.put("endpoint", participant.endpoint());
         }
@@ -789,6 +1011,13 @@ public class RunService {
         node.put("scope", run.scope());
         node.put("budget", run.budget());
         node.put("model", run.model());
+        node.put("seed", run.seed());
+        node.set("config", run.config().deepCopy());
+        node.put("pauseReason", "paused".equals(run.status()) ? run.errorCode() : null);
+        boolean localExecution = isLocalExecution(run.config());
+        node.set("credentialsRequired", mapper.valueToTree(localExecution
+                ? missingCredentials(run, credentials.getOrDefault(run.id(), Map.of())) : List.of()));
+        node.put("canResume", localExecution && "paused".equals(run.status()) && !List.of("catalog_changed", "agent_changed").contains(run.errorCode() == null ? "" : run.errorCode()));
         node.put("totalTasks", run.totalTasks());
         ObjectNode progress = node.putObject("progress");
         progress.put("total", run.totalTasks());
@@ -807,13 +1036,14 @@ public class RunService {
     }
 
     private Run owned(BenchmarkUser user, String id, boolean lock) {
+        if (user == null) throw new ApiException(HttpStatus.UNAUTHORIZED, "请先登录");
         Run run = runs.find(id, lock).orElse(null);
         if (run == null || !run.ownerId().equals(user.id())) throw new ApiException(HttpStatus.NOT_FOUND, "运行不存在");
         return run;
     }
 
     private void log(String id, String level, String message) {
-        runs.insertLog(new RunLog(id, runs.nextLogSequence(id), level, message, Instant.now().toString()));
+        runs.appendLog(id, level, message);
     }
 
     private ObjectNode errorResult(String status, String reason) {

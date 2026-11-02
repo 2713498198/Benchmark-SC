@@ -6,6 +6,7 @@ import com.cryptobench.benchmark.auth.repository.AdminInvitationRepository;
 import com.cryptobench.benchmark.auth.repository.SessionRepository;
 import com.cryptobench.benchmark.auth.repository.UserRepository;
 import com.cryptobench.benchmark.common.ApiException;
+import com.cryptobench.benchmark.mail.MailDeliveryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -58,35 +59,95 @@ public class AdminAccountService {
 
     @Transactional
     public InvitationResult invite(BenchmarkUser actor, String emailInput, String nameInput) {
+        notifier.requireReady();
+        notifier.guard();
         String email = normalizeEmail(emailInput);
         String name = clean(nameInput);
         if (name.isBlank() || name.length() > 30) throw bad("姓名长度无效");
         if (users.existsByEmail(email)) throw conflict("该邮箱已经注册");
         long now = System.currentTimeMillis();
-        invitations.deleteOutstanding(email, now);
         if (invitations.hasOutstanding(email, now)) throw conflict("该邮箱已有待处理邀请");
         String token = randomToken();
         long expires = now + INVITATION_LIFETIME.toMillis();
-        invitations.insert("invite_" + UUID.randomUUID(), email, name, hash(token), actor.id(),
+        String id = "invite_" + UUID.randomUUID();
+        invitations.insert(id, email, name, hash(token), actor.id(),
                 Instant.now().toString(), expires);
-        boolean delivered = notifier.sendAdminInvite(email, name, token, Instant.ofEpochMilli(expires));
+        String messageId = notifier.sendAdminInvite(id, 1, email, name, token, Instant.ofEpochMilli(expires));
+        invitations.setMessage(id, messageId);
         audit(actor.id(), null, "invite_admin", json("email", email, "name", name), "success");
-        return new InvitationResult(delivered ? "queued" : "unconfigured", Instant.ofEpochMilli(expires).toString(), notifier.deliveryMode());
+        return new InvitationResult(id, "queued", "pending", Instant.ofEpochMilli(expires).toString(), notifier.deliveryMode(), notifier.delivery(messageId));
+    }
+
+    public MailDeliveryService.Status mailStatus() { return notifier.status(); }
+
+    public Page<InvitationView> invitations(String status, String deliveryStatus, int page, int size) {
+        validateFilter(status, "pending", "accepted", "revoked", "expired");
+        validateFilter(deliveryStatus, "queued", "dispatching", "retry_wait", "provider_accepted", "local_outbox_written", "failed", "cancelled", "expired", "legacy_unknown");
+        int safePage = Math.min(1_000_000, Math.max(0, page)), safeSize = Math.min(100, Math.max(1, size));
+        long now = System.currentTimeMillis();
+        var items = invitations.page(status, deliveryStatus, safePage, safeSize, now).stream().map(this::invitationView).toList();
+        return new Page<>(items, invitations.count(status, deliveryStatus, now), safePage, safeSize);
+    }
+
+    @Transactional
+    public InvitationView resendInvitation(BenchmarkUser actor, String id) {
+        notifier.requireReady();
+        notifier.guard();
+        var invitation = invitation(id);
+        if (invitation.usedAt() != null || invitation.revokedAt() != null) throw conflict("已接受或已撤销的邀请不能重发");
+        if (users.existsByEmail(invitation.email())) throw conflict("该邮箱已经注册");
+        // A newer invitation for this mailbox must be handled instead of reviving an expired one.
+        if (invitation.expiresAt() <= System.currentTimeMillis() && invitations.hasOutstanding(invitation.email(), System.currentTimeMillis()))
+            throw conflict("该邮箱已有新的待处理邀请，请在新邀请上重发");
+        notifier.cancelInvitation(id);
+        String token = randomToken();
+        long expires = System.currentTimeMillis() + INVITATION_LIFETIME.toMillis();
+        invitations.rotate(id, hash(token), expires);
+        String message = notifier.sendAdminInvite(id, invitation.generation() + 1, invitation.email(), invitation.displayName(), token, Instant.ofEpochMilli(expires));
+        invitations.setMessage(id, message);
+        audit(actor.id(), null, "resend_admin_invite", json("invitationId", id, "email", invitation.email()), "success");
+        return invitationView(invitation(id));
+    }
+
+    @Transactional
+    public InvitationView revokeInvitation(BenchmarkUser actor, String id) {
+        notifier.guard();
+        var invitation = invitation(id);
+        if (invitation.usedAt() != null) throw conflict("已接受的邀请不能撤销，请使用账号管理");
+        if (invitation.revokedAt() == null) {
+            invitations.revoke(id, actor.id(), System.currentTimeMillis());
+            notifier.cancelInvitation(id);
+            audit(actor.id(), null, "revoke_admin_invite", json("invitationId", id, "email", invitation.email()), "success");
+        }
+        return invitationView(invitation(id));
+    }
+
+    private AdminInvitationRepository.Invitation invitation(String id) {
+        return invitations.findById(id).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "邀请不存在"));
+    }
+
+    private InvitationView invitationView(AdminInvitationRepository.Invitation invitation) {
+        String status = invitation.usedAt() != null ? "accepted" : invitation.revokedAt() != null ? "revoked"
+                : invitation.expiresAt() <= System.currentTimeMillis() ? "expired" : "pending";
+        return new InvitationView(invitation.id(), invitation.email(), invitation.displayName(), status, invitation.createdAt(),
+                Instant.ofEpochMilli(invitation.expiresAt()).toString(), notifier.delivery(invitation.lastMessageId()));
     }
 
     @Transactional(noRollbackFor = ApiException.class)
     public BenchmarkUser acceptInvitation(String rawToken, String password) {
-        if (rawToken == null || !rawToken.matches("[a-f0-9]{64}") || password == null || password.length() < 12) {
+        if (rawToken == null || !rawToken.matches("[a-f0-9]{64}") || password == null
+                || password.length() < 8 || password.length() > 24) {
             audit(null, null, "accept_admin_invite", json("reason", "invalid_format"), "failed");
             throw bad("邀请令牌或密码格式无效");
         }
+        notifier.guard();
         var invitation = invitations.find(hash(rawToken)).orElse(null);
         if (invitation == null) {
             audit(null, null, "accept_admin_invite", json("reason", "unknown_or_expired"), "failed");
             throw bad("邀请令牌无效或已过期");
         }
         long now = System.currentTimeMillis();
-        if (invitation.usedAt() != null || invitation.expiresAt() <= now) {
+        if (invitation.usedAt() != null || invitation.revokedAt() != null || invitation.expiresAt() <= now) {
             audit(invitation.invitedBy(), null, "accept_admin_invite", json("email", invitation.email()), "failed");
             throw bad("邀请令牌无效或已过期");
         }
@@ -101,6 +162,7 @@ public class AdminAccountService {
         BenchmarkUser user = new BenchmarkUser("admin_" + UUID.randomUUID(), invitation.email(),
                 invitation.displayName(), "admin", passwords.encode(password), null, Instant.now().toString());
         users.insert(user);
+        notifier.cancelInvitation(invitation.id());
         audit(invitation.invitedBy(), user.id(), "accept_admin_invite", json("email", user.email()), "success");
         return user;
     }
@@ -188,7 +250,8 @@ public class AdminAccountService {
     }
 
     public record Page<T>(List<T> items, long total, int page, int size) {}
-    public record InvitationResult(String status, String expiresAt, String delivery) {}
+    public record InvitationResult(String id, String status, String invitationStatus, String expiresAt, String delivery, MailDeliveryService.DeliveryView deliveryStatus) {}
+    public record InvitationView(String id, String email, String name, String status, String createdAt, String expiresAt, MailDeliveryService.DeliveryView deliveryStatus) {}
     public record AccountView(String id, String name, String email, String role, String status, String createdAt) {
         static AccountView from(BenchmarkUser user) { return new AccountView(user.id(), user.name(), user.email(), user.role(), user.accountStatus(), user.createdAt()); }
     }

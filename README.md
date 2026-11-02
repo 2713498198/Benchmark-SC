@@ -2,6 +2,8 @@
 
 专用于比较智能体在密码分析任务中通过率、耗时与资源消耗的评测网站。项目采用 Java 21、Spring Boot 3.5.7 和 Vue 3，前后端由同一个 Spring Boot 进程提供服务。
 
+榜单、图表和实验对比使用平均每题耗时，报告同时展示累计耗时，按实际选题分类列出通过数与通过率；PK 双方分别统计。历史报告保持原始数据，明细不足时显示“未知”。字段、CSV 兼容规则与测试命令见 [报告耗时与分类成绩](docs/report-metrics.md)。
+
 首次阅读代码可参考 [项目阅读顺序与建议](docs/reading-guide.md)，按启动入口、请求链路、业务模块和前端题库逐步理解。
 
 ## 快速启动
@@ -23,6 +25,8 @@
 macOS/Linux 在项目根目录执行 `bash start.sh`。首次源码启动需要联网下载缺少的 JDK、Maven 和依赖；Linux/macOS 需要 Bash、curl、tar、unzip 和 SHA-256 工具。工具缓存位于 `.tools/`，依赖缓存在 `.mvn/repository/`，不会更改系统 Java。完整环境、代理、离线准备与排错说明见 [跨机器启动指南](docs/SETUP.md)。
 
 浏览器访问 http://127.0.0.1:4173 。本地默认使用 H2 文件数据库，启动时自动创建表，无需额外安装数据库；数据保存在 `var/data/cryptobench.mv.db`，重启后保留。普通 Compose 仅启动网站，需要 Docker Agent 测评时使用 [sandbox 配置](docker/README.md)。
+
+两种 Compose 均仅向本机发布端口，默认关闭免密码体验登录，sandbox 同样持久化账号、运行和报告。普通用户可注册；真实管理员初始化、临时开启体验和升级备份步骤见 [Docker 部署说明](docker/README.md)。`start.cmd` 的本地体验默认不变；不要让源码服务和 Compose 同时占用同一 H2 数据目录。
 
 前端 Vue 运行时已随项目放在 `src/main/resources/static/vendor/vue/`，启动网站不需要 Node.js 或 npm。
 
@@ -73,7 +77,7 @@ Flyway 在启动时执行 `src/main/resources/db/migration/` 中的版本化迁�
 
 生产环境默认关闭体验账号，并使用 Secure Cookie，需通过 HTTPS 访问。服务器对外监听时设置 `SERVER_ADDRESS=0.0.0.0`，使用反向代理提供 HTTPS。仅在本机通过 HTTP 验证 MySQL 配置时，可临时设置 `SECURE_COOKIE=false`。
 
-`.env.example` 仅作为参数参考，Spring Boot 不会自动加载 `.env`；请在系统环境、PowerShell 或 IDEA 运行配置中设置。
+Compose 会读取 `.env` 做变量替换，并只向容器传入配置中明确映射的变量；可从 `.env.example` 复制需要的配置。直接运行 Spring Boot 不会自动加载 `.env`，请在系统环境、PowerShell 或 IDEA 运行配置中设置。修改 Compose 环境变量后需重新创建容器，`restart` 不会更新容器环境。
 
 ## 目录与开发约定
 
@@ -132,7 +136,7 @@ target/                                 编译和打包产物，不提交 Git
 | `GET /api/auth/me` | 当前账号 |
 | `GET /api/auth/csrf` | CSRF 令牌 |
 | `POST /api/auth/register`、`login`、`logout` | 注册、登录、退出 |
-| `POST /api/auth/demo` | 本地体验账号，仅 local 默认启用 |
+| `POST /api/auth/demo` | 体验账号：源码 local 默认启用，Compose 默认关闭、可显式开启 |
 | `GET /api/bootstrap` | 工作台与公开数据 |
 | `GET/POST /api/connections` | 连接列表和新增 |
 | `DELETE /api/connections/{id}` | 删除自己的连接 |
@@ -147,7 +151,7 @@ target/                                 编译和打包产物，不提交 Git
 | `POST /api/admin/users/{id}/sessions/revoke` | 撤销目标账号全部会话 |
 | `POST /api/auth/admin-invitations/accept` | 受邀管理员设置密码并创建账号 |
 
-注册接口只创建研究者，不能通过客户端指定管理员角色。本地体验入口可创建管理员体验账号；生产管理员通过一次性环境变量初始化首个管理员，后续使用管理员邀请和后台账号管理。设置 `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD` 后启动一次即可创建首个管理员；密码至少 12 位，启动成功后应移除密码环境变量。邀请令牌只保存哈希，邮件内容可通过 `PASSWORD_RESET_OUTBOX` 或内部邮件网关投递。
+注册接口只创建研究者，不能通过客户端指定管理员角色。本地体验入口可创建管理员体验账号；生产管理员通过一次性环境变量初始化首个管理员，后续使用管理员邀请和后台账号管理。设置 `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD` 后启动一次即可创建首个管理员；密码要求为 8 至 24 位，启动成功后应移除密码环境变量。邀请令牌只保存哈希，邮件内容可通过 `PASSWORD_RESET_OUTBOX` 或内部邮件网关投递。
 
 ## 旧版本数据迁移
 
@@ -208,12 +212,36 @@ V4 隐藏材料交付后，先使用 `node scripts/validate-v4-materials.mjs <ma
 
 登录平台后，在“开始测评”中使用 `http://127.0.0.1:8000`，点击“检查本地 Agent”，再创建 Mini-SPN 测评。服务端会轮询运行状态和日志，并在完成后生成带 `runId`、验证器版本和可信状态的私有报告。公开榜单接口 `GET /api/reports/public` 只返回已公开报告，不会返回其他用户的私有记录。
 
-Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal Agent network，并使用平台自有的 `cryptobench-agent-proxy:local` 代理镜像把请求限制在宿主机 `127.0.0.1`；Agent 容器本身没有发布端口，也不能访问外部网络。平台同时限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理 Agent、代理容器和网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。
+Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal Agent network，并使用平台自有的 `cryptobench-agent-proxy:local` 代理镜像把请求限制在宿主机 `127.0.0.1`；Agent 容器本身没有发布端口或直接外网连接。启用可选模型网关后，Agent 可经受控 API 调用允许的供应商和模型。平台同时限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理本次 Agent、代理、网关容器和网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。
 
 Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验测评集与版本；题目目录声明的必需工具和能力也会在发送 `/analyze` 前检查。V4 目前仍没有服务端题目目录与验证器，因此会被明确拒绝执行，不会生成伪造分数。
 
 密码找回接口为 `POST /api/auth/forgot` 和 `POST /api/auth/reset`。令牌只保存哈希且一次性使用；邮件投递可通过 `PASSWORD_RESET_DELIVERY_URL` 配置内网邮件网关，本地联调可用 `PASSWORD_RESET_OUTBOX` 写入临时 outbox 文件。
 
-管理员邀请复用同一投递适配器：生产环境设置 `PASSWORD_RESET_DELIVERY_URL`，本地联调设置 `PASSWORD_RESET_OUTBOX=tmp/mail-outbox.jsonl`。邀请接口只返回投递状态和过期时间，不返回明文令牌；本地 outbox 中的消息可用于手动打开邀请链接。应用重启会回收遗留 Docker 资源，并把未取消的排队或运行中任务重新排队；需要访问凭证的本地 Agent 需在重启后重新输入凭证，凭证不会写入运行记录。
+管理员邀请与密码重置共用加密持久队列，支持显式 SMTP、HTTP 网关和本地测试邮箱。管理后台可查看投递状态、重发和撤销；接口不返回明文令牌。SMTP 配置、重试和密钥备份见 [邮件投递](docs/mail-delivery.md)。
 
-模型价格由管理员在“管理后台 → 模型价格”维护，也可通过 `GET /api/pricing/active` 读取当前公开价格快照。价格表按版本创建、启用后不可修改，服务端按启用版本重新计算费用；未知模型或缺失用量保留为空费用。Windows 桌面包由 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签后构建并发布到 GitHub Release，同时提供 EXE 安装器、便携版 ZIP 和 SHA-256 校验文件；页面“下载公开安装包”会打开最新 Release。
+忘记密码支持所有符合格式的注册邮箱：获取 6 位邮件验证码 → 验证邮箱 → 设置并确认新密码（8～24 位）→ 返回登录。验证码 10 分钟有效，60 秒后可重发，改密会撤销原登录会话。QQ SMTP 为可选发件通道，不限制收件邮箱服务商；本地 outbox 不发送真实邮件。接口、限流和 QQ 配置见 [邮箱验证码找回密码](docs/password-recovery.md)。
+
+Windows 配置 QQ 发信可运行 `configure-mail.cmd`，在本机窗口输入邮箱授权码并验证保存；授权码使用 Windows DPAPI 加密存储。重启后通过 `start.cmd` 启动会自动加载该配置。IDE 直接启动不经过此加载流程。
+
+应用重启后未开始的排队任务继续调度，结果未确认的运行进入暂停；已保存的题目结果保持不变。补录凭证并确认后继续原 Run，或取消后按原配置重试。运行链接支持刷新，公开报告链接可由游客直接打开。接口、暂停原因和升级方法见 [运行恢复与报告](docs/run-recovery.md)。
+
+管理员可上传 `cryptobench-custom-dataset-v1` JSON，预览后发布不可覆盖的版本；题目与输入公开，评分规则私有。支持精确 JSON 匹配和十进制数值容差，旧格式仅保留浏览能力。格式及示例见 [自定义题库](docs/custom-datasets.md)。本轮实际测试与待验收环境见 [六项功能实施记录](docs/implementation-2026-11-01.md)。
+
+模型价格由管理员在“管理后台 → 模型价格”维护，也可通过 `GET /api/pricing/active` 读取当前公开价格。价格版本保存后不可修改；可复制完整价格表、编辑多模型价格并保存新版本，启用前查看差异。每次运行创建时固定价格快照和哈希，恢复与重试使用原快照；启用新价不回算旧报告。未知模型或缺失用量保留为空费用，历史非 USD 价格不冒充 USD。详见 [价格版本与快照](docs/pricing.md)。Windows 桌面包由 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签后构建并发布到 GitHub Release，同时提供 EXE 安装器、便携版 ZIP 和 SHA-256 校验文件；页面“下载公开安装包”会打开最新 Release。
+
+## 本机 Agent 与模型网关
+
+通过 `start.cmd` 在本机启动网站后，可选择 Agent HTTP 服务或 Docker 沙箱进行测评。HTTP 地址中的 `localhost` 指运行网站后端的电脑。
+
+Docker Agent 需要云模型时，在实际执行机器构建模型网关镜像，并由管理员配置供应商 HTTPS Base URL、模型白名单及可选的价格模型 ID 映射。使用 `CRYPTOBENCH_GATEWAY_ENABLED=true` 与 `CRYPTOBENCH_GATEWAY_PROVIDERS` JSON，或在管理员 YAML 中配置 `benchmark.gateway.providers`。用户 API Key 在发起运行时填写；不要写入 `.env`、供应商配置或报告。
+
+```powershell
+docker build -f tests/fixtures/mock-agent.Dockerfile -t cryptobench-mock-agent:local tests/fixtures
+docker build -f docker/agent-proxy.Dockerfile -t cryptobench-agent-proxy:local docker
+docker build -f docker/model-gateway.Dockerfile -t cryptobench-model-gateway:local docker
+```
+
+需要网站容器本身管理 Docker 时使用 `compose.sandbox.yaml` 的 sandbox profile，它会构建三个镜像。网关默认关闭，启用必须配置供应商与模型；`.env.example` 给出不含 Key 的配置格式。源码 `start.cmd` 不自动读取 `.env`。配置与协议见 [模型网关](docs/model-gateway.md)，Compose 操作见 [Docker 部署](docker/README.md)。
+
+独立前端回归可运行 `node tests/run-state.mjs`、`node tests/pricing-admin.mjs`、`node tests/model-gateway.mjs`；它们不读写用户数据库，也不调用真实模型。

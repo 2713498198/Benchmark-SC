@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<job>
+  <script language="JScript"><![CDATA[
+    // jpackage runs this supported hook after generating WiX sources and before
+    // compiling the MSI. Only remove its recursive directory cleanup: ordinary
+    // MSI file removal must leave user-created databases, secrets and reports.
+    var files = new ActiveXObject("Scripting.FileSystemObject");
+    var source = files.BuildPath(files.GetParentFolderName(WScript.ScriptFullName), "bundle.wxf");
+    var document = new ActiveXObject("Msxml2.DOMDocument.6.0");
+    document.async = false;
+    document.preserveWhiteSpace = true;
+    if (!document.load(source)) throw new Error("Cannot read jpackage WiX file: " + source);
+    document.setProperty("SelectionLanguage", "XPath");
+    var removals = document.selectNodes("//*[local-name()='RemoveFolderEx' and namespace-uri()='http://schemas.microsoft.com/wix/UtilExtension']");
+    if (removals.length !== 1) throw new Error("jpackage cleanup layout changed; review data preservation before packaging");
+    var removal = removals.item(0);
+    var installPathProperty = removal.getAttribute("Property");
+    if (!installPathProperty) throw new Error("Missing persisted install directory property");
+    removal.parentNode.removeChild(removal);
+    document.save(source);
+
+    // MSI otherwise resolves INSTALLDIR to its default on maintenance. Restore
+    // the selected directory before costing, so normal uninstall removes the
+    // installed files at the correct path while retaining user-created files.
+    var mainSource = files.BuildPath(files.GetParentFolderName(WScript.ScriptFullName), "main.wxs");
+    var main = new ActiveXObject("Msxml2.DOMDocument.6.0");
+    main.async = false;
+    main.preserveWhiteSpace = true;
+    if (!main.load(mainSource)) throw new Error("Cannot read jpackage main WiX file");
+    main.setProperty("SelectionLanguage", "XPath");
+    var product = main.selectSingleNode("/*[local-name()='Wix']/*[local-name()='Product']");
+    if (!product) throw new Error("jpackage product layout changed");
+    var wix = "http://schemas.microsoft.com/wix/2006/wi";
+    var restore = main.createNode(1, "CustomAction", wix);
+    restore.setAttribute("Id", "CryptoBenchRestoreInstallDir");
+    restore.setAttribute("Property", "INSTALLDIR");
+    restore.setAttribute("Value", "[" + installPathProperty + "]");
+    product.appendChild(restore);
+    for (var i = 0; i < 2; i++) {
+      var sequenceName = i === 0 ? "InstallExecuteSequence" : "InstallUISequence";
+      var sequence = product.selectSingleNode("*[local-name()='" + sequenceName + "']");
+      if (!sequence) throw new Error("Missing jpackage install sequence: " + sequenceName);
+      var action = main.createNode(1, "Custom", wix);
+      action.setAttribute("Action", "CryptoBenchRestoreInstallDir");
+      action.setAttribute("After", "AppSearch");
+      action.text = "Installed AND " + installPathProperty;
+      sequence.appendChild(action);
+    }
+    main.save(mainSource);
+    WScript.Echo("CryptoBench installer preserves user data on upgrade and uninstall");
+  ]]></script>
+</job>

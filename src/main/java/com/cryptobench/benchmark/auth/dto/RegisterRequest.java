@@ -8,11 +8,12 @@ import jakarta.validation.constraints.Size;
  * 注册请求参数，不提供角色字段；新账号的 researcher 角色由服务端决定。
  * @param name 研究者显示名，最多 30 个字符
  * @param email 登录邮箱，最长 254 个字符
- * @param password 原始密码，长度为 6 至 128 个字符，持久化前会计算哈希
+ * @param password 原始密码，长度为 8 至 24 个字符，持久化前会计算哈希
  */
 public record RegisterRequest(
         @NotBlank(message = "请输入姓名") @Size(max = 30, message = "姓名长度不能超过 30 位") String name,
         @NotBlank(message = "请输入邮箱") @Email(message = "请输入有效邮箱") @Size(max = 254) String email,
         @NotBlank(message = "请输入密码")
-        @Size(min = 6, max = 128, message = "密码长度应为 6 至 128 位") String password) {
+        @Size(min = 8, max = 24, message = "密码长度应为 8 至 24 位") String password) {
+    @Override public String toString() { return "RegisterRequest[REDACTED]"; }
 }
