@@ -17,7 +17,8 @@ if (process.env.GITHUB_ACTIONS === 'true') {
 
 const windows = process.platform === 'win32';
 await mkdir('tmp', {recursive: true});
-const root = path.resolve(await mkdtemp('tmp/bootstrap space 中文-📦-'));
+// The emoji reproduces Windows launcher codepage failures; retain the original Unix fixture.
+const root = path.resolve(await mkdtemp(windows ? 'tmp/bootstrap space 中文-📦-' : 'tmp/bootstrap space 中文-'));
 // Isolate Windows' automatic per-user cache fallback; never use the real user cache.
 const localCache = windows ? path.resolve(await mkdtemp('tmp/bootstrap-cache-')) : null;
 const toolsRoot = windows ? path.join(localCache, 'CryptoBench', 'tools') : path.join(root, '.tools');
