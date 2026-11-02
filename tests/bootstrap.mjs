@@ -6,6 +6,15 @@ import {cp, mkdir, mkdtemp, readFile, readdir, writeFile, chmod} from 'node:fs/p
 import {createServer} from 'node:http';
 import path from 'node:path';
 
+// Surface the real launcher failure in the check summary, not only "exit code 1".
+// The monitor leaves Node's normal exception handling and failure exit intact.
+if (process.env.GITHUB_ACTIONS === 'true') {
+  process.on('uncaughtExceptionMonitor', error => {
+    const detail = String(error.stack || error.message).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    console.log(`::error title=Portable bootstrap::${detail}`);
+  });
+}
+
 const windows = process.platform === 'win32';
 await mkdir('tmp', {recursive: true});
 const root = path.resolve(await mkdtemp('tmp/bootstrap space 中文-'));
@@ -110,6 +119,16 @@ assert.match(prepared.output, /Downloading Temurin/);
 const cached = await probe({CRYPTOBENCH_NO_JDK_DOWNLOAD: '1'});
 assert.equal(cached.code, 0, cached.output);
 assert.doesNotMatch(cached.output, /Downloading Temurin/);
+
+// JVM option notices go to stderr even when both java and javac exit with zero.
+// Exercise the complete launcher probe so benign stderr never rejects a valid JDK.
+const notices = await probe({CRYPTOBENCH_NO_JDK_DOWNLOAD: '1', JAVA_TOOL_OPTIONS: '-Dcryptobench.bootstrap.test=true'});
+assert.equal(notices.code, 0, notices.output);
+assert.match(notices.output, /Apache Maven 3\.9\.11/);
+assert.match(notices.output, /Java version: 21\./);
+const invalidOptions = await probe({CRYPTOBENCH_NO_JDK_DOWNLOAD: '1', JAVA_TOOL_OPTIONS: '-XX:CryptoBenchInvalidOption'});
+assert.notEqual(invalidOptions.code, 0, invalidOptions.output);
+console.log('PASS harmless JVM stderr is accepted and invalid JVM options are rejected');
 
 // A user-supplied valid JDK must work without a project JDK cache or download.
 const cachedName = (await readdir(path.join(root, '.tools'))).find(name => name.startsWith('temurin-'));

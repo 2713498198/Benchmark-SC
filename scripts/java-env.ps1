@@ -1,15 +1,54 @@
 # Shared by the source launcher and Windows packaging. Process-local settings only.
-function Test-CryptoBenchJdk([string]$Candidate) {
+function Get-CryptoBenchJdkVersion([string]$Executable) {
+    # Windows PowerShell treats redirected native stderr as an error record.
+    # Java can write harmless launcher notices there and still exit successfully.
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $process.StartInfo.FileName = $Executable
+    $process.StartInfo.Arguments = '--version'
+    $process.StartInfo.UseShellExecute = $false
+    $process.StartInfo.CreateNoWindow = $true
+    $process.StartInfo.RedirectStandardOutput = $true
+    $process.StartInfo.RedirectStandardError = $true
+    try {
+        $process.Start() | Out-Null
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(15000)) {
+            $process.Kill()
+            throw 'JDK version check timed out.'
+        }
+        return [PSCustomObject]@{
+            ExitCode = $process.ExitCode
+            Output = $stdout.GetAwaiter().GetResult() + "`n" + $stderr.GetAwaiter().GetResult()
+        }
+    } finally { $process.Dispose() }
+}
+
+function Test-CryptoBenchJdk([string]$Candidate, [switch]$ExplainFailure) {
     if (-not $Candidate) { return $false }
     $java = Join-Path $Candidate 'bin\java.exe'
     $javac = Join-Path $Candidate 'bin\javac.exe'
-    if (-not (Test-Path -LiteralPath $java) -or -not (Test-Path -LiteralPath $javac)) { return $false }
+    if (-not (Test-Path -LiteralPath $java) -or -not (Test-Path -LiteralPath $javac)) {
+        if ($ExplainFailure) { Write-Warning "JDK executables are missing under: $Candidate" }
+        return $false
+    }
     try {
-        $runtimeVersion = & $java --version 2>$null
-        if ($LASTEXITCODE -ne 0 -or ($runtimeVersion -join "`n") -notmatch '(?m)^(openjdk|java) 21[.\s]') { return $false }
-        $compilerVersion = & $javac --version 2>$null
-        return ($LASTEXITCODE -eq 0 -and ($compilerVersion -join "`n") -match '^javac 21[.\s]')
-    } catch { return $false }
+        foreach ($name in @('java', 'javac')) {
+            $version = Get-CryptoBenchJdkVersion (Join-Path $Candidate "bin\$name.exe")
+            $pattern = if ($name -eq 'java') { '(?m)^(openjdk|java) 21[.\s]' } else { '(?m)^javac 21[.\s]' }
+            if ($version.ExitCode -ne 0 -or $version.Output -notmatch $pattern) {
+                if ($ExplainFailure) {
+                    Write-Warning "$name --version failed in $Candidate (exit $($version.ExitCode)): $($version.Output.Trim())"
+                }
+                return $false
+            }
+        }
+        return $true
+    } catch {
+        if ($ExplainFailure) { Write-Warning "JDK probe failed in ${Candidate}: $($_.Exception.Message)" }
+        return $false
+    }
 }
 
 function Initialize-CryptoBenchJava([string]$ProjectRoot) {
@@ -47,7 +86,7 @@ function Initialize-CryptoBenchJava([string]$ProjectRoot) {
             if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.sha256) { throw 'JDK SHA-256 verification failed; the archive will not be used.' }
             Expand-Archive -LiteralPath $archive -DestinationPath (Join-Path $staging 'expanded')
             $jdk = Get-ChildItem -LiteralPath (Join-Path $staging 'expanded') -Directory | Select-Object -First 1
-            if (-not $jdk -or -not (Test-CryptoBenchJdk $jdk.FullName)) { throw 'Downloaded archive does not contain a working JDK 21.' }
+            if (-not $jdk -or -not (Test-CryptoBenchJdk $jdk.FullName -ExplainFailure)) { throw 'Downloaded archive does not contain a working JDK 21.' }
             Move-Item -LiteralPath $jdk.FullName -Destination $cached
             $selected = $cached
         } catch {
