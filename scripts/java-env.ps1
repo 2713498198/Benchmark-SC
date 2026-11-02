@@ -13,6 +13,10 @@ function Test-CryptoBenchJdk([string]$Candidate) {
 }
 
 function Initialize-CryptoBenchJava([string]$ProjectRoot) {
+    # Use the modules shipped with this PowerShell host. CI can launch Windows
+    # PowerShell with a PowerShell 7 module path, breaking command auto-loading.
+    Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility') -ErrorAction Stop
+    Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Archive') -ErrorAction Stop
     $architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     $arch = switch ($architecture) { 'AMD64' { 'x64' } 'ARM64' { 'aarch64' } default { $architecture } }
     $entry = Import-Csv -LiteralPath (Join-Path $ProjectRoot 'scripts\jdk-distributions.tsv') -Delimiter "`t" |

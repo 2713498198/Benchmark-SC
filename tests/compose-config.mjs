@@ -3,6 +3,7 @@ import {resolve} from 'node:path';
 import {composeTest, persistentDb} from './compose-test-utils.mjs';
 
 const test = await composeTest();
+test.env.CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE = '';
 for (const sandbox of [false, true]) {
   for (const enabled of ['', 'true']) {
     test.env.CRYPTOBENCH_COMPOSE_DEMO_ENABLED = enabled;
@@ -27,9 +28,14 @@ for (const sandbox of [false, true]) {
     assert.equal(resolve(data.source), test.dataDir);
     assert.equal(service.volumes.some(volume => volume.target === '/var/run/docker.sock'), sandbox);
     assert.equal(service.environment.CRYPTOBENCH_DOCKER_ENABLED, String(sandbox));
+    if (sandbox) assert.equal(service.environment.CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE, '');
     console.log(`PASS Compose config: sandbox=${sandbox}, demo=${enabled || 'default(false)'}`);
   }
 }
+test.env.CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE = 'compatibility';
+const compatible = JSON.parse((await test.compose(['config', '--format', 'json'], {sandbox: true})).stdout).services.cryptobench;
+assert.equal(compatible.environment.CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE, 'compatibility');
+console.log('PASS sandbox forwards the CI proxy network compatibility mode');
 test.env.HOST_PORT = '';
 test.env.CRYPTOBENCH_DATA_DIR = '';
 const defaults = JSON.parse((await test.compose(['config', '--format', 'json'])).stdout).services.cryptobench;

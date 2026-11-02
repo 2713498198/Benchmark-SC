@@ -12,6 +12,7 @@ services:
       CRYPTOBENCH_DOCKER_ENABLED: "true"
       CRYPTOBENCH_DOCKER_ENDPOINT_HOST: host.docker.internal
       CRYPTOBENCH_DOCKER_PROXY_BIND_ADDRESS: 0.0.0.0
+      CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE: "${CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE:-}"
       CRYPTOBENCH_DOCKER_MOCK_IMAGE: cryptobench-mock-agent:compose
       CRYPTOBENCH_DOCKER_PROXY_IMAGE: cryptobench-agent-proxy:compose
       CRYPTOBENCH_GATEWAY_IMAGE: cryptobench-model-gateway:compose

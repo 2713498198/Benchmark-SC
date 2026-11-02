@@ -35,7 +35,18 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/scripts/java-env.ps1"
 function Get-Command { param($Name) if ($Name -eq 'java.exe') { return $null }; Microsoft.PowerShell.Core/Get-Command $Name }
 try {
-  Initialize-CryptoBenchJava $PSScriptRoot
+  # A parent PowerShell 7 process can supply a module path that does not expose
+  # Windows PowerShell's Get-FileHash/Expand-Archive. Do not rely on profiles.
+  $savedModulePath = $env:PSModulePath
+  try {
+    $env:PSModulePath = "$PSScriptRoot/no-profile-modules"
+    Remove-Item Function:Get-FileHash -ErrorAction SilentlyContinue
+    $PSModuleAutoLoadingPreference = 'None'
+    Initialize-CryptoBenchJava $PSScriptRoot
+  } finally {
+    $env:PSModulePath = $savedModulePath
+    $PSModuleAutoLoadingPreference = 'All'
+  }
   & "$PSScriptRoot/mvnw.cmd" --version
   exit $LASTEXITCODE
 } catch { Write-Host $_.Exception.Message; exit 1 }
