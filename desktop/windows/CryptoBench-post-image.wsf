@@ -5,6 +5,8 @@
     // compiling the MSI. Only remove its recursive directory cleanup: ordinary
     // MSI file removal must leave user-created databases, secrets and reports.
     var files = new ActiveXObject("Scripting.FileSystemObject");
+    var applicationName = files.GetBaseName(WScript.ScriptFullName).replace(/-post-image$/, "");
+    if (!/^[A-Za-z][A-Za-z0-9-]{0,40}$/.test(applicationName)) throw new Error("Unexpected application name");
     var source = files.BuildPath(files.GetParentFolderName(WScript.ScriptFullName), "bundle.wxf");
     var document = new ActiveXObject("Msxml2.DOMDocument.6.0");
     document.async = false;
@@ -31,6 +33,15 @@
     var product = main.selectSingleNode("/*[local-name()='Wix']/*[local-name()='Product']");
     if (!product) throw new Error("jpackage product layout changed");
     var wix = "http://schemas.microsoft.com/wix/2006/wi";
+    // jpackage normally removes the old version before CostInitialize. Move it
+    // inside the transaction, after our running-process check, so a rejected
+    // upgrade cannot first uninstall the application it was meant to protect.
+    var removeExisting = product.selectNodes("*[local-name()='InstallExecuteSequence']/*[local-name()='RemoveExistingProducts']");
+    if (removeExisting.length !== 1 || removeExisting.item(0).getAttribute("Before") !== "CostInitialize") {
+      throw new Error("jpackage upgrade schedule changed; review maintenance protection before packaging");
+    }
+    removeExisting.item(0).removeAttribute("Before");
+    removeExisting.item(0).setAttribute("After", "InstallInitialize");
     var restore = main.createNode(1, "CustomAction", wix);
     restore.setAttribute("Id", "CryptoBenchRestoreInstallDir");
     restore.setAttribute("Property", "INSTALLDIR");
@@ -43,8 +54,62 @@
       var action = main.createNode(1, "Custom", wix);
       action.setAttribute("Action", "CryptoBenchRestoreInstallDir");
       action.setAttribute("After", "AppSearch");
-      action.text = "Installed AND " + installPathProperty;
+      action.text = "(Installed OR JP_UPGRADABLE_FOUND) AND " + installPathProperty;
       sequence.appendChild(action);
+    }
+    // Refuse maintenance while this installation is running. Never use Restart
+    // Manager's forced shutdown to close a live H2 database or an active task.
+    var restartManager = main.createNode(1, "Property", wix);
+    restartManager.setAttribute("Id", "MSIRESTARTMANAGERCONTROL");
+    restartManager.setAttribute("Value", "Disable");
+    product.appendChild(restartManager);
+    var preflight = main.createNode(1, "CustomAction", wix);
+    preflight.setAttribute("Id", "CryptoBenchCheckRunning");
+    preflight.setAttribute("BinaryKey", "CryptoBenchRunningScript");
+    preflight.setAttribute("JScriptCall", "CryptoBenchCheckRunning");
+    preflight.setAttribute("Execute", "immediate");
+    preflight.setAttribute("Return", "check");
+    var runningScript = 'function CryptoBenchCheckRunning() {\n' +
+      'var fs = new ActiveXObject("Scripting.FileSystemObject");\n' +
+      'var dir = Session.Property("INSTALLDIR");\n' +
+      'Session.Property("CRYPTOBENCH_RUNNING") = "";\n' +
+      'if (dir) {\n' +
+      '  var lock = fs.BuildPath(dir, "var\\\\run\\\\instance.lock");\n' +
+      '  if (fs.FileExists(lock)) {\n' +
+      '    try { var stream = fs.OpenTextFile(lock, 1, false); try { if (!stream.AtEndOfStream) stream.Read(1); } finally { stream.Close(); } }\n' +
+      '    catch (busy) { Session.Property("CRYPTOBENCH_RUNNING") = "1"; }\n' +
+      '  }\n' +
+      '  try {\n' +
+      '    var processes = GetObject("winmgmts:root\\\\cimv2").ExecQuery("SELECT ExecutablePath FROM Win32_Process WHERE Name=\'' + applicationName + '.exe\'");\n' +
+      '    var expected = fs.GetAbsolutePathName(fs.BuildPath(dir, "' + applicationName + '.exe")).toLowerCase();\n' +
+      '    for (var it = new Enumerator(processes); !it.atEnd(); it.moveNext()) { var p = it.item(); if (p.ExecutablePath && String(p.ExecutablePath).toLowerCase() === expected) Session.Property("CRYPTOBENCH_RUNNING") = "1"; }\n' +
+      '  } catch (unavailable) { Session.Property("CRYPTOBENCH_RUNNING") = "1"; }\n' +
+      '}\nreturn 1;\n}\n';
+    var runningSource = files.BuildPath(files.GetParentFolderName(WScript.ScriptFullName), "cryptobench-running.js");
+    var runningFile = files.CreateTextFile(runningSource, true, false);
+    runningFile.Write(runningScript);
+    runningFile.Close();
+    var runningBinary = main.createNode(1, "Binary", wix);
+    runningBinary.setAttribute("Id", "CryptoBenchRunningScript");
+    runningBinary.setAttribute("SourceFile", runningSource);
+    product.appendChild(runningBinary);
+    product.appendChild(preflight);
+    var stopMessage = main.createNode(1, "CustomAction", wix);
+    stopMessage.setAttribute("Id", "CryptoBenchRequireStopped");
+    stopMessage.setAttribute("Error", "CryptoBench is running or its state cannot be checked. Exit CryptoBench before installing, upgrading or uninstalling. User data has not been removed.");
+    product.appendChild(stopMessage);
+    for (var n = 0; n < 2; n++) {
+      var seq = product.selectSingleNode("*[local-name()='" + (n === 0 ? "InstallExecuteSequence" : "InstallUISequence") + "']");
+      var check = main.createNode(1, "Custom", wix);
+      check.setAttribute("Action", "CryptoBenchCheckRunning");
+      check.setAttribute("After", "CostFinalize");
+      check.text = "NOT UPGRADINGPRODUCTCODE";
+      seq.appendChild(check);
+      var requireStopped = main.createNode(1, "Custom", wix);
+      requireStopped.setAttribute("Action", "CryptoBenchRequireStopped");
+      requireStopped.setAttribute("After", "CryptoBenchCheckRunning");
+      requireStopped.text = "CRYPTOBENCH_RUNNING";
+      seq.appendChild(requireStopped);
     }
     main.save(mainSource);
     WScript.Echo("CryptoBench installer preserves user data on upgrade and uninstall");

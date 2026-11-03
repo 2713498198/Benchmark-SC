@@ -72,6 +72,15 @@ public class UserRepository {
         return jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_users WHERE user_role='admin' AND account_status='active'", Integer.class);
     }
 
+    public int countRealActiveAdmins() {
+        return jdbc.queryForObject("""
+                SELECT COUNT(*) FROM benchmark_users
+                WHERE user_role='admin' AND account_status='active'
+                AND id NOT IN ('demo_admin','demo_researcher')
+                AND email NOT IN ('admin@cryptobench.local','researcher@cryptobench.local')
+                """, Integer.class);
+    }
+
     public int updateRole(String id, String role) {
         return jdbc.update("UPDATE benchmark_users SET user_role=? WHERE id=?", role, id);
     }

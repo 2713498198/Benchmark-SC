@@ -91,7 +91,7 @@ jobs:
 
   windows-package:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -102,6 +102,19 @@ jobs:
           distribution: temurin
           java-version: '21.0.13'
           cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify data protection and desktop control
+        shell: pwsh
+        run: |
+          .\tests\windows-data-safety.ps1
+          .\tests\windows-wix-hook.ps1
+          .\tests\windows-release-metadata.ps1
+          .\mvnw.cmd --batch-mode '-Dtest=DesktopLauncherTest,DesktopInstanceTest,DesktopAdminServiceTest' test
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop tests failed' }
 
       - name: Build Windows app image
         shell: pwsh
@@ -124,6 +137,14 @@ jobs:
         shell: pwsh
         run: node tests/windows-app-image.mjs "$env:RUNNER_TEMP\cryptobench-app\CryptoBench\CryptoBench.exe"
 
+      - name: Reject incompatible prepared release images
+        shell: pwsh
+        run: .\tests\windows-prepared-image.ps1 -Image "$env:RUNNER_TEMP\cryptobench-app\CryptoBench"
+
+      - name: Verify startup failures and crash recovery
+        shell: pwsh
+        run: node tests/windows-desktop-failures.mjs "$env:RUNNER_TEMP\cryptobench-app\CryptoBench\CryptoBench.exe"
+
       - name: Prepare portable WiX binaries
         shell: pwsh
         run: |
@@ -133,6 +154,7 @@ jobs:
           Invoke-WebRequest -UseBasicParsing `
             'https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip' `
             -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne '6AC824E1642D6F7277D0ED7EA09411A508F6116BA6FAE0AA5F2C7DAA2FF43D31') { throw 'WiX checksum mismatch' }
           Expand-Archive -LiteralPath $zip -DestinationPath $wixDir -Force
           if (-not (Get-ChildItem $wixDir -Filter candle.exe -Recurse)) { throw 'WiX candle.exe was not downloaded' }
           if (-not (Get-ChildItem $wixDir -Filter light.exe -Recurse)) { throw 'WiX light.exe was not downloaded' }
@@ -157,5 +179,39 @@ jobs:
           .\tests\windows-installer.ps1 `
             -InitialInstaller "$env:RUNNER_TEMP\cryptobench-installer\CryptoBench-1.0.0.exe" `
             -UpgradeInstaller "$env:RUNNER_TEMP\cryptobench-installer-upgrade\CryptoBench-1.0.1.exe" `
-            -InstallRoot "$env:RUNNER_TEMP\cryptobench-custom-install" `
+            -InstallRoot "$env:RUNNER_TEMP\CryptoBench 中文 custom install" `
             -LogDirectory "$env:RUNNER_TEMP\cryptobench-installer-logs"
+
+      - name: Verify default installation directory
+        shell: pwsh
+        run: .\tests\windows-installer.ps1 -InitialInstaller "$env:RUNNER_TEMP\cryptobench-installer\CryptoBench-1.0.0.exe" -LogDirectory "$env:RUNNER_TEMP\cryptobench-default-install-logs"
+
+      - name: Verify upgrade from the latest stable Windows release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $pages = gh api --paginate --slurp "repos/$env:GITHUB_REPOSITORY/releases"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the historical upgrade baseline' }
+          $releases = @($pages | ConvertFrom-Json | ForEach-Object { $_ } | ForEach-Object { $_ })
+          $previous = $releases | Where-Object { -not $_.draft -and -not $_.prerelease -and $_.tag_name -match '^v\d+\.\d+\.\d+$' } | Sort-Object { [version]$_.tag_name.Substring(1) } -Descending | Select-Object -First 1
+          if (-not $previous) { Write-Host 'No stable historical release exists; fresh and same-source upgrade tests completed.'; exit 0 }
+          $oldVersion = [version]$previous.tag_name.Substring(1)
+          if ($oldVersion.Build -ge 65535) { throw 'Choose a new MSI minor version before running the historical upgrade check' }
+          $candidateVersion = '{0}.{1}.{2}' -f $oldVersion.Major, $oldVersion.Minor, ($oldVersion.Build + 1)
+          $baselineDir = Join-Path $env:RUNNER_TEMP 'cryptobench-ci-baseline'
+          .\scripts\resolve-windows-baseline.ps1 -Repository $env:GITHUB_REPOSITORY -Version $candidateVersion -OutputDir $baselineDir
+          $baseline = Get-Content (Join-Path $baselineDir 'baseline.json') -Raw | ConvertFrom-Json
+          if ($baseline.tag -ne $previous.tag_name) { throw 'Historical release changed during validation; retry against a consistent baseline' }
+          $candidateDir = Join-Path $env:RUNNER_TEMP 'cryptobench-ci-candidate'
+          .\scripts\package-windows.ps1 -Release -Installer -AppVersion $candidateVersion -AllowExternalOutput -OutputDir $candidateDir
+          .\tests\windows-installer.ps1 -InitialInstaller $baseline.installer -InitialVersion $baseline.version -LegacyInitial -UpgradeInstaller (Join-Path $candidateDir "CryptoBench-$candidateVersion.exe") -UpgradeVersion $candidateVersion -InstallRoot "$env:RUNNER_TEMP\CryptoBench historical 中文 upgrade" -LogDirectory "$env:RUNNER_TEMP\cryptobench-historical-upgrade-logs"
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: windows-package-diagnostics
+          path: |
+            ${{ runner.temp }}/cryptobench-*-logs/*.log
+            tmp/desktop-check-*/**/var/logs/*.log
+          if-no-files-found: ignore

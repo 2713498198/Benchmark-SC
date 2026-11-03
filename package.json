@@ -22,6 +22,8 @@
     "test:docker-ui": "node tests/docker-ui-browser.mjs",
     "test:desktop": "node tests/windows-app-image.mjs",
     "test:desktop:contents": "node tests/windows-package-content.mjs",
+    "test:desktop:safety": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows-data-safety.ps1",
+    "test:desktop:docker": "node tests/windows-app-image.mjs output/desktop/CryptoBench/CryptoBench.exe --docker",
     "test:report-metrics": "node tests/report-metrics.mjs && node tests/leaderboard-model.mjs && node tests/leaderboard-chart-model.mjs",
     "test:run-state": "node tests/run-state.mjs",
     "test:password-recovery": "node tests/password-recovery.mjs && node tests/password-recovery-browser.mjs",

@@ -48,7 +48,7 @@ public class DockerSandboxExecutor {
         String configured = System.getProperty("cryptobench.instance-id", System.getenv("CRYPTOBENCH_INSTANCE_ID"));
         if (configured != null && !configured.isBlank()) return configured;
         try {
-            String location = java.nio.file.Path.of("").toAbsolutePath().normalize().toString();
+            String location = java.nio.file.Path.of(System.getProperty("cryptobench.desktop.home", "")).toAbsolutePath().normalize().toString();
             byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(location.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             return "server-" + java.util.HexFormat.of().formatHex(hash).substring(0, 24);
         } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }

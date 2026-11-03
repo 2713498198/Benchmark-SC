@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:${cryptobench.desktop.home}/var/data/cryptobench;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ''
+benchmark:
+  demo-enabled: false
+  legacy-import-enabled: false
+  docker:
+    enabled: false
+  password-reset:
+    outbox: ''
+  mail:
+    key-file: ${cryptobench.desktop.home}/var/secrets/mail.key
+    outbox: ''
+logging:
+  config: classpath:logback-desktop.xml
+  file:
+    name: ${cryptobench.desktop.home}/var/logs/cryptobench.log

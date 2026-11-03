@@ -15,9 +15,13 @@ permissions:
 
 jobs:
   windows-release:
-    runs-on: windows-latest
+    runs-on: ${{ vars.WINDOWS_SIGNING_RUNNER || 'windows-latest' }}
+    timeout-minutes: 45
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      SIGNING_MODE: ${{ vars.CRYPTOBENCH_SIGNING_ENABLED == 'true' && 'Required' || 'None' }}
+      CRYPTOBENCH_SIGNING_THUMBPRINT: ${{ secrets.CRYPTOBENCH_SIGNING_THUMBPRINT }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +36,17 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Resolve exact release source
+        shell: pwsh
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v(\d+\.\d+\.\d+)$') { throw 'Expected vMAJOR.MINOR.PATCH tag' }
+          $version = $Matches[1]
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve checked-out commit' }
+          $tagCommit = git rev-parse "$($env:RELEASE_TAG)^{commit}"
+          if ($LASTEXITCODE -ne 0 -or $commit -ne $tagCommit) { throw 'Checked-out commit does not match release tag' }
+          "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          "RELEASE_COMMIT=$commit" >> $env:GITHUB_ENV
       - name: Verify source before packaging
         shell: pwsh
         run: |
@@ -41,6 +56,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Report metric verification failed" }
           .\start.cmd --batch-mode verify
           if ($LASTEXITCODE -ne 0) { throw "Backend verification failed" }
+          .\tests\windows-data-safety.ps1
+          .\tests\windows-wix-hook.ps1
+          .\tests\windows-release-metadata.ps1
       - name: Prepare WiX
         shell: pwsh
         run: |
@@ -48,6 +66,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $dir | Out-Null
           $zip = Join-Path $env:RUNNER_TEMP 'wix314-binaries.zip'
           Invoke-WebRequest -UseBasicParsing 'https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314-binaries.zip' -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne '6AC824E1642D6F7277D0ED7EA09411A508F6116BA6FAE0AA5F2C7DAA2FF43D31') { throw 'WiX checksum mismatch' }
           Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force
       - name: Build installer and portable package
         shell: pwsh
@@ -55,19 +74,37 @@ jobs:
           $root = Join-Path $env:RUNNER_TEMP 'cryptobench-release'
           $portable = Join-Path $env:RUNNER_TEMP 'cryptobench-portable'
           $tag = $env:RELEASE_TAG
-          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') {
-            throw "Release tag must match vMAJOR.MINOR.PATCH, received: $tag"
-          }
-          $version = $Matches[1]
-          .\scripts\package-windows.ps1 -Installer -AppVersion $version -AllowExternalOutput -OutputDir $root
-          .\scripts\package-windows.ps1 -AppVersion $version -AllowExternalOutput -OutputDir $portable
+          $version = $env:RELEASE_VERSION
+          .\scripts\package-windows.ps1 -Release -SigningMode $env:SIGNING_MODE -AppVersion $version -AllowExternalOutput -OutputDir $portable
+          .\scripts\package-windows.ps1 -Release -SigningMode $env:SIGNING_MODE -Installer -PreparedAppImage (Join-Path $portable 'CryptoBench') -AppVersion $version -AllowExternalOutput -OutputDir $root
           node tests/windows-package-content.mjs (Join-Path $portable 'CryptoBench')
           if ($LASTEXITCODE -ne 0) { throw 'Desktop payload verification failed' }
           node tests/windows-app-image.mjs (Join-Path $portable 'CryptoBench\CryptoBench.exe')
           if ($LASTEXITCODE -ne 0) { throw 'Desktop readiness verification failed' }
-          Compress-Archive -Path (Join-Path $portable 'CryptoBench') -DestinationPath (Join-Path $root "CryptoBench-$tag-portable.zip") -Force
+          node tests/windows-desktop-failures.mjs (Join-Path $portable 'CryptoBench\CryptoBench.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop failure/recovery verification failed' }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $portable 'CryptoBench'), (Join-Path $root "CryptoBench-$tag-portable.zip"), 'Optimal', $true)
           Copy-Item (Join-Path $env:GITHUB_WORKSPACE 'docs\INSTALL-WINDOWS.md') (Join-Path $root 'INSTALL-WINDOWS.md')
-          .\scripts\create-release-manifest.ps1 -ReleaseDir $root -Version $version -Tag $tag -Commit $env:GITHUB_SHA
+          $extracted = Join-Path $env:RUNNER_TEMP 'cryptobench-final-zip'
+          Expand-Archive -LiteralPath (Join-Path $root "CryptoBench-$tag-portable.zip") -DestinationPath $extracted
+          node tests/windows-package-content.mjs (Join-Path $extracted 'CryptoBench')
+          if ($LASTEXITCODE -ne 0) { throw 'Final ZIP verification failed' }
+          node tests/windows-app-image.mjs (Join-Path $extracted 'CryptoBench\CryptoBench.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Final ZIP startup failed' }
+      - name: Verify final installer and actual previous-version upgrade
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'cryptobench-release'
+          $baselineDir = Join-Path $env:RUNNER_TEMP 'cryptobench-baseline'
+          .\scripts\resolve-windows-baseline.ps1 -Repository $env:GITHUB_REPOSITORY -Version $env:RELEASE_VERSION -OutputDir $baselineDir
+          $baseline = Get-Content (Join-Path $baselineDir 'baseline.json') -Raw | ConvertFrom-Json
+          $candidate = Join-Path $root "CryptoBench-$($env:RELEASE_VERSION).exe"
+          .\tests\windows-installer.ps1 -InitialInstaller $candidate -InitialVersion $env:RELEASE_VERSION -LogDirectory "$env:RUNNER_TEMP\cryptobench-fresh-install-logs"
+          if ($baseline.tag -ne 'first-release') {
+            .\tests\windows-installer.ps1 -InitialInstaller $baseline.installer -InitialVersion $baseline.version -LegacyInitial -UpgradeInstaller $candidate -UpgradeVersion $env:RELEASE_VERSION -InstallRoot "$env:RUNNER_TEMP\CryptoBench 中文 upgrade" -LogDirectory "$env:RUNNER_TEMP\cryptobench-upgrade-logs"
+          }
+          .\scripts\create-release-manifest.ps1 -ReleaseDir $root -Version $env:RELEASE_VERSION -Tag $env:RELEASE_TAG -Commit $env:RELEASE_COMMIT -BuildInfo "$env:RUNNER_TEMP\cryptobench-portable\CryptoBench\support\build-info.json" -SigningMode $env:SIGNING_MODE -UpgradeBaseline $baseline.tag -UpgradeVerified:($baseline.tag -ne 'first-release')
       - name: Verify release assets
         shell: pwsh
         run: |
@@ -81,9 +118,20 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
+          prerelease: ${{ env.SIGNING_MODE != 'Required' }}
+          name: ${{ env.RELEASE_TAG }}${{ env.SIGNING_MODE != 'Required' && ' — Unsigned test build' || '' }}
           files: |
             ${{ runner.temp }}/cryptobench-release/**/*.exe
             ${{ runner.temp }}/cryptobench-release/**/*.zip
             ${{ runner.temp }}/cryptobench-release/SHA256SUMS.csv
             ${{ runner.temp }}/cryptobench-release/release-manifest.json
             ${{ runner.temp }}/cryptobench-release/INSTALL-WINDOWS.md
+      - name: Upload installer diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-diagnostics
+          path: |
+            ${{ runner.temp }}/cryptobench-*-logs/*.log
+            tmp/desktop-check-*/**/var/logs/*.log
+          if-no-files-found: ignore
