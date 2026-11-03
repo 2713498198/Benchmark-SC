@@ -10,7 +10,7 @@ const root=path.resolve('src/main/resources/static');
 const server=createServer(async(req,res)=>{try{const pathname=new URL(req.url,'http://localhost').pathname,file=path.resolve(root,'.'+(pathname==='/'?'/index.html':decodeURIComponent(pathname)));if(!file.startsWith(root+path.sep))throw Error();const data=await readFile(file);res.writeHead(200,{'Content-Type':({'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream'});res.end(data);}catch{res.writeHead(404);res.end();}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base='http://127.0.0.1:'+server.address().port,installed='C:/Program Files/Google/Chrome/Application/chrome.exe';
-let browser,page;const errors=[],requests=[];let user=null,grant=null,sequence=0,challengeId='',rateLimited=false,slowEmail='',releaseSlow,slowStarted;
+let browser,page;const errors=[],requests=[];let user=null,grant=null,sequence=0,challengeId='',rateLimited=false,verifyResponseLost=false,slowEmail='',releaseSlow,slowStarted;
 const grantFor=id=>({canReset:true,challengeId:id,maskedEmail:'r***@example.org',expiresAt:new Date(Date.now()+3600000).toISOString()});
 try{
  browser=await chromium.launch({headless:true,...((process.env.CHROME_PATH||existsSync(installed))?{executablePath:process.env.CHROME_PATH||installed}:{})});
@@ -30,7 +30,9 @@ try{
   }
   if(p==='/api/auth/reset/verify'){
    if(body.code!=='123456')return json({error:'验证码不正确',code:'reset_code_invalid'},400);
-   grant=grantFor(body.challengeId);return json({ok:true});
+   grant=grantFor(body.challengeId);
+   if(verifyResponseLost){verifyResponseLost=false;return json({error:'Temporary gateway failure'},503);}
+   return json({ok:true});
   }
   if(p==='/api/auth/reset/complete'){grant=null;user=null;return json({ok:true});}
   if(p==='/api/auth/reset')return json({ok:true});
@@ -64,6 +66,14 @@ try{
  assert.deepEqual(requests.find(r=>r.p.endsWith('/complete')).body,{challengeId,password:'new-secret-123',confirmPassword:'new-secret-123'});
  assert.equal(requests.filter(r=>r.p==='/api/auth/login').length,0,'reset does not log in automatically');
  assert.ok(!(await page.evaluate(()=>Object.values(localStorage).join('')+Object.values(sessionStorage).join(''))).includes('new-secret-123'));
+ await go('/forgot-password');await send('retry@example.org');verifyResponseLost=true;
+ await page.locator('#recovery-code').fill('123456');await page.getByRole('button',{name:'下一步',exact:true}).click();
+ await page.getByRole('button',{name:'重新检查验证状态',exact:true}).waitFor();assert.equal(await page.locator('#recovery-code').inputValue(),'');
+ const sendsBeforeRecovery=requests.filter(r=>r.p==='/api/auth/forgot').length;
+ await page.getByRole('button',{name:'重新检查验证状态',exact:true}).click();await page.locator('#recovery-password').waitFor();
+ assert.equal(requests.filter(r=>r.p==='/api/auth/forgot').length,sendsBeforeRecovery,'recover accepted verification without sending another code');
+ grant=null;
+ await page.reload();await page.locator('#recovery-email').waitFor();
  await go('/forgot-password');await send('person@proton.me');await page.reload();await page.locator('#recovery-email').waitFor();assert.equal(await page.locator('#recovery-email').inputValue(),'');assert.equal(await page.locator('#recovery-code').count(),0);
  rateLimited=true;await page.locator('#recovery-email').fill('rate@example.net');await page.locator('[data-recovery-send]').click();await page.locator('[data-recovery-error]').waitFor();assert.match(await page.locator('[data-password-recovery]').innerText(),/37 秒后重试/);
  await page.clock.fastForward(37000);rateLimited=false;assert.equal(await page.locator('[data-recovery-send]').isEnabled(),true);

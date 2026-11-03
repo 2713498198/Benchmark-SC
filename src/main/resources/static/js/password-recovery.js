@@ -80,7 +80,10 @@ export function createPasswordRecovery({state, api, onComplete, now = Date.now,
     const request = start(); state.restoring = true;
     try {
       const result = await api('/api/auth/reset/status', {cache: 'no-store', signal: request.signal});
-      if (current(request)) acceptStatus(result);
+      if (current(request) && !acceptStatus(result) && state.step === 'password') {
+        dropChallenge(); state.notice = '';
+        state.error = '验证已失效，请重新获取验证码。';
+      }
     } catch (error) {
       failed(error, request, 'restore');
       if (current(request)) state.restoreFailed = true;
@@ -125,7 +128,12 @@ export function createPasswordRecovery({state, api, onComplete, now = Date.now,
       }
     } catch (error) {
       failed(error, request, 'verify');
-      if (current(request) && verified) state.restoreFailed = true;
+      // A lost response can still have installed the grant Cookie. Let the user
+      // check it before spending another one-use code or requesting a new one.
+      if (current(request) && (verified || !error.status || error.status >= 500)) {
+        state.code = ''; state.restoreFailed = true;
+        state.error = '暂时无法确认验证结果，请先重新检查验证状态。';
+      }
     }
     finally { finish(request); }
   }

@@ -90,4 +90,19 @@ for(const code of ['reset_challenge_expired','reset_challenge_locked']){
  f.workflow.editEmail('retry@example.org');await f.workflow.sendCode();f.workflow.inputCode('123456');await f.workflow.verifyCode();
  assert.equal(f.state.restoreFailed,true);assert.equal(f.state.code,'');offline=false;await f.workflow.restore();assert.equal(f.state.step,'password');f.workflow.dispose();
 }
-console.log('PASS password recovery: two steps, generic email, exact code, 8–24 password, refresh, cooldown/429, expiry, stale response isolation and secret cleanup.');
+for (const status of [undefined, 503]) {
+ const f=fixture(path=>path.endsWith('/forgot')?challenge('lost-verification'):path.endsWith('/verify')?
+  Promise.reject(Object.assign(Error('response lost'),{status})):grant('lost-verification',f.time));
+ f.workflow.editEmail('retry@example.org');await f.workflow.sendCode();f.workflow.inputCode('123456');await f.workflow.verifyCode();
+ assert.equal(f.state.restoreFailed,true);assert.equal(f.state.code,'');assert.match(f.state.error,/重新检查/);
+ await f.workflow.restore();assert.equal(f.state.step,'password');assert.equal(f.state.restoreFailed,false);
+ assert.equal(f.requests.filter(r=>r.path.endsWith('/forgot')).length,1,'recover a server-accepted code without sending another email');f.workflow.dispose();
+}
+{
+ let valid=true;
+ const f=fixture(()=>valid?grant('revoked-in-another-tab',f.time):{canReset:false});await f.workflow.restore();
+ f.state.password=f.state.confirmPassword='unsent-secret';valid=false;await f.workflow.restore();
+ assert.equal(f.state.step,'verify');assert.equal(f.state.challengeId,'');assert.equal(f.state.password,'');assert.equal(f.state.confirmPassword,'');
+ assert.match(f.state.error,/验证已失效/);f.workflow.dispose();
+}
+console.log('PASS password recovery: two steps, generic email, exact code, 8–24 password, refresh, cooldown/429, expiry, stale response isolation, lost verification response recovery and secret cleanup.');
