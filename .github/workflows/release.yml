@@ -101,8 +101,11 @@ jobs:
           $baseline = Get-Content (Join-Path $baselineDir 'baseline.json') -Raw | ConvertFrom-Json
           $candidate = Join-Path $root "CryptoBench-$($env:RELEASE_VERSION).exe"
           .\tests\windows-installer.ps1 -InitialInstaller $candidate -InitialVersion $env:RELEASE_VERSION -LogDirectory "$env:RUNNER_TEMP\cryptobench-fresh-install-logs"
+          .\tests\windows-installer.ps1 -InitialInstaller $candidate -InitialVersion $env:RELEASE_VERSION -InstallRoot "$env:RUNNER_TEMP\CryptoBench 中文 ქართული install" -LogDirectory "$env:RUNNER_TEMP\cryptobench-unicode-install-logs"
           if ($baseline.tag -ne 'first-release') {
-            .\tests\windows-installer.ps1 -InitialInstaller $baseline.installer -InitialVersion $baseline.version -LegacyInitial -UpgradeInstaller $candidate -UpgradeVersion $env:RELEASE_VERSION -InstallRoot "$env:RUNNER_TEMP\CryptoBench 中文 upgrade" -LogDirectory "$env:RUNNER_TEMP\cryptobench-upgrade-logs"
+            # Historical launchers lack the UTF-8 manifest. Exercise them as
+            # published in an ASCII path; test the new EXE's Unicode path above.
+            .\tests\windows-installer.ps1 -InitialInstaller $baseline.installer -InitialVersion $baseline.version -LegacyInitial -UpgradeInstaller $candidate -UpgradeVersion $env:RELEASE_VERSION -InstallRoot "$env:RUNNER_TEMP\CryptoBench historical upgrade" -LogDirectory "$env:RUNNER_TEMP\cryptobench-upgrade-logs"
           }
           .\scripts\create-release-manifest.ps1 -ReleaseDir $root -Version $env:RELEASE_VERSION -Tag $env:RELEASE_TAG -Commit $env:RELEASE_COMMIT -BuildInfo "$env:RUNNER_TEMP\cryptobench-portable\CryptoBench\support\build-info.json" -SigningMode $env:SIGNING_MODE -UpgradeBaseline $baseline.tag -UpgradeVerified:($baseline.tag -ne 'first-release')
       - name: Verify release assets
@@ -134,4 +137,5 @@ jobs:
           path: |
             ${{ runner.temp }}/cryptobench-*-logs/*.log
             tmp/desktop-check-*/**/var/logs/*.log
+            tmp/desktop-check-*/launch-failure.log
           if-no-files-found: ignore

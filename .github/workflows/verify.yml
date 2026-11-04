@@ -179,7 +179,7 @@ jobs:
           .\tests\windows-installer.ps1 `
             -InitialInstaller "$env:RUNNER_TEMP\cryptobench-installer\CryptoBench-1.0.0.exe" `
             -UpgradeInstaller "$env:RUNNER_TEMP\cryptobench-installer-upgrade\CryptoBench-1.0.1.exe" `
-            -InstallRoot "$env:RUNNER_TEMP\CryptoBench 中文 custom install" `
+            -InstallRoot "$env:RUNNER_TEMP\CryptoBench 中文 ქართული custom install" `
             -LogDirectory "$env:RUNNER_TEMP\cryptobench-installer-logs"
 
       - name: Verify default installation directory
@@ -205,7 +205,10 @@ jobs:
           if ($baseline.tag -ne $previous.tag_name) { throw 'Historical release changed during validation; retry against a consistent baseline' }
           $candidateDir = Join-Path $env:RUNNER_TEMP 'cryptobench-ci-candidate'
           .\scripts\package-windows.ps1 -Release -Installer -AppVersion $candidateVersion -AllowExternalOutput -OutputDir $candidateDir
-          .\tests\windows-installer.ps1 -InitialInstaller $baseline.installer -InitialVersion $baseline.version -LegacyInitial -UpgradeInstaller (Join-Path $candidateDir "CryptoBench-$candidateVersion.exe") -UpgradeVersion $candidateVersion -InstallRoot "$env:RUNNER_TEMP\CryptoBench historical 中文 upgrade" -LogDirectory "$env:RUNNER_TEMP\cryptobench-historical-upgrade-logs"
+          # The unmodified historical EXE predates the UTF-8 launcher fix and
+          # cannot start in a Chinese path on an English runner. Keep the real
+          # baseline runnable; new-version Unicode installs are tested above.
+          .\tests\windows-installer.ps1 -InitialInstaller $baseline.installer -InitialVersion $baseline.version -LegacyInitial -UpgradeInstaller (Join-Path $candidateDir "CryptoBench-$candidateVersion.exe") -UpgradeVersion $candidateVersion -InstallRoot "$env:RUNNER_TEMP\CryptoBench historical upgrade" -LogDirectory "$env:RUNNER_TEMP\cryptobench-historical-upgrade-logs"
 
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -214,4 +217,5 @@ jobs:
           path: |
             ${{ runner.temp }}/cryptobench-*-logs/*.log
             tmp/desktop-check-*/**/var/logs/*.log
+            tmp/desktop-check-*/launch-failure.log
           if-no-files-found: ignore

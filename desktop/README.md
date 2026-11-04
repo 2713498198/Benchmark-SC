@@ -17,6 +17,10 @@ npm run package:windows:installer
 
 同一版本先构建 app-image，再用 `-Installer -PreparedAppImage <目录>` 封装，可确保 EXE 与便携 ZIP 使用相同的应用载荷。最终发布目录不用于运行测试，测试使用隔离副本。
 
+打包时通过 `scripts/set-windows-launcher-encoding.ps1` 为启动器嵌入进程级 UTF-8 清单，再签名及计算载荷哈希；保留原有 DPI、兼容性及 `asInvoker` 声明。Windows 10 1903 及以上支持此设置，无需更改系统区域设置。它修复 JDK 21 在英文 Windows 上从中文路径加载 JVM 时的退出码 2。冒烟测试同时使用中文、格鲁吉亚文及空格路径，使中文开发机也能覆盖系统 ANSI 编码之外的字符；原生启动失败时仍保存 `launch-failure.log` 供 CI 上传。
+
+历史版本 EXE 保持原样，在 ASCII 加空格路径验证真实升级及数据保留，因为旧启动器尚不支持跨系统编码路径。当前版本的多语言安装路径另由 CI 和 Release 安装生命周期门禁验证，不通过修改历史包来规避问题。
+
 ## 自动验证
 
 ```powershell

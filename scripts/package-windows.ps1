@@ -110,6 +110,7 @@ try {
         if ($PSBoundParameters['Verbose']) { $arguments += '--verbose' }
         & $jpackage @arguments
         if ($LASTEXITCODE -ne 0) { throw 'jpackage app-image failed.' }
+        & (Join-Path $PSScriptRoot 'set-windows-launcher-encoding.ps1') -File (Join-Path $image "$ApplicationName.exe")
         $support = Join-Path $image 'support'
         New-Item -ItemType Directory -Path (Join-Path $support 'docker') -Force | Out-Null
         foreach ($name in @('agent-proxy.Dockerfile', 'agent-proxy.mjs', 'model-gateway.Dockerfile', 'model-gateway.mjs')) {

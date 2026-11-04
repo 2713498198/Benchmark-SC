@@ -17,7 +17,9 @@ const inPlace = process.argv.includes('--in-place');
 const dockerTest=process.argv.includes('--docker');
 assert.ok(!(inPlace&&dockerTest),'Docker preparation test requires an isolated copy');
 const workspace = path.resolve(await mkdtemp('tmp/desktop-check-'));
-const directory = inPlace ? path.dirname(source) : path.join(workspace, '中文 portable app');
+// Georgian is outside both Chinese CP936 and English CP1252: catch native
+// launcher path loss on developer machines as well as English Windows runners.
+const directory = inPlace ? path.dirname(source) : path.join(workspace, '中文 ქართული portable app');
 if (!inPlace) await cp(path.dirname(source), directory, {recursive:true});
 const executable = path.join(directory, path.basename(source));
 const dockerVersion='0.0.'+Date.now();
@@ -54,14 +56,20 @@ const env = {...process.env, JAVA_HOME:path.join(workspace,'no-system-java'), JA
 delete env.SERVER_PORT;delete env.PORT;
 // No database, key or log override: this exercises the delivered defaults.
 const options = {cwd:workspace, windowsHide:true, stdio:'ignore', env};
+const launchOptions = {...options, stdio:['ignore','pipe','pipe']};
 const shortcutIndex=process.argv.indexOf('--shortcut');
 const shortcut=shortcutIndex>=0?process.argv[shortcutIndex+1]:null;
 assert.ok(shortcutIndex<0||(inPlace&&shortcut),'Shortcut launch requires an installed image and shortcut path');
 const child = shortcut
-  ? spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.resolve('tests/windows-shortcut-launch.ps1'),'-Shortcut',shortcut,'-Executable',executable],options)
-  : spawn(executable, [], options);
+  ? spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.resolve('tests/windows-shortcut-launch.ps1'),'-Shortcut',shortcut,'-Executable',executable],launchOptions)
+  : spawn(executable, [], launchOptions);
 let spawnError;
 child.on('error', error => { spawnError = error; });
+let nativeOutput='';
+for(const stream of [child.stdout,child.stderr]){
+  stream.setEncoding('utf8');
+  stream.on('data',text=>{nativeOutput=(nativeOutput+text).slice(-16000);});
+}
 
 async function waitExit(process, timeout=60_000) {
   const deadline=Date.now()+timeout;
@@ -131,6 +139,14 @@ try {
   await assert.rejects(fetch(`http://127.0.0.1:${port}/actuator/health`,{signal:AbortSignal.timeout(1000)}));
   await assert.rejects(access(path.join(directory,'var/run/instance.properties')));
   console.log(`PASS desktop defaults, real administrator, private key, demo disabled, independent cwd, single instance and graceful exit. Log: ${log}`);
+} catch(error) {
+  // Native JVM loading can fail before logback or startup-failure.log exists.
+  // Always leave an artifact for this case, even for a GUI launcher with no output.
+  const diagnostic=JSON.stringify({executable,cwd:workspace,exitCode:child.exitCode,
+    signal:child.signalCode,error:error.message,nativeOutput},null,2).replaceAll(password,'[REDACTED]');
+  await writeFile(path.join(workspace,'launch-failure.log'),diagnostic);
+  console.error(diagnostic);
+  throw error;
 } finally {
   if(child.exitCode===null && child.pid){
     try{await command('stop');await waitExit(child,5000);}catch{}

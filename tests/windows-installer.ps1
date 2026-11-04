@@ -101,10 +101,13 @@ function ShortcutPaths {
 }
 
 function Assert-Shortcuts([string]$executable) {
-    $shell = New-Object -ComObject WScript.Shell
+    # WScript.Shell's TargetPath loses characters outside the system ANSI code
+    # page. Shell.Application reads the actual Unicode link target.
+    $shell = New-Object -ComObject Shell.Application
     foreach ($path in (ShortcutPaths)) {
         if (-not (Test-Path -LiteralPath $path)) { throw "Expected CryptoBench shortcut was not created: $path" }
-        $target = [IO.Path]::GetFullPath($shell.CreateShortcut($path).TargetPath)
+        $folder = $shell.NameSpace((Split-Path $path))
+        $target = [IO.Path]::GetFullPath($folder.ParseName((Split-Path $path -Leaf)).GetLink.Path)
         if ($target -ne [IO.Path]::GetFullPath($executable)) {
             throw "CryptoBench shortcut points to $target instead of $executable"
         }
