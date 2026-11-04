@@ -1,11 +1,11 @@
 # Shared by the source launcher and Windows packaging. Process-local settings only.
-function Get-CryptoBenchJdkVersion([string]$Executable) {
+function Get-CryptoBenchJdkVersion([string]$Executable, [string]$VersionArguments = '--version') {
     # Windows PowerShell treats redirected native stderr as an error record.
     # Java can write harmless launcher notices there and still exit successfully.
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
     $process.StartInfo.FileName = $Executable
-    $process.StartInfo.Arguments = '--version'
+    $process.StartInfo.Arguments = $VersionArguments
     $process.StartInfo.UseShellExecute = $false
     $process.StartInfo.CreateNoWindow = $true
     $process.StartInfo.RedirectStandardOutput = $true
@@ -66,7 +66,7 @@ function Get-CryptoBenchToolsDirectory([string]$ProjectRoot) {
     return $directory
 }
 
-function Initialize-CryptoBenchJava([string]$ProjectRoot) {
+function Initialize-CryptoBenchJava([string]$ProjectRoot, [switch]$Pinned) {
     # Use the modules shipped with this PowerShell host. CI can launch Windows
     # PowerShell with a PowerShell 7 module path, breaking command auto-loading.
     Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility') -ErrorAction Stop
@@ -81,7 +81,18 @@ function Initialize-CryptoBenchJava([string]$ProjectRoot) {
     $systemHome = if ($systemJava) { Split-Path (Split-Path $systemJava.Source) } else { $null }
     $selected = $null
     foreach ($candidate in @((Join-Path $ProjectRoot '.tools\jdk-21'), (Join-Path $toolsDir 'jdk-21'), $cached, $env:JAVA_HOME, $systemHome)) {
-        if (Test-CryptoBenchJdk $candidate) { $selected = $candidate; break }
+        if (Test-CryptoBenchJdk $candidate) {
+            if ($Pinned) {
+                if (-not $entry) { throw "No pinned JDK is configured for Windows $arch." }
+                $metadata = Get-Content -LiteralPath (Join-Path $candidate 'release') -Raw -ErrorAction SilentlyContinue
+                $version = ($entry.version -split '\+')[0]
+                $build = (($entry.version -split '\+')[1] -split '\.')[0]
+                $runtimeVersionPattern = '(?m)^JAVA_RUNTIME_VERSION="' + [regex]::Escape("$version+$build") + '(?:-LTS)?"'
+                $expectedArch = if ($arch -eq 'x64') { '(amd64|x86_64)' } else { '(aarch64|arm64)' }
+                if ($metadata -notmatch ('(?m)^JAVA_VERSION="' + [regex]::Escape($version) + '"') -or $metadata -notmatch $runtimeVersionPattern -or $metadata -notmatch 'IMPLEMENTOR="Eclipse Adoptium"' -or $metadata -notmatch ('OS_ARCH="' + $expectedArch + '"')) { continue }
+            }
+            $selected = $candidate; break
+        }
     }
     if (-not $selected) {
         if ($env:CRYPTOBENCH_NO_JDK_DOWNLOAD -eq '1') { throw 'JDK 21 was not found. Set JAVA_HOME to a full JDK 21, or put it in .tools\jdk-21. Automatic download is disabled.' }
