@@ -30,11 +30,13 @@ class LocalExecutionMigrationTest {
         }
 
         var latest = Flyway.configure().dataSource(url, "sa", "").load();
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(1);
+        // V12 removes retired bridge tables and V13 creates the local Runner tables.
+        assertThat(latest.migrate().migrationsExecuted).isEqualTo(2);
         latest.validate();
         assertThat(latest.info().pending()).isEmpty();
         try (var connection = DriverManager.getConnection(url, "sa", "")) {
             assertDeviceTablesAbsent(connection);
+            assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('benchmark_runners','benchmark_runner_pairings','benchmark_runner_jobs')")).isEqualTo("3");
             assertThat(value(connection, "SELECT password_hash FROM benchmark_users WHERE id='preserved-owner'")).isEqualTo("preserved-hash");
             assertThat(value(connection, "SELECT COUNT(*) FROM benchmark_sessions WHERE user_id='preserved-owner'")).isEqualTo("1");
             assertThat(value(connection, "SELECT COUNT(*) FROM benchmark_password_reset_tokens WHERE user_id='preserved-owner' AND used_at IS NULL")).isEqualTo("1");
