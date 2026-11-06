@@ -20,6 +20,6 @@ export class RunnerClient{
 
 // Advertise only public metadata; endpoint and credentials stay on the local machine.
 export function publicAgents(config){
- const profiles=Array.isArray(config.agents)?config.agents:[config.agent||{}];
+ const profiles=Array.isArray(config.agents)&&config.agents.length?config.agents:[config.agent||{}];
  return {profiles:profiles.map(item=>({name:item.name||'Local Agent',model:item.model||'unknown',version:item.version||'unknown',mode:item.mode||'local'}))};
 }

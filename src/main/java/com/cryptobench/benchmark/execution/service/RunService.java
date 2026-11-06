@@ -668,8 +668,9 @@ public class RunService {
                         ? null : (ObjectNode) job.result().path("response");
                 if (response == null || !"completed".equals(job.status())) {
                     ObjectNode error = errorResult(job.status(), job.errorMessage() == null ? "Runner returned no valid result" : job.errorMessage());
-                    runs.finishTask(id, key, generation, attempt, "failed", null, error, false, 0d, null, elapsedMillis(nano));
-                    runs.finish(id, generation, "failed", "runner_execution_failed", error.path("reason").asText(), null);
+                    String failureStatus = "timeout".equals(job.status()) ? "timeout" : "failed";
+                    runs.finishTask(id, key, generation, attempt, failureStatus, null, error, false, 0d, null, elapsedMillis(nano));
+                    runs.finish(id, generation, failureStatus, "timeout".equals(failureStatus) ? "runner_timeout" : "runner_execution_failed", error.path("reason").asText(), null);
                     return;
                 }
                 ObjectNode verification = catalog.evaluate(run.datasetId(), run.version(), task, response);
