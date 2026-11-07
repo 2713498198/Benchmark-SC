@@ -16,7 +16,7 @@ public class MailRepository {
             new MailCipher.Envelope(r.getString("ciphertext"), r.getString("nonce"), r.getString("key_id")), r.getInt("attempts"),
             r.getLong("next_attempt_at"), r.getLong("expires_at"), r.getString("claim_id"), r.getString("error_code"));
     public MailRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    /** Low-volume identity operations serialize across instances, including first invites for an email. */
+    /** 低频身份操作在多个实例之间串行执行，包括同一邮箱的首次邀请。 */
     public void guard() { jdbc.queryForObject("SELECT id FROM benchmark_mail_guard WHERE id=1 FOR UPDATE", Integer.class); }
     public void insert(String id, String purpose, String reference, String owner, int generation, String transport, MailCipher.Envelope encrypted, long expires, long now) {
         jdbc.update("INSERT INTO benchmark_mail_messages(id,purpose,reference_id,owner_id,generation,transport,state,ciphertext,nonce,key_id,next_attempt_at,expires_at,created_at) VALUES(?,?,?,?,?,?,'queued',?,?,?,?,?,?)",
@@ -38,8 +38,6 @@ public class MailRepository {
         Integer count = switch (message.purpose()) {
             case "admin_invite" -> jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_admin_invitations WHERE id=? AND generation=? AND used_at IS NULL AND revoked_at IS NULL AND expires_at>?",
                     Integer.class, message.reference(), message.generation(), now);
-            case "password_reset" -> jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_password_reset_tokens WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
-                    Integer.class, message.reference(), now);
             case "password_reset_code" -> jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_password_reset_challenges WHERE id=? AND user_id IS NOT NULL AND status='active' AND expires_at>?",
                     Integer.class, message.reference(), now);
             default -> 0;
@@ -56,7 +54,7 @@ public class MailRepository {
         jdbc.update("UPDATE benchmark_mail_messages SET state='cancelled',completed_at=?,ciphertext=NULL,nonce=NULL,key_id=NULL,lease_until=NULL,claim_id=NULL WHERE purpose=? AND reference_id=? AND state IN " + OPEN, now, purpose, reference);
     }
     public void cancelOwner(String owner, long now) {
-        jdbc.update("UPDATE benchmark_mail_messages SET state='cancelled',completed_at=?,ciphertext=NULL,nonce=NULL,key_id=NULL,lease_until=NULL,claim_id=NULL WHERE purpose IN ('password_reset','password_reset_code') AND owner_id=? AND state IN " + OPEN, now, owner);
+        jdbc.update("UPDATE benchmark_mail_messages SET state='cancelled',completed_at=?,ciphertext=NULL,nonce=NULL,key_id=NULL,lease_until=NULL,claim_id=NULL WHERE purpose='password_reset_code' AND owner_id=? AND state IN " + OPEN, now, owner);
     }
     public void expire(long now) {
         jdbc.update("UPDATE benchmark_mail_messages SET state='expired',completed_at=?,ciphertext=NULL,nonce=NULL,key_id=NULL,lease_until=NULL,claim_id=NULL WHERE expires_at<=? AND state IN " + OPEN, now, now);

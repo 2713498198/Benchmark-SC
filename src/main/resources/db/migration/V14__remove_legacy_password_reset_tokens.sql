@@ -1,0 +1,1 @@
+DROP TABLE benchmark_password_reset_tokens;

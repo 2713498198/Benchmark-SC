@@ -48,13 +48,13 @@ class MailCipherTest {
         assertThatThrownBy(() -> new MailCipher(missing, production).checkReady()).hasMessage("mail_key_unavailable");
         assertThat(temp.resolve("missing")).doesNotExist();
         MailProperties old = new MailProperties(); old.setKey(Base64.getEncoder().encodeToString(new byte[32]));
-        var message = new MailCipher(old, production).encrypt("message1", "password_reset", "reset1", "token");
+        var message = new MailCipher(old, production).encrypt("message1", "password_reset_code", "reset1", "token");
         MailProperties fresh = new MailProperties(); byte[] next = new byte[32]; next[0] = 1;
         fresh.setKey(Base64.getEncoder().encodeToString(next));
         fresh.getPreviousKeys().put(message.keyId(), old.getKey());
-        assertThat(new MailCipher(fresh, production).decrypt("message1", "password_reset", "reset1", message)).isEqualTo("token");
+        assertThat(new MailCipher(fresh, production).decrypt("message1", "password_reset_code", "reset1", message)).isEqualTo("token");
         fresh.getPreviousKeys().clear();
-        assertThatThrownBy(() -> new MailCipher(fresh, production).decrypt("message1", "password_reset", "reset1", message)).hasMessage("mail_decryption_failed");
+        assertThatThrownBy(() -> new MailCipher(fresh, production).decrypt("message1", "password_reset_code", "reset1", message)).hasMessage("mail_decryption_failed");
     }
     @Test void autoOnlyMigratesExplicitLegacyGatewayOrOutboxSettings() {
         MailProperties properties = new MailProperties(); properties.setSmtpHost("smtp.example.com");

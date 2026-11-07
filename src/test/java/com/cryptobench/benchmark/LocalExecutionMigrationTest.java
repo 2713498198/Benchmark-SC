@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import static org.assertj.core.api.Assertions.*;
 
-/** Retiring remote execution must not delete accounts, finished results or recovery credentials. */
+/** 停用旧设备执行方式时，不应删除账号和已完成的测评结果。 */
 class LocalExecutionMigrationTest {
     @TempDir Path temporary;
 
@@ -20,7 +20,6 @@ class LocalExecutionMigrationTest {
         try (var connection = DriverManager.getConnection(url, "sa", ""); var statement = connection.createStatement()) {
             statement.execute("INSERT INTO benchmark_users(id,email,display_name,user_role,password_hash,created_at) VALUES('preserved-owner','retire@example.test','Existing user','admin','preserved-hash','2026-01-01T00:00:00Z')");
             statement.execute("INSERT INTO benchmark_sessions(token_hash,user_id,expires_at) VALUES('" + "a".repeat(64) + "','preserved-owner',4102444800000)");
-            statement.execute("INSERT INTO benchmark_password_reset_tokens(token_hash,user_id,expires_at,created_at) VALUES('" + "b".repeat(64) + "','preserved-owner',4102444800000,'2026-01-01T00:00:00Z')");
             statement.execute("INSERT INTO benchmark_reports(id,owner_id,published,payload) VALUES('preserved-report','preserved-owner',TRUE,'" + report + "')");
             statement.execute("INSERT INTO benchmark_runs(run_id,owner_id,kind,execution_source,dataset_id,dataset_version,budget,task_scope,model_id,seed,status,total_tasks,completed_tasks,passed_tasks,config_payload,report_id,created_at) VALUES('preserved-run','preserved-owner','evaluation','local','mini-spn','1.0.0','standard','sample','fixture',987,'completed',1,1,1,'" + config + "','preserved-report','2026-01-01T00:00:00Z')");
             statement.execute("INSERT INTO benchmark_run_tasks(run_id,task_id,ordinal,status,passed,cost_usd,agent_response) VALUES('preserved-run','main:task-1',1,'passed',TRUE,0.123456,'{\"artifact\":{\"answer\":4}}')");
@@ -30,8 +29,8 @@ class LocalExecutionMigrationTest {
         }
 
         var latest = Flyway.configure().dataSource(url, "sa", "").load();
-        // V12 removes retired bridge tables and V13 creates the local Runner tables.
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(2);
+        // V12 删除旧设备表，V13 创建本地 Runner 表，V14 删除旧密码重置令牌表。
+        assertThat(latest.migrate().migrationsExecuted).isEqualTo(3);
         latest.validate();
         assertThat(latest.info().pending()).isEmpty();
         try (var connection = DriverManager.getConnection(url, "sa", "")) {
@@ -39,7 +38,7 @@ class LocalExecutionMigrationTest {
             assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('benchmark_runners','benchmark_runner_pairings','benchmark_runner_jobs')")).isEqualTo("3");
             assertThat(value(connection, "SELECT password_hash FROM benchmark_users WHERE id='preserved-owner'")).isEqualTo("preserved-hash");
             assertThat(value(connection, "SELECT COUNT(*) FROM benchmark_sessions WHERE user_id='preserved-owner'")).isEqualTo("1");
-            assertThat(value(connection, "SELECT COUNT(*) FROM benchmark_password_reset_tokens WHERE user_id='preserved-owner' AND used_at IS NULL")).isEqualTo("1");
+            assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='benchmark_password_reset_tokens'")).isEqualTo("0");
             assertThat(value(connection, "SELECT payload FROM benchmark_reports WHERE id='preserved-report'")).isEqualTo(report);
             assertThat(value(connection, "SELECT config_payload FROM benchmark_runs WHERE run_id='preserved-run'")).isEqualTo(config);
             assertThat(value(connection, "SELECT status FROM benchmark_runs WHERE run_id='preserved-run'")).isEqualTo("completed");
@@ -62,6 +61,7 @@ class LocalExecutionMigrationTest {
         try (var connection = DriverManager.getConnection(url, "sa", "")) {
             assertDeviceTablesAbsent(connection);
             assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('benchmark_users','benchmark_runs','benchmark_reports','benchmark_dataset_packages','benchmark_password_reset_challenges')")).isEqualTo("5");
+            assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='benchmark_password_reset_tokens'")).isEqualTo("0");
         }
     }
 

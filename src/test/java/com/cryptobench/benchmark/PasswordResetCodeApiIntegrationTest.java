@@ -1,7 +1,5 @@
 package com.cryptobench.benchmark;
 
-import com.cryptobench.benchmark.auth.repository.PasswordResetRepository;
-import com.cryptobench.benchmark.auth.service.PasswordResetService;
 import com.cryptobench.benchmark.mail.MailCipher;
 import com.cryptobench.benchmark.mail.MailRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,8 +37,6 @@ class PasswordResetCodeApiIntegrationTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired MailRepository messages;
     @Autowired MailCipher cipher;
-    @Autowired PasswordResetRepository legacyTokens;
-    @Autowired PasswordResetService legacy;
     private static final AtomicInteger IPS=new AtomicInteger();
     private static final String OLD_PASSWORD="old-password8";
 
@@ -226,24 +221,6 @@ class PasswordResetCodeApiIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_password_reset_grants WHERE challenge_id=? AND used_at IS NOT NULL",Integer.class,challenge.id())).isEqualTo(1);
     }
 
-    @Test void legacyLinksRemainUsableAndInvalidateNewChallengesAndGrants()throws Exception{
-        Account account=account("example.com");Client client=new Client();Challenge code=request(client,account.email());verify(client,code);
-        String token=UUID.randomUUID().toString().replace("-","").repeat(2);
-        legacyTokens.insert(hash(token),account.id(),System.currentTimeMillis()+60_000,Instant.now().toString());
-        assertStatus(new Client().post("/api/auth/reset",Map.of("token",token,"password","legacy-password8")),200);
-        assertThat(json(client.get("/api/auth/reset/status")).path("canReset").asBoolean()).isFalse();
-        assertStatus(client.post("/api/auth/reset/complete",completeBody(code.id(),"new-password8")),400);
-        assertStatus(new Client().post("/api/auth/reset",Map.of("token",token,"password","legacy-password8")),400);
-        legacy.request(account.email());String old=legacyToken(account.id());ageSendWindow(account.email());Challenge newer=request(client,account.email());
-        assertStatus(new Client().post("/api/auth/reset",Map.of("token",old,"password","legacy-password8")),400);
-        verify(client,newer);legacy.request(account.email());
-        assertThat(json(client.get("/api/auth/reset/status")).path("canReset").asBoolean()).isFalse();
-        ageSendWindow(account.email());Challenge completed=request(client,account.email());verify(client,completed);
-        String other=UUID.randomUUID().toString().replace("-","").repeat(2);legacyTokens.insert(hash(other),account.id(),System.currentTimeMillis()+60_000,Instant.now().toString());
-        assertStatus(client.post("/api/auth/reset/complete",completeBody(completed.id(),"new-password8")),200);
-        assertStatus(new Client().post("/api/auth/reset",Map.of("token",other,"password","legacy-password8")),400);
-    }
-
     private record Account(String id,String email,Client loggedIn){}
     private record Challenge(String id,String code){}
     private Account account(String domain)throws Exception{
@@ -263,10 +240,6 @@ class PasswordResetCodeApiIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT email_key FROM benchmark_password_reset_challenges WHERE id=?",String.class,id)).hasSize(64).doesNotContain("@");
         assertThat(message.encrypted().ciphertext()).doesNotContain(payload.path("email").asText(),"\"code\"",code);
         assertThat(response.toString()).doesNotContain(code,"resetUrl");return new Challenge(id,code);
-    }
-    private String legacyToken(String owner)throws Exception{
-        String id=jdbc.queryForObject("SELECT id FROM benchmark_mail_messages WHERE purpose='password_reset' AND owner_id=? AND state='queued'",String.class,owner);
-        var message=messages.find(id).orElseThrow();return mapper.readTree(cipher.decrypt(id,message.purpose(),message.reference(),message.encrypted())).path("token").asText();
     }
     private void verify(Client client,Challenge challenge)throws Exception{assertStatus(client.post("/api/auth/reset/verify",Map.of("challengeId",challenge.id(),"code",challenge.code())),200);}
     private Map<String,String> completeBody(String id,String password){return Map.of("challengeId",id,"password",password,"confirmPassword",password);}

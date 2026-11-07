@@ -97,11 +97,10 @@ public class MailTransport {
         helper.setFrom(properties.getFrom()); helper.setTo(payload.path("email").asText());
         boolean invite = "admin_invite".equals(payload.path("type").asText());
         boolean code = "password_reset_code".equals(payload.path("type").asText());
-        helper.setSubject(invite ? "CryptoBench 管理员邀请" : code ? "CryptoBench 找回密码验证码" : "CryptoBench 密码重置");
+        helper.setSubject(invite ? "CryptoBench 管理员邀请" : "CryptoBench 找回密码验证码");
         String content = code ? "你的 CryptoBench 找回密码验证码是：\n" + payload.path("code").asText()
                 + "\n请在找回密码页面输入此验证码。验证码仅能使用一次，请勿提供给他人。"
-                : (invite ? "你收到了一份 CryptoBench 管理员邀请。\n" : "请使用以下链接重置 CryptoBench 密码。\n")
-                    + payload.path(invite ? "inviteUrl" : "resetUrl").asText();
+                : "你收到了一份 CryptoBench 管理员邀请。\n" + payload.path("inviteUrl").asText();
         helper.setText(content + "\n有效期至：" + payload.path("expiresAt").asText()
                 + "\n如果你未请求此操作，请忽略这封邮件。", false);
         sender.send(message);
