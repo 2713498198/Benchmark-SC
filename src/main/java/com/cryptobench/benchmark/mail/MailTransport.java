@@ -53,8 +53,8 @@ public class MailTransport {
         while (!pending.isEmpty()) {
             Throwable failure = pending.removeFirst(); if (!seen.add(failure)) continue;
             if (failure instanceof MailAuthenticationException) return new DeliveryException("smtp_authentication_failed", false);
-            Integer code = failure instanceof SMTPAddressFailedException address ? address.getReturnCode()
-                    : failure instanceof SMTPSendFailedException send ? send.getReturnCode() : null;
+            Integer code = failure instanceof SMTPAddressFailedException address ? Integer.valueOf(address.getReturnCode())
+                    : failure instanceof SMTPSendFailedException send ? Integer.valueOf(send.getReturnCode()) : null;
             if (code != null && code >= 500 && code < 600) return new DeliveryException("smtp_" + code, false);
             if (code != null && code >= 400 && code < 500) temporary = code;
             if (failure instanceof SendFailedException failed && failed.getInvalidAddresses() != null && failed.getInvalidAddresses().length > 0) invalidRecipient = true;

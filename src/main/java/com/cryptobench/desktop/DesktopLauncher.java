@@ -2,6 +2,7 @@ package com.cryptobench.desktop;
 
 import com.cryptobench.benchmark.CryptoBenchApplication;
 import com.cryptobench.benchmark.auth.service.DesktopAdminService;
+import com.cryptobench.benchmark.persistence.MybatisDatabase;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -19,7 +20,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * Entry point used by the optional Windows app-image. The normal Spring Boot
@@ -89,14 +89,14 @@ public final class DesktopLauncher {
                     log.info("Desktop version {} using Java {}; data directory {}", System.getProperty("jpackage.app-version", "development"), Runtime.version(), paths.data);
                     Runnable open = () -> openBrowser(uri, DesktopUi::browse, true);
                     Runnable stop = () -> {
-                        Integer active = ready.getBean(JdbcTemplate.class).queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE status IN ('queued','running')", Integer.class);
+                        Integer active = ready.getBean(MybatisDatabase.class).queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE status IN ('queued','running')", Integer.class);
                         if (active == null || active == 0 || DesktopUi.confirmStop()) close.run();
                     };
                     instance.onCommand(command -> {
                         if (stopping.get()) return "STOPPING";
                         if (command.equals("status")) return "READY " + uri;
                         if (command.equals("open")) { java.awt.EventQueue.invokeLater(open); return "OPENED"; }
-                        Integer active = ready.getBean(JdbcTemplate.class).queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE status IN ('queued','running')", Integer.class);
+                        Integer active = ready.getBean(MybatisDatabase.class).queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE status IN ('queued','running')", Integer.class);
                         if (active != null && active > 0) return "BUSY";
                         close.run(); return "STOPPING";
                     });
