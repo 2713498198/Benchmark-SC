@@ -22,6 +22,8 @@ def main() -> None:
     numbers = []
     validator_count = 0
     validator_tasks = set()
+    public_attachment_count = 0
+    empty_public_attachment_paths = []
     for task in tasks:
         release = json.loads((task / 'release.json').read_text(encoding='utf-8'))
         assert release['task_id'] == task.name
@@ -33,6 +35,14 @@ def main() -> None:
         if (task / 'oracle/validator.py').is_file():
             validator_count += 1
             validator_tasks.add(task.name)
+        public = task / 'public'
+        for path in public.rglob('*'):
+            if path.is_file() and 'attachments' in path.relative_to(public).parts:
+                public_attachment_count += 1
+                if path.stat().st_size == 0:
+                    empty_public_attachment_paths.append(
+                        f'tasks/{task.name}/public/{path.relative_to(public).as_posix()}'
+                    )
     assert sorted(numbers) == list(range(1, 171))
     missing = sorted(set(task_ids) - validator_tasks)
     result = {
@@ -41,11 +51,18 @@ def main() -> None:
         'validatorCount': validator_count,
         'validatorCoverage': validator_count / len(tasks),
         'missingValidatorTaskIds': missing,
-        'executionReady': validator_count == len(tasks),
+        'publicAttachmentCount': public_attachment_count,
+        'emptyPublicAttachmentCount': len(empty_public_attachment_paths),
+        'emptyPublicAttachmentPaths': sorted(empty_public_attachment_paths),
+        'executionReady': validator_count == len(tasks) and not empty_public_attachment_paths,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.require_validators and missing:
-        raise SystemExit(f"release gate failed: {len(missing)} task validators missing")
+    if args.require_validators and (missing or empty_public_attachment_paths):
+        raise SystemExit(
+            'release gate failed: '
+            f'{len(missing)} task validators missing, '
+            f'{len(empty_public_attachment_paths)} public attachments empty'
+        )
 
 
 if __name__ == '__main__':
