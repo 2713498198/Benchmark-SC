@@ -31,3 +31,17 @@ npm run validate:v4-materials -- .\private\v4-manifest.json `
 ```
 
 校验器只输出数据集身份、题目数、材料数和摘要哈希，不打印隐藏文件内容。校验通过后，还需要把 verifier 实现注册到 `BenchmarkEvaluator`，完成服务端集成测试和正式评分复核，才能把 `executionReady` 改为 `true`。
+
+## 修正版公开附件覆盖层
+
+如果原始题库只把公开附件列出但内容为空，可以使用导入器的
+`--public-overlay` 补齐附件：覆盖层目录只能包含
+`tasks/<task-id>/public/attachments/` 下与源包同名的非空文件，并且只能替换源包中的空文件。
+题干、`hidden/`、`oracle/`、答案文件、额外路径和非空文件冲突都会被拒绝；未补齐的空附件仍会阻止导入。
+
+```powershell
+python scripts/import_cryptobench.py .\staged-release `
+  --version 4.1.0 `
+  --public-overlay .\public-attachment-correction `
+  --output-dir .\src\main\resources\static\data\cryptobench-sc-v4\4.1.0
+```

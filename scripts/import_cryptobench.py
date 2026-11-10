@@ -11,6 +11,55 @@ SITE = Path(__file__).resolve().parents[1] / 'src' / 'main' / 'resources' / 'sta
 DATASET_ID = 'cryptobench-sc-v4'
 FIELDS = ('task_id', 'source_task_id', 'question_number', 'title', 'cipher',
           'difficulty', 'budget_class', 'task_family', 'attack_type', 'is_aggregate_stress')
+ALLOWED_PUBLIC_SUFFIXES = {'.md', '.json', '.txt', '.pdf', '.csv'}
+
+
+def load_public_overlay(overlay_root, task_ids, source_files):
+    """Return a safe replacement map for empty public attachments.
+
+    A correction package is deliberately narrower than the source release: it
+    may only contain ``tasks/<id>/public/attachments/<file>`` entries that are
+    already present and empty in the source.  This prevents an overlay from
+    adding questions, replacing non-empty files, or smuggling private material
+    into the generated public package.
+    """
+    overlay_root = overlay_root.resolve()
+    if overlay_root.is_symlink() or not overlay_root.is_dir():
+        raise ValueError('Public overlay must be a real directory: ' + str(overlay_root))
+    tasks_root = overlay_root / 'tasks'
+    if not tasks_root.is_dir() or tasks_root.is_symlink():
+        raise ValueError('Public overlay must contain a real tasks directory')
+
+    replacements = {}
+    for path in tasks_root.rglob('*'):
+        if path.is_dir():
+            if path.is_symlink():
+                raise ValueError('Public overlay directories must not be symlinks: ' + str(path))
+            continue
+        relative = path.relative_to(overlay_root)
+        parts = relative.parts
+        if len(parts) < 5 or parts[0] != 'tasks' or parts[2] != 'public' or parts[3] != 'attachments':
+            raise ValueError('Overlay may only contain tasks/<id>/public/attachments files: '
+                             + relative.as_posix())
+        task_id = parts[1]
+        if task_id not in task_ids:
+            raise ValueError('Overlay references an unknown task: ' + task_id)
+        if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(overlay_root):
+            raise ValueError('Overlay file escapes its root: ' + relative.as_posix())
+        if path.suffix.lower() not in ALLOWED_PUBLIC_SUFFIXES or any(part.startswith('.') for part in parts[3:]):
+            raise ValueError('Unexpected overlay file: ' + relative.as_posix())
+        key = relative.as_posix()
+        if key in replacements:
+            raise ValueError('Duplicate overlay file: ' + key)
+        if key not in source_files:
+            raise ValueError('Overlay file is not an existing source attachment: ' + key)
+        if source_files[key]:
+            raise ValueError('Overlay may only replace an empty source attachment: ' + key)
+        content = path.read_bytes()
+        if not content:
+            raise ValueError('Overlay attachment is empty: ' + key)
+        replacements[key] = content
+    return replacements
 
 
 def main():
@@ -22,6 +71,9 @@ def main():
                         help='Immutable published version (default: 4.0.0)')
     parser.add_argument('--output-dir', type=Path,
                         help='Explicit public output directory; defaults to a versioned site path')
+    parser.add_argument('--public-overlay', type=Path,
+                        help=('Optional correction directory containing only '
+                              'tasks/<id>/public/attachments files that replace empty source attachments'))
     args = parser.parse_args()
     source = args.source.resolve()
     dataset_id = args.dataset_id.strip()
@@ -36,7 +88,8 @@ def main():
     if len(tasks) != manifest['task_count'] or len({t['task_id'] for t in tasks}) != len(tasks):
         raise ValueError('Manifest task count or unique task IDs do not match')
     # Validate all inputs before publishing any files. Never traverse hidden/ or oracle/.
-    entries, public_files = [], {}
+    entries, public_files, file_records, empty_attachment_keys = [], {}, {}, set()
+    task_ids = {task['task_id'] for task in tasks}
     for task in tasks:
         task_id = task['task_id']
         if not re.fullmatch(r'[A-Za-z0-9_-]+', task_id) or task['directory_name'] != task_id:
@@ -56,16 +109,28 @@ def main():
             if file.is_symlink() or not file.resolve().is_relative_to(public.resolve()):
                 raise ValueError('File escapes public directory: ' + str(file))
             rel = file.relative_to(public).as_posix()
-            if file.suffix.lower() not in {'.md', '.json', '.txt', '.pdf', '.csv'} or any(p.startswith('.') for p in file.relative_to(public).parts):
+            if file.suffix.lower() not in ALLOWED_PUBLIC_SUFFIXES or any(p.startswith('.') for p in file.relative_to(public).parts):
                 raise ValueError('Unexpected public file: ' + rel)
             content = file.read_bytes()
-            if 'attachments' in file.relative_to(public).parts and not content:
-                raise ValueError('Empty public attachment: ' + f'{task_id}/{rel}')
             key = f'tasks/{task_id}/public/{rel}'
+            if 'attachments' in file.relative_to(public).parts and not content:
+                empty_attachment_keys.add(key)
             public_files[key] = content
             entry['files'].append({'name': rel, 'url': f'{public_prefix}/{key}',
                                    'bytes': len(content), 'sha256': hashlib.sha256(content).hexdigest()})
+            file_records[key] = entry['files'][-1]
         entries.append(entry)
+    if args.public_overlay:
+        replacements = load_public_overlay(args.public_overlay, task_ids, public_files)
+        for key, content in replacements.items():
+            public_files[key] = content
+            file_records[key]['bytes'] = len(content)
+            file_records[key]['sha256'] = hashlib.sha256(content).hexdigest()
+        empty_attachment_keys.difference_update(replacements)
+    if empty_attachment_keys:
+        sample = sorted(empty_attachment_keys)
+        suffix = '' if len(sample) <= 5 else f' (and {len(sample) - 5} more)'
+        raise ValueError('Empty public attachment(s): ' + ', '.join(sample[:5]) + suffix)
     aggregate_stress_tasks = sum(bool(task.get('is_aggregate_stress')) for task in tasks)
     commit = subprocess.run(['git', '-C', str(source), 'rev-parse', 'HEAD'],
                             capture_output=True, text=True).stdout.strip() or None
