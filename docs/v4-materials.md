@@ -27,7 +27,9 @@ V4 的隐藏答案、oracle、参考复放和验证器不能放在 `src/main/res
 ```powershell
 npm run validate:v4-materials -- .\private\v4-manifest.json `
   --public-catalog .\src\main\resources\static\data\cryptobench-sc-v4\catalog.json `
-  --materials-root .\private\v4-materials
+  --materials-root .\private\v4-materials `
+  --validator-registry .\private\v4-validator-registry.json `
+  --validator-root .\private\v4-validators
 ```
 
 校验器只输出数据集身份、题目数、材料数和摘要哈希，不打印隐藏文件内容。校验通过后，还需要把 verifier 实现注册到 `BenchmarkEvaluator`，完成服务端集成测试和正式评分复核，才能把 `executionReady` 改为 `true`。

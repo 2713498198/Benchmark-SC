@@ -18,13 +18,15 @@ for (let index = 2; index < process.argv.length; index += 1) {
 
 const [manifestPath] = positional;
 if (!manifestPath || !options['public-catalog'] || !options['materials-root']) {
-  console.error('Usage: node scripts/validate-v4-materials.mjs <manifest.json> --public-catalog <catalog.json> --materials-root <private-dir>');
+  console.error('Usage: node scripts/validate-v4-materials.mjs <manifest.json> --public-catalog <catalog.json> --materials-root <private-dir> [--validator-registry <registry.json> --validator-root <dir>]');
   process.exit(2);
 }
 
 const manifestAbsolute = path.resolve(manifestPath);
 const catalogAbsolute = path.resolve(options['public-catalog']);
 const materialsAbsolute = path.resolve(options['materials-root']);
+const registryAbsolute = options['validator-registry'] ? path.resolve(options['validator-registry']) : null;
+const validatorRootAbsolute = options['validator-root'] ? path.resolve(options['validator-root']) : null;
 const normalizedManifest = manifestAbsolute.replaceAll('\\', '/').toLowerCase();
 if (normalizedManifest.includes('/resources/static/') || normalizedManifest.endsWith('/resources/static')) {
   throw new Error('Private V4 material manifest must stay outside resources/static.');
@@ -32,6 +34,19 @@ if (normalizedManifest.includes('/resources/static/') || normalizedManifest.ends
 const normalizedMaterials = materialsAbsolute.replaceAll('\\', '/').toLowerCase();
 if (normalizedMaterials.includes('/resources/static/') || normalizedMaterials.endsWith('/resources/static')) {
   throw new Error('Private V4 materials must stay outside resources/static.');
+}
+if (registryAbsolute) {
+  const normalizedRegistry = registryAbsolute.replaceAll('\\', '/').toLowerCase();
+  if (normalizedRegistry.includes('/resources/static/') || normalizedRegistry.endsWith('/resources/static')) {
+    throw new Error('Private validator registry must stay outside resources/static.');
+  }
+  if (!validatorRootAbsolute) throw new Error('--validator-root is required with --validator-registry.');
+}
+if (validatorRootAbsolute) {
+  const normalizedValidatorRoot = validatorRootAbsolute.replaceAll('\\', '/').toLowerCase();
+  if (normalizedValidatorRoot.includes('/resources/static/') || normalizedValidatorRoot.endsWith('/resources/static')) {
+    throw new Error('Private validator files must stay outside resources/static.');
+  }
 }
 
 async function jsonFile(file, label) {
@@ -107,6 +122,7 @@ for (const [index, task] of catalog.tasks.entries()) {
   publicIds.add(id);
 }
 const privateIds = new Set();
+const manifestVerifierRefs = new Map();
 const materialPaths = new Set();
 let materialCount = 0;
 for (const [index, task] of manifest.tasks.entries()) {
@@ -114,7 +130,8 @@ for (const [index, task] of manifest.tasks.entries()) {
   const id = requiredText(task?.id, `${label}.id`);
   if (privateIds.has(id)) throw new Error(`Duplicate private task id: ${id}`);
   privateIds.add(id);
-  requiredText(task?.verifierRef, `${label}.verifierRef`);
+  const verifierRef = requiredText(task?.verifierRef, `${label}.verifierRef`);
+  manifestVerifierRefs.set(id, verifierRef);
   if (!Array.isArray(task.materials) || task.materials.length === 0) {
     throw new Error(`${label}.materials must contain hidden verification files.`);
   }
@@ -143,9 +160,56 @@ if (missing.length || extra.length) {
   throw new Error(`V4 task coverage mismatch (${details.join('; ')}).`);
 }
 
+let validatorRegistrySummary;
+if (registryAbsolute) {
+  const registry = await jsonFile(registryAbsolute, 'validator registry');
+  if (registry.schema !== 'cryptobench-v4-validator-registry-v1') {
+    throw new Error('Unsupported validator registry schema.');
+  }
+  if (!Array.isArray(registry.tasks) || registry.tasks.length === 0) {
+    throw new Error('validator registry tasks must be a non-empty array.');
+  }
+  const registryIds = new Set();
+  const implementationRefs = new Set();
+  for (const [index, task] of registry.tasks.entries()) {
+    const label = `validatorRegistry.tasks[${index}]`;
+    const id = requiredText(task?.task_id, `${label}.task_id`);
+    if (registryIds.has(id)) throw new Error(`Duplicate validator registry task id: ${id}`);
+    registryIds.add(id);
+    if (!manifestVerifierRefs.has(id)) throw new Error(`Validator registry task is not in the private manifest: ${id}`);
+    const verifierRef = requiredText(task?.validator_ref, `${label}.validator_ref`);
+    if (manifestVerifierRefs.get(id) !== verifierRef) {
+      throw new Error(`Validator reference mismatch for ${id}.`);
+    }
+    const implementationPath = verifierRef.split('#', 1)[0];
+    await containedFile(validatorRootAbsolute, implementationPath, `${label}.validator_ref`);
+    implementationRefs.add(verifierRef);
+    for (const field of ['positive_tests', 'negative_tests', 'boundary_tests']) {
+      if (!Array.isArray(task[field]) || task[field].length === 0
+          || task[field].some(value => {
+            const normalized = typeof value === 'string' ? value.trim().replaceAll('\\', '/') : '';
+            return !normalized || normalized.startsWith('/') || /^[a-z]:\//i.test(normalized)
+              || normalized.split('/').includes('..');
+          })) {
+        throw new Error(`${label}.${field} must contain safe non-empty relative paths.`);
+      }
+      for (const relative of task[field]) {
+        await containedFile(validatorRootAbsolute, relative, `${label}.${field}`);
+      }
+    }
+  }
+  const missingRegistry = [...manifestVerifierRefs.keys()].filter(id => !registryIds.has(id));
+  const extraRegistry = [...registryIds].filter(id => !manifestVerifierRefs.has(id));
+  if (missingRegistry.length || extraRegistry.length) {
+    throw new Error(`Validator registry coverage mismatch: missing=${missingRegistry.join(', ')}, extra=${extraRegistry.join(', ')}.`);
+  }
+  validatorRegistrySummary = {taskCount: registryIds.size, implementationCount: implementationRefs.size};
+}
+
 const publicCatalogSha256 = requiredHash(manifest.publicCatalogSha256, 'manifest.publicCatalogSha256');
 const actualCatalogSha256 = await sha256(catalogAbsolute);
 if (actualCatalogSha256 !== publicCatalogSha256) throw new Error('Public catalog SHA-256 does not match manifest.');
 console.log(JSON.stringify({datasetId, version, evaluatorVersion, taskCount: privateIds.size,
   materialCount, publicCatalogSha256: actualCatalogSha256,
-  manifestSha256: await sha256(manifestAbsolute)}));
+  manifestSha256: await sha256(manifestAbsolute),
+  ...(validatorRegistrySummary ? {validatorRegistry: validatorRegistrySummary} : {})}));
