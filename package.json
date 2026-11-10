@@ -13,6 +13,7 @@
     "validate:v4-release": "python scripts/validate-v4-release.py",
     "test:v4-1-import": "python tests/verify-v4-1-import.py",
     "test:cryptobench-import": "python tests/import-cryptobench-overlay.py",
+    "test:v4-validator-registry": "python tests/validate-v4-validator-registry.py",
     "test:evaluator": "node tests/evaluator-catalog.mjs",
     "test:v4-materials": "node tests/v4-materials.mjs",
     "test": "node tests/smoke.mjs",

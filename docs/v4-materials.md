@@ -45,3 +45,16 @@ python scripts/import_cryptobench.py .\staged-release `
   --public-overlay .\public-attachment-correction `
   --output-dir .\src\main\resources\static\data\cryptobench-sc-v4\4.1.0
 ```
+
+## 共用验证器的覆盖登记
+
+验证器可以共用实现文件，但每道题必须在私有注册表中单独登记
+`validator_ref`，并提供至少一个 `positive_tests`、`negative_tests` 和
+`boundary_tests` 路径。注册表允许多个任务引用同一个实现，发布门禁仍要求任务 ID
+完整覆盖且所有测试材料存在：
+
+```powershell
+python scripts/validate-v4-release.py .\staged-release `
+  --validator-registry .\private\v4-validator-registry.json `
+  --require-validators
+```
