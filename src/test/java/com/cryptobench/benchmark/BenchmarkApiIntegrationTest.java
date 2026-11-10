@@ -33,7 +33,7 @@ class BenchmarkApiIntegrationTest {
     @Autowired JdbcTemplate jdbc;
 
     /**
-     * 验证页面与 127 题公开目录可访问，同时禁止读取项目源码、运行数据及环境文件。
+     * 验证旧版与新版公开目录可访问，同时禁止读取项目源码、运行数据及环境文件。
      */
     @Test
     void servesVueAndPublicDatasetWithoutExposingProjectOrRuntimeFiles() throws Exception {
@@ -45,6 +45,10 @@ class BenchmarkApiIntegrationTest {
         JsonNode catalog = client.json(client.send("GET", "/data/cryptobench-sc-v4/catalog.json", null));
         assertThat(catalog.path("tasks").size()).isEqualTo(127);
         assertThat(client.send("GET", "/data/cryptobench-sc-v4/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(200);
+        JsonNode current = client.json(client.send("GET", "/data/cryptobench-sc-v4/4.1.0/catalog.json", null));
+        assertThat(current.path("dataset").path("version").asText()).isEqualTo("4.1.0");
+        assertThat(current.path("tasks").size()).isEqualTo(170);
+        assertThat(client.send("GET", "/data/cryptobench-sc-v4/4.1.0/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(200);
         for (String path : new String[]{"/.env", "/pom.xml", "/data/runtime/db.json", "/var/data/cryptobench.mv.db",
                 "/scripts/import_cryptobench.py", "/db/migration/V1__create_benchmark_schema.sql"}) {
             assertThat(client.send("GET", path, null).getResponse().getStatus()).isGreaterThanOrEqualTo(400);

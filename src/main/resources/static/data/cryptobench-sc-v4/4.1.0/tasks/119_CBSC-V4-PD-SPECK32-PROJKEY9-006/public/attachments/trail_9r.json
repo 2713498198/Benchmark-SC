@@ -1,0 +1,18 @@
+{
+  "schema_version": "cbsc_fixed_xor_trail_v1",
+  "cipher": "SPECK-32 long-key",
+  "rounds": 9,
+  "encoding": "Four hexadecimal digits per 16-bit word; each row is [delta_X_j, delta_Y_j] at a round boundary.",
+  "round_boundaries": [
+    ["8054", "a900"],
+    ["0000", "a402"],
+    ["e402", "7408"],
+    ["5040", "8061"],
+    ["0381", "0207"],
+    ["001c", "0800"],
+    ["2000", "0000"],
+    ["0040", "0040"],
+    ["8040", "8140"],
+    ["0040", "0542"]
+  ]
+}

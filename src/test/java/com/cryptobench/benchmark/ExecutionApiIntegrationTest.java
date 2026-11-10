@@ -303,11 +303,13 @@ class ExecutionApiIntegrationTest {
     void refusesV4UntilARegisteredServerEvaluatorAndPrivateCatalogExist() throws Exception {
         Client client = registeredClient();
         String endpoint = "http://127.0.0.1:" + agent.getAddress().getPort();
-        MvcResult response = client.send("POST", "/api/runs", Map.of(
-                "datasetId", "cryptobench-sc-v4", "version", "4.0.0", "scope", "sample",
-                "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
-        assertThat(response.getResponse().getStatus()).isEqualTo(400);
-        assertThat(client.json(response).path("error").asText()).contains("尚未绑定服务端验证器");
+        for (String version : java.util.List.of("4.0.0", "4.1.0")) {
+            MvcResult response = client.send("POST", "/api/runs", Map.of(
+                    "datasetId", "cryptobench-sc-v4", "version", version, "scope", "sample",
+                    "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
+            assertThat(response.getResponse().getStatus()).isEqualTo(400);
+            assertThat(client.json(response).path("error").asText()).contains("尚未绑定服务端验证器");
+        }
     }
 
     @Test

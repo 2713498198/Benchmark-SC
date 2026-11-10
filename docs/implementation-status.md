@@ -89,7 +89,7 @@ CI 使用 `-AllowExternalOutput` 将临时产物写入 runner 临时目录；默
 
 ### CryptoBench-SC V4 正式执行
 
-V4 仍保持 `executionReady: false`。项目缺少真实隐藏答案、参考复放材料和正式服务端验证器。不能用公开题干推测答案，也不能用示例结果冒充正式成绩。
+V4.1 已导入 170 道公开题目并保留 4.0.0 历史版本，但仍保持 `executionReady: false`。RAR 提供了隐藏 oracle 和研究用验证材料，却只有 65/170 道题带 task-local validator；项目尚未完成 170 道题的正式服务端 verifier。不能用公开题干推测答案，也不能用示例结果冒充正式成绩。
 
 需要维护者提供并确认：
 

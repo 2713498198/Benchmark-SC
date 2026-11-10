@@ -1,0 +1,42 @@
+{
+  "schema_version": "cbsc_public_cryptanalysis_instance_v1",
+  "primitive": "GIFT-64 two-round middle function",
+  "state_convention": {
+    "word_size_bits": 64,
+    "integer_bit_order": "LSB-first: bit i is (x >> i) & 1",
+    "nibble_order": "nibble j is (x >> (4*j)) & 0xf",
+    "hex_encoding": "16 hexadecimal digits, most significant digit printed on the left"
+  },
+  "sbox": [1, 10, 4, 12, 6, 15, 3, 9, 2, 13, 11, 7, 5, 0, 8, 14],
+  "subcells": "Apply the S-box independently to each LSB-first nibble.",
+  "permbits": {
+    "direction": "output bit P(i) receives input bit i",
+    "formula_python": "P(i) = 4*(i//16) + 16*((3*((i%16)//4) + (i%4)) % 4) + (i%4)"
+  },
+  "restricted_round_key": {
+    "base_mask_R": "R is sampled uniformly from the 48-bit subspace of 64-bit masks with bit 4*i+1 equal to zero for i=0..15; positions 4*i, 4*i+2, and 4*i+3 are independent uniform bits",
+    "branch_masks": ["R", "R", "R xor 0x0000000000000001", "R xor 0x0000000000000001"]
+  },
+  "round_constant": {
+    "round_index_zero_based": 10,
+    "six_bit_value_hex": "1e",
+    "injection": "Always toggle state bit 63; for c5..c0 toggle state bits 23,19,15,11,7,3 respectively.",
+    "state_mask_hex": "8000000000088880",
+    "application": "The same constant mask is XORed in all four branches after PermBits and together with the branch round-key mask."
+  },
+  "branch_execution": [
+    "X_j = X_0 xor stage_0[j]",
+    "Y_j = SubCells(X_j)",
+    "Z_j = PermBits(Y_j) xor branch_round_key[j] xor round_constant_mask",
+    "W_j = SubCells(Z_j)"
+  ],
+  "three_difference_stages_hex": {
+    "stage_0_X": ["0000000000000000", "0100000001020200", "0000010200000012", "0100010201020212"],
+    "stage_1_Y": ["0000000000000000", "08000000060a0600", "0000090600000085", "08000906060a0685"],
+    "stage_2_Z": ["0000000000000000", "00a2000080200044", "0000050c0a000000", "00a2050c8a200044"],
+    "stage_3_W": ["0000000000000000", "0015000030500077", "0000080201000000", "0015080231500077"]
+  },
+  "event_definition": "For j=1,2,3, require Y_0 xor Y_j, Z_0 xor Z_j, and W_0 xor W_j to equal entries j of stages 1, 2, and 3. X_0 and R are sampled independently: X_0 is uniform over all 2^64 oriented base states, and R is uniform over the 2^48 masks defined in restricted_round_key. The requested exact probability is over the joint sample (R, X_0).",
+  "independent_layer_estimate": "For each S-box layer and each nibble, count base nibble values satisfying all three branch differences, divide the product by 2^64, then multiply the two layer probabilities as if their concrete values were independent.",
+  "required_artifact": "Executable code that recomputes the local counts and counts or verifies the exact joint event over the joint sample (R, X_0)."
+}

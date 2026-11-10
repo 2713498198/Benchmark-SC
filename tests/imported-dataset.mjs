@@ -11,7 +11,7 @@ const go=async route=>{await page.goto(base+'/#'+route);await page.locator('#mai
 const check=(name, condition)=>{assert.ok(condition,name);console.log('PASS '+name);};
 try {
   await go('/datasets');
-  check('five datasets and real suite first',await page.locator('.resource-dataset-card').count()===5 && (await page.locator('.resource-dataset-card').first().innerText()).includes('127 题'));
+  check('six dataset versions and current suite first',await page.locator('.resource-dataset-card').count()===6 && (await page.locator('.resource-dataset-card').first().innerText()).includes('170 题'));
   await page.locator('.resource-dataset-card').first().click();
   await page.locator('[data-imported-suite]').waitFor();
   check('real suite overview',await page.locator('#main').innerText().then(t=>t.includes('执行待接入')));
@@ -36,15 +36,15 @@ try {
   check('cipher filter',await page.locator('.suite-task-table tbody tr').count()>0 && await page.locator('.suite-task-table tbody tr td:nth-child(3)').allInnerTexts().then(values=>values.every(v=>v==='PRESENT')));
   await page.locator('[data-suite-reset]').click();
   await page.locator('#suite-stress').selectOption('only');
-  check('stress filter',await page.locator('.suite-task-table tbody tr').count()===2);
+  check('stress filter',await page.locator('.suite-task-table tbody tr').count()===3);
   await page.locator('#suite-stress').selectOption('exclude');
-  check('125 ordinary tasks',await page.locator('.suite-list-meta').innerText().then(t=>t.includes('125')));
+  check('167 ordinary tasks',await page.locator('.suite-list-meta').innerText().then(t=>t.includes('167')));
   await page.locator('nav [data-suite-tab="scoring"]').click();
   check('source scoring',await page.locator('#main').innerText().then(t=>t.includes('65%')&&t.includes('35%')&&t.includes('0.99')));
-  await go('/evaluate?dataset=cryptobench-sc-v4&version=4.0.0');
+  await go('/evaluate?dataset=cryptobench-sc-v4&version=4.1.0');
   check('execution guard',await page.locator('[data-execution-pending]').isVisible() && await page.locator('[data-eval-next]').count()===0);
   await go('/arena');
-  check('real suite disabled in simulator',await page.locator('option[value="cryptobench-sc-v4@4.0.0"]').isDisabled());
+  check('real suite disabled in simulator',await page.locator('option[value="cryptobench-sc-v4@4.1.0"]').isDisabled());
   await go('/datasets/cryptobench-sc-v4?version=4.0.0&task=127_CBSC-V4-PL-PRESENT64-ZC6-007');
   await page.locator('#suite-question').waitFor();
   await mkdir(new URL('../tmp/verification/',import.meta.url),{recursive:true});

@@ -63,6 +63,7 @@ public class TaskCatalogService {
         JsonNode root;
         String evaluatorVersion;
         boolean custom = evaluator == null;
+        if (evaluator != null && !evaluator.executionReady()) throw unbound();
         if (custom) {
             ObjectNode summary = datasets.findPublic(datasetId, version).orElseThrow(this::unbound);
             if (!summary.path("executionReady").asBoolean() || !CustomDatasetRules.SCHEMA.equals(summary.path("schema").asText())) throw unbound();
