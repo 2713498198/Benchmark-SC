@@ -18,7 +18,7 @@ export const cryptobenchV4_4_1_0 = {
   "color": "blue",
   "published": true,
   "demo": false,
-  "executionReady": false,
+  "executionReady": true,
   "suiteId": "CBSC-V4-COMPREHENSIVE-BLOCK-CIPHER-170-20260805",
   "releaseDate": "2026-08-05",
   "sourceUrl": "https://gitee.com/xiandianzidaxue/cryptobench-sc",

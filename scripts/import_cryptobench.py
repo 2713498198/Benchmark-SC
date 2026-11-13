@@ -74,6 +74,8 @@ def main():
     parser.add_argument('--public-overlay', type=Path,
                         help=('Optional correction directory containing only '
                               'tasks/<id>/public/attachments files that replace empty source attachments'))
+    parser.add_argument('--execution-ready', action='store_true',
+                        help='Mark the published dataset executable (server scoring is wired)')
     args = parser.parse_args()
     source = args.source.resolve()
     dataset_id = args.dataset_id.strip()
@@ -142,7 +144,8 @@ def main():
                    type='分组密码', algorithm='多算法 · AES / PRESENT / GIFT / SPECK 等', tasks=len(entries),
                    version=version, difficulty='入门 → 高难度', tags=['真实题库', '分组密码分析', '公开任务'],
                    description=f'{len(entries)} 道密码分析任务，覆盖差分、线性、积分、相关密钥与证明任务。支持浏览题干和下载公开附件。',
-                   icon='layers', color='blue', published=True, demo=False, executionReady=False,
+                   icon='layers', color='blue', published=True, demo=False,
+                   executionReady=args.execution_ready,
                    suiteId=manifest['suite_id'], releaseDate=manifest['created_at'],
                    sourceUrl='https://gitee.com/xiandianzidaxue/cryptobench-sc', sourceCommit=commit,
                    catalogUrl=f'{public_prefix}/catalog.json', downloadUrl=f'{public_prefix}/public-tasks.zip',

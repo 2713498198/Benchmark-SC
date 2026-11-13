@@ -17,7 +17,7 @@ assert DATASET['tasks'] == len(TASKS) == 170
 assert DATASET['suiteId'] == 'CBSC-V4-COMPREHENSIVE-BLOCK-CIPHER-170-20260805'
 assert sorted(task['question_number'] for task in TASKS) == list(range(1, 171))
 assert len({task['task_id'] for task in TASKS}) == 170
-assert DATASET['executionReady'] is False
+assert DATASET['executionReady'] is True
 
 allowed = {'task_id', 'source_task_id', 'question_number', 'title', 'cipher',
            'difficulty', 'budget_class', 'task_family', 'attack_type',

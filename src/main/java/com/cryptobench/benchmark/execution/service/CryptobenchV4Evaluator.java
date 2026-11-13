@@ -43,7 +43,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
     public String taskResource() { return "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"; }
 
     @Override
-    public boolean executionReady() { return false; }
+    public boolean executionReady() { return true; }
 
     @Override
     public ObjectNode evaluate(TaskDefinition task, ObjectNode response) {
@@ -71,6 +71,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
             case "boolean" -> actual.isBoolean() && actual.asBoolean() == rule.path("expected").asBoolean();
             case "exact-json" -> CustomDatasetRules.canonical(rule.get("expected"))
                     .equals(CustomDatasetRules.canonical(actual));
+            case "fields" -> fieldsMatch(rule, actual);
             default -> false;
         };
         result.put("status", passed ? "passed" : "failed");
@@ -115,6 +116,70 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
             if (expected.equals(submitted)) return true;
         }
         return false;
+    }
+
+    private boolean fieldsMatch(JsonNode rule, JsonNode actual) {
+        if (!actual.isObject()) return false;
+        JsonNode fields = rule.get("fields");
+        if (fields == null || !fields.isObject()) return false;
+        double tolerance = rule.path("numericTolerance").asDouble(0.0);
+        for (var entry = fields.fields(); entry.hasNext(); ) {
+            var field = entry.next();
+            JsonNode submitted = findByKey(actual, field.getKey());
+            if (submitted == null || !valueEquals(field.getValue(), submitted, tolerance)) return false;
+        }
+        return true;
+    }
+
+    private static JsonNode findByKey(JsonNode object, String key) {
+        String target = normalizeKey(key);
+        for (var entry = object.fields(); entry.hasNext(); ) {
+            var field = entry.next();
+            if (target.equals(normalizeKey(field.getKey()))) return field.getValue();
+        }
+        return null;
+    }
+
+    private static String normalizeKey(String key) {
+        return key == null ? "" : key.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private boolean valueEquals(JsonNode expected, JsonNode actual, double tolerance) {
+        if (expected.isBoolean() || actual.isBoolean()) {
+            return expected.isBoolean() && actual.isBoolean() && expected.asBoolean() == actual.asBoolean();
+        }
+        Double expectedWeight = probabilityWeight(expected.isTextual() ? expected.asText() : null);
+        Double actualWeight = probabilityWeight(actual.isTextual() ? actual.asText() : null);
+        if (expectedWeight != null && actualWeight != null) {
+            return Math.abs(expectedWeight - actualWeight) <= tolerance;
+        }
+        Double expectedNumber = numericValue(expected);
+        Double actualNumber = numericValue(actual);
+        if (expectedNumber != null && actualNumber != null) {
+            return Math.abs(expectedNumber - actualNumber) <= Math.max(tolerance, 1e-9);
+        }
+        String expectedText = normalize(expected.asText(""));
+        String actualText = normalize(actual.asText(""));
+        return !expectedText.isEmpty() && expectedText.equals(actualText);
+    }
+
+    /** Extract a numeric value from a scalar or a string such as "2^62.58" or "115". */
+    private static Double numericValue(JsonNode node) {
+        if (node == null) return null;
+        if (node.isNumber()) return node.asDouble();
+        if (!node.isTextual()) return null;
+        String text = node.asText().trim();
+        java.util.regex.Matcher exponent = java.util.regex.Pattern
+                .compile("2\\s*\\^\\s*(-?\\d+(?:\\.\\d+)?)").matcher(text);
+        if (exponent.find()) {
+            try { return Math.abs(Double.parseDouble(exponent.group(1))); } catch (NumberFormatException ignored) { }
+        }
+        java.util.regex.Matcher number = java.util.regex.Pattern
+                .compile("-?\\d+(?:\\.\\d+)?").matcher(text);
+        if (number.find()) {
+            try { return Double.parseDouble(number.group()); } catch (NumberFormatException ignored) { }
+        }
+        return null;
     }
 
     private static String normalize(String value) {
