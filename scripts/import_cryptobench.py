@@ -132,8 +132,12 @@ def main():
         suffix = '' if len(sample) <= 5 else f' (and {len(sample) - 5} more)'
         raise ValueError('Empty public attachment(s): ' + ', '.join(sample[:5]) + suffix)
     aggregate_stress_tasks = sum(bool(task.get('is_aggregate_stress')) for task in tasks)
-    commit = subprocess.run(['git', '-C', str(source), 'rev-parse', 'HEAD'],
-                            capture_output=True, text=True).stdout.strip() or None
+    commit = None
+    toplevel = subprocess.run(['git', '-C', str(source), 'rev-parse', '--show-toplevel'],
+                              capture_output=True, text=True).stdout.strip()
+    if toplevel and Path(toplevel).resolve() == source:
+        commit = subprocess.run(['git', '-C', str(source), 'rev-parse', 'HEAD'],
+                                capture_output=True, text=True).stdout.strip() or None
     dataset = dict(id=dataset_id, name=f'CryptoBench-SC V4 · {len(entries)} 题', subtitle='BLOCK CIPHER CRYPTANALYSIS',
                    type='分组密码', algorithm='多算法 · AES / PRESENT / GIFT / SPECK 等', tasks=len(entries),
                    version=version, difficulty='入门 → 高难度', tags=['真实题库', '分组密码分析', '公开任务'],

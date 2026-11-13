@@ -2259,8 +2259,8 @@
         {
           "name": "attachments/gift64_3diff_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/106_CBSC-V4-PB-GIFT64-3DIFF-ZERO-016/public/attachments/gift64_3diff_instance.json",
-          "bytes": 2745,
-          "sha256": "1027d14f7358e07eb74fd524328fcf502f22a21912e95874b52dfe20364e4a39"
+          "bytes": 2492,
+          "sha256": "cd18bea650a6f2584708cb6834ec2c54ea437a6784886911b52a47bc2d87b9b8"
         },
         {
           "name": "question.md",
@@ -2536,13 +2536,13 @@
       "task_family": "differential_cryptanalysis",
       "attack_type": "cluster_impossible_differential_with_indirect_contradiction",
       "is_aggregate_stress": false,
-      "question": "# Question 116. Simeck64 十七轮边界簇的不可能差分判定\n\n考虑只保留差分传播所需部分的 Simeck64 轮函数。状态为两个 32 位字 `(L_r, R_r)`，比特从最低位开始编号为 `0,...,31`，所有下标均模 32。`ROL_j(X)` 的输出比特 `i` 等于 `X[(i+j) mod 32]`。一轮定义为\n\n```text\nR_{r+1} = L_r\nL_{r+1} = R_r xor (L_r & ROL_5(L_r)) xor ROL_1(L_r).\n```\n\n轮密钥在 XOR 差分中抵消，因此不写入上述轮函数。用 `0`、`1` 和 `*` 描述一个差分边界，其中每个 `*` 都是可独立取 `0` 或 `1` 的比特。固定以下 17 轮边界簇：\n\n```text\n输入差分（r = 0）\n  L_0：bit 31 为 *，其余位为 0\n  R_0：bit 2 为 1，bits 26、30、31 为 *，其余位为 0\n\n输出差分（r = 17）\n  L_17：bit 31 为 *，其余位为 0\n  R_17：所有位均为 0\n```\n\n密码分析中只统计输入差分和输出差分都非零的具体边界对。请判断该边界簇中的所有非平凡具体边界对是否都是 17 轮不可能差分，并给出其准确数量。返回可执行的精确验证代码和可核查的证明证据；同时说明普通的上下传播直接冲突是否足够，若使用信息合并或间接传播，请给出合并位置和在上述编号约定下最早得到的冲突。允许使用 SAT/SMT、约束传播、完备枚举或其他等价的精确方法。\n",
+      "question": "# Question 116. Simeck64 十七轮边界簇的不可能差分判定\n\n考虑只保留差分传播所需部分的 Simeck64 轮函数。状态为两个 32 位字 `(L_r, R_r)`，比特从最低位开始编号为 `0,...,31`，所有下标均模 32。`ROL_j(X)` 的输出比特 `i` 等于 `X[(i+j) mod 32]`。一轮定义为\n\n```text\nR_{r+1} = L_r\nL_{r+1} = R_r xor (L_r & ROL_5(L_r)) xor ROL_1(L_r).\n```\n\n轮密钥在 XOR 差分中抵消，因此不写入上述轮函数。用 `0`、`1` 和 `*` 描述一个差分边界，其中每个 `*` 都是可独立取 `0` 或 `1` 的比特。固定以下 17 轮边界簇：\n\n```text\n输入差分（r = 0）\n  L_0：bit 31 为 *，其余位为 0\n  R_0：bit 2 为 1，bits 26、30、31 为 *，其余位为 0\n\n输出差分（r = 17）\n  L_17：bit 31 为 *，其余位为 0\n  R_17：所有位均为 0\n```\n\n密码分析中只统计输入差分和输出差分都非零的具体边界对。请判断该边界簇中的所有非平凡具体边界对是否都是 17 轮不可能差分，并给出其准确数量。返回可执行的精确验证代码和可核查的证明证据；同时说明普通的上下传播直接冲突是否足够，若使用信息合并或间接传播，请给出合并位置和在上述编号约定下最早得到的冲突。允许使用 SAT/SMT、约束传播、完备枚举或其他等价的精确方法。\n\n",
       "files": [
         {
           "name": "question.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/116_CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023/public/question.md",
-          "bytes": 1363,
-          "sha256": "882a0d9ce9aa93c677c4425ce359bb54bd4f001e9a2d9b6bbe1e88a48f2cc3da"
+          "bytes": 1364,
+          "sha256": "5ebbf5caa92468f1f79b25bee7b803493cadd57fd01dec79491233072e3ba18b"
         }
       ]
     },
@@ -2877,8 +2877,8 @@
         {
           "name": "attachments/baksheesh_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/128_CBSC-V4-PI-BAKSHEESH-ID7-024/public/attachments/baksheesh_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2404,
+          "sha256": "d86a7d268221bdf6b34b09e74446107baebe384b6ef2c5266b17b692866e5f3c"
         },
         {
           "name": "question.md",
@@ -2904,8 +2904,8 @@
         {
           "name": "attachments/baksheesh_diff_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/129_CBSC-V4-PD-BAKSHEESH-OPT12-025/public/attachments/baksheesh_diff_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1496,
+          "sha256": "1e92fbd838e1344d69dad77d63f246fbd65fc531bd6855000162968c6faacacb"
         },
         {
           "name": "question.md",
@@ -2931,8 +2931,8 @@
         {
           "name": "attachments/baksheesh_linear_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/130_CBSC-V4-PL-BAKSHEESH-KR20-026/public/attachments/baksheesh_linear_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2255,
+          "sha256": "79cb9d1e68f7f79102e68dbce3094d5bbcc7e8d6eaaef3d6d7b26bf0eaa55939"
         },
         {
           "name": "question.md",
@@ -2958,8 +2958,8 @@
         {
           "name": "attachments/gift64_state_id_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/131_CBSC-V4-PD-GIFT64-STATEID6-027/public/attachments/gift64_state_id_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2798,
+          "sha256": "bfaa62774e24f9b12df0aceb306a4f8e20c6b990aeda7af0ab53d2f24ab15656"
         },
         {
           "name": "question.md",
@@ -2985,8 +2985,8 @@
         {
           "name": "attachments/speck32_dl11_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/132_CBSC-V4-PDL-SPECK32-DL11-AUDIT-028/public/attachments/speck32_dl11_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2611,
+          "sha256": "2f10d30e026fb75099b3154a7ab18bb31d87a7e3a256b9185ec18d669519d780"
         },
         {
           "name": "question.md",
@@ -3012,14 +3012,14 @@
         {
           "name": "attachments/corrupted_model.txt",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/133_CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029/public/attachments/corrupted_model.txt",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 12239,
+          "sha256": "2a742d91a108ae6863414126586f25a9fcc255e9488eb087fe347d05eb17253a"
         },
         {
           "name": "attachments/skinny128_sbox.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/133_CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029/public/attachments/skinny128_sbox.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1464,
+          "sha256": "734c4673ab17014464cdcd7a38b91bf2aa249471d5c30d905b6178dba8e2947b"
         },
         {
           "name": "question.md",
@@ -3045,14 +3045,14 @@
         {
           "name": "attachments/candidates.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030/public/attachments/candidates.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 394046,
+          "sha256": "e82d0650acafac77a6a8009564fd9be3a6abbba3bd35bd505fc3dfb8e08d49c0"
         },
         {
           "name": "attachments/semantics.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030/public/attachments/semantics.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2529,
+          "sha256": "eb74736ce7b9edce0914da1437070367d32a2aa889bef2b8f6a11a685249921f"
         },
         {
           "name": "question.md",
@@ -3078,14 +3078,14 @@
         {
           "name": "attachments/semantics.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/135_CBSC-V4-PDL-WARP11-DETERMINISTIC-031/public/attachments/semantics.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1659,
+          "sha256": "912f07387bfb70e168615d6efaa3003da74cbdd33e04f46493914ce74f09df8e"
         },
         {
           "name": "attachments/warp11_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/135_CBSC-V4-PDL-WARP11-DETERMINISTIC-031/public/attachments/warp11_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 638,
+          "sha256": "22268bff68c9012f12e474bc0d0463af17787a351c9faa115141770d6f4b34cc"
         },
         {
           "name": "question.md",
@@ -3111,14 +3111,14 @@
         {
           "name": "attachments/quasidifferential_semantics.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/136_CBSC-V4-PD-SPEEDY192-QD-B0-032/public/attachments/quasidifferential_semantics.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1139,
+          "sha256": "6b7ca7d30a4a55c1659761509714a28c202bd1499eb490116d1a452d6985c880"
         },
         {
           "name": "attachments/speedy_b0_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/136_CBSC-V4-PD-SPEEDY192-QD-B0-032/public/attachments/speedy_b0_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2648,
+          "sha256": "8040cfe33c8aacec66a66660d27d63649de31135fffb81aa23d163d6359fa228"
         },
         {
           "name": "question.md",
@@ -3144,14 +3144,14 @@
         {
           "name": "attachments/fixed_integral_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/137_CBSC-V4-PI-FORKSKINNY64-AGG14-033/public/attachments/fixed_integral_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 995,
+          "sha256": "8c0252ebafeda9984e1f1ca8fec7c7d27b9ad56db8faf2a464d37c3b716a0ef2"
         },
         {
           "name": "attachments/forkskinny64_spec.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/137_CBSC-V4-PI-FORKSKINNY64-AGG14-033/public/attachments/forkskinny64_spec.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2314,
+          "sha256": "cd3588671fba59eced0384ed83a9c71b1b06d7673e9b91653760265ffe46a5ab"
         },
         {
           "name": "question.md",
@@ -3177,8 +3177,8 @@
         {
           "name": "attachments/attack_cost_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/138_CBSC-V4-PI-QARMAV2-PS13-COST-034/public/attachments/attack_cost_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2085,
+          "sha256": "81e7f0e6065394b1adff1600a56fd64e4a92c667541b33f68bdabf02b705512c"
         },
         {
           "name": "question.md",
@@ -3204,8 +3204,8 @@
         {
           "name": "attachments/skinny64_tk2_trail_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/139_CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035/public/attachments/skinny64_tk2_trail_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2250,
+          "sha256": "e69d0f3c2f4dc8637d5aacc046f617d371c4b97d9a7d580945b923e0aeecb1ff"
         },
         {
           "name": "question.md",
@@ -3231,8 +3231,8 @@
         {
           "name": "attachments/speck32_mif_weight_distribution.txt",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/140_CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036/public/attachments/speck32_mif_weight_distribution.txt",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 9360,
+          "sha256": "a3bec2f8d636d6c4a43c1a8fd3a2a2cd63fc836cea135d36c5eb866d93506b17"
         },
         {
           "name": "question.md",
@@ -3321,8 +3321,8 @@
         {
           "name": "attachments/serpent_datf_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/144_CBSC-V4-PDL-SERPENT-DATF-BIAS-040/public/attachments/serpent_datf_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 131447,
+          "sha256": "39b2c75fa25242d4c4807f088d8de7570e0b247f583a92aa600c48574c214b1e"
         },
         {
           "name": "question.md",
@@ -3343,19 +3343,19 @@
       "task_family": "differential_cryptanalysis",
       "attack_type": "related_key_impossible_differential_feasibility",
       "is_aggregate_stress": false,
-      "question": "# LBlock 十六轮相关密钥零到零差分判定\n\n附件 `attachments/lblock_instance.json` 给出 LBlock 的十个 4 比特 S 盒、轮函数中的字位置、S 盒顺序和两组完整轮测试向量。所有整数均按通常的十六进制大端书写；对一个整数内部的比特编号，bit 0 是最低有效位。\n\n将 64 比特状态写成 `P = L_0 || R_0`，其中 `L_0` 是高 32 比特。对 `r = 0,...,15`，令 `sk_r = K_r[79:48]`，并执行\n\n```text\nL_{r+1} = F(L_r xor sk_r) xor ROL_8(R_r)\nR_{r+1} = L_r.\n```\n\n`F` 先把 32 比特输入按从最高有效位到最低有效位分成 8 个 nibble。附件中的 `word_positions_from_msb` 指定依次读取的输入 nibble，`sbox_order` 指定对应 S 盒；八个 S 盒输出按该顺序从最高有效位到最低有效位拼接。16 轮输出为 `C = R_16 || L_16`。\n\n80 比特密钥状态按 `K_r = k_79...k_0` 编号。由 `K_r` 生成 `K_{r+1}` 时，先循环左移 29 位，再分别对最高和次高 nibble 应用 `S9` 与 `S8`，最后按整数运算异或 `((r+1) << 46)`。轮常量在两次相关密钥执行的 XOR 差分中抵消，但实现完整加密时仍应保留。\n\n固定以下 16 轮相关密钥差分实例：\n\n```text\nDelta P = 0x0000000000000000\nDelta C = 0x0000000000000000\nDelta K = 0x00000000000000000040\n```\n\n请判定是否存在满足该边界的 16 轮差分特征，并据此判断它是否为相关密钥不可能差分。结论必须覆盖非线性密钥调度产生的全部可行子密钥差分，不能只检查一个具体主密钥、一个具体明文或一种 S 盒输出。返回可直接执行的精确验证代码、机器可读的判定结果和足以复核结论完备性的证明证据。允许使用完整 DDT 可行性模型、SAT/SMT、约束传播、完备分支证明或其他等价的严格方法；随机抽样和求解超时不能作为不可能性的证明。\n",
+      "question": "# LBlock 十六轮相关密钥零到零差分判定\n\n附件 `attachments/lblock_instance.json` 给出 LBlock 的十个 4 比特 S 盒、轮函数中的字位置、S 盒顺序和两组完整轮测试向量。所有整数均按通常的十六进制大端书写；对一个整数内部的比特编号，bit 0 是最低有效位。\n\n将 64 比特状态写成 `P = L_0 || R_0`，其中 `L_0` 是高 32 比特。对 `r = 0,...,15`，令 `sk_r = K_r[79:48]`，并执行\n\n```text\nL_{r+1} = F(L_r xor sk_r) xor ROL_8(R_r)\nR_{r+1} = L_r.\n```\n\n`F` 先把 32 比特输入按从最高有效位到最低有效位分成 8 个 nibble。附件中的 `word_positions_from_msb` 指定依次读取的输入 nibble，`sbox_order` 指定对应 S 盒；八个 S 盒输出按该顺序从最高有效位到最低有效位拼接。16 轮输出为 `C = R_16 || L_16`。\n\n80 比特密钥状态按 `K_r = k_79...k_0` 编号。由 `K_r` 生成 `K_{r+1}` 时，先循环左移 29 位，再分别对最高和次高 nibble 应用 `S9` 与 `S8`，最后按整数运算异或 `((r+1) << 46)`。轮常量在两次相关密钥执行的 XOR 差分中抵消，但实现完整加密时仍应保留。\n\n固定以下 16 轮相关密钥差分实例：\n\n```text\nDelta P = 0x0000000000000000\nDelta C = 0x0000000000000000\nDelta K = 0x00000000000000000040\n```\n\n请判定是否存在满足该边界的 16 轮差分特征，并据此判断它是否为相关密钥不可能差分。结论必须覆盖非线性密钥调度产生的全部可行子密钥差分，不能只检查一个具体主密钥、一个具体明文或一种 S 盒输出。返回可直接执行的精确验证代码、机器可读的判定结果和足以复核结论完备性的证明证据。允许使用完整 DDT 可行性模型、SAT/SMT、约束传播、完备分支证明或其他等价的严格方法；随机抽样和求解超时不能作为不可能性的证明。\n\n",
       "files": [
         {
           "name": "attachments/lblock_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/145_CBSC-V4-PD-LBLOCK-RKID16-041/public/attachments/lblock_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1673,
+          "sha256": "e38b7adccba9282d65bb82f7ad946da70f275d6302ca2c6c4e385416f2647480"
         },
         {
           "name": "question.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/145_CBSC-V4-PD-LBLOCK-RKID16-041/public/question.md",
-          "bytes": 1892,
-          "sha256": "37a1463e381b64f6b94f297887b16f7d862631381d0ac16644cbcee95257fd13"
+          "bytes": 1893,
+          "sha256": "18db4ab96b003dd9c98db0b3122d62c77c065f115107a4e79330133f7d87ad4b"
         }
       ]
     },
@@ -3375,8 +3375,8 @@
         {
           "name": "attachments/speedy_segments.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/146_CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042/public/attachments/speedy_segments.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1360,
+          "sha256": "a3a409931d1ace142d63667362794b56d0f33592e9c40985b6df62c6ee67a5ea"
         },
         {
           "name": "question.md",
@@ -3402,8 +3402,8 @@
         {
           "name": "attachments/skinny64_tk1_integral.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/147_CBSC-V4-PI-SKINNY64-TK1-INT10-043/public/attachments/skinny64_tk1_integral.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1676,
+          "sha256": "0f1b5275da0d2360949e8650f83870ad4c5d8e302f058f3f0f85a3a2a05f93d6"
         },
         {
           "name": "question.md",
@@ -3429,14 +3429,14 @@
         {
           "name": "attachments/craft_r7_matrix_definition.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/148_CBSC-V4-PB-CRAFT64-R7MATRIX-044/public/attachments/craft_r7_matrix_definition.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2196,
+          "sha256": "9c50e6c36f47dedf2c8c8b3308e80b3ddc4d55dae9a08c3660b0135c7dac0db0"
         },
         {
           "name": "attachments/reference_paper.pdf",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/148_CBSC-V4-PB-CRAFT64-R7MATRIX-044/public/attachments/reference_paper.pdf",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 4256367,
+          "sha256": "af1885b58d9d06344a3cced03c64c45cf21e56e9d14f0c57ff147d469bd97b05"
         },
         {
           "name": "question.md",
@@ -3462,14 +3462,14 @@
         {
           "name": "attachments/lea128_4round_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/149_CBSC-V4-PB-LEA128-RKID4-045/public/attachments/lea128_4round_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2009,
+          "sha256": "36b9affbda39c84d0296651efbb1bf81a87149984587ca64b277e1f45d724ef5"
         },
         {
           "name": "attachments/reference_paper.pdf",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/149_CBSC-V4-PB-LEA128-RKID4-045/public/attachments/reference_paper.pdf",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1023844,
+          "sha256": "acec170145fbda226fe49e299c99c975e59472e0fcbbd6b46316bb691234c9d2"
         },
         {
           "name": "question.md",
@@ -3495,14 +3495,14 @@
         {
           "name": "attachments/reference_paper.pdf",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/150_CBSC-V4-PD-TWINE15-NLPROJ-046/public/attachments/reference_paper.pdf",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2460842,
+          "sha256": "da50943839dbc17c9e84fd4f5e5c821a9c6672e63713dd446d1a5c6f3bc1c58d"
         },
         {
           "name": "attachments/twine15_constraint_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/150_CBSC-V4-PD-TWINE15-NLPROJ-046/public/attachments/twine15_constraint_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2515,
+          "sha256": "a16053ae94c90090f52990fec119df0eddaa3adff2435dff0dccf76833cca202"
         },
         {
           "name": "question.md",
@@ -3528,14 +3528,14 @@
         {
           "name": "attachments/pride_local_compatibility_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047/public/attachments/pride_local_compatibility_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1638,
+          "sha256": "653b67136f456165ef5615ebb8c5df67a8edd3f5432617165f4049e87822485f"
         },
         {
           "name": "attachments/reference_paper.pdf",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047/public/attachments/reference_paper.pdf",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 517304,
+          "sha256": "0137a9851e379c217e9444f37a083f76e75028420ecf9bd23ab44dc700472139"
         },
         {
           "name": "question.md",
@@ -3561,8 +3561,8 @@
         {
           "name": "attachments/gift64_division_property_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/152_CBSC-V4-PI-GIFT64-DP9-AUDIT-048/public/attachments/gift64_division_property_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2249,
+          "sha256": "ea1dd67e1f70ed32f6442fa32e5a5be6b3177c04e631e17c1243cc867ffe7dbd"
         },
         {
           "name": "question.md",
@@ -3588,8 +3588,8 @@
         {
           "name": "attachments/twine15_fixed_io_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/153_CBSC-V4-PD-TWINE15-FIXEDIO-049/public/attachments/twine15_fixed_io_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1503,
+          "sha256": "0ccd6b5d158a1d8635fa513022c3026f69b649256c8ed63a0d1d29d8729a7cec"
         },
         {
           "name": "question.md",
@@ -3615,8 +3615,8 @@
         {
           "name": "attachments/simon32_ultrametric_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/154_CBSC-V4-PI-SIMON32-UTDIV8-050/public/attachments/simon32_ultrametric_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 3896,
+          "sha256": "8a5b9c76dc999ec6d6d8c8eecaf0e48513262db07d48a65eb76ad5a79e5b0da9"
         },
         {
           "name": "question.md",
@@ -3642,14 +3642,14 @@
         {
           "name": "attachments/present9_relation_candidates.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/155_CBSC-V4-PI-PRESENT9-ATMRANK-051/public/attachments/present9_relation_candidates.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 224435,
+          "sha256": "d1fd19f7d202bc3209c8c14e21ff48775ac8232248a0c373cc75934ef449eede"
         },
         {
           "name": "attachments/relation_space_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/155_CBSC-V4-PI-PRESENT9-ATMRANK-051/public/attachments/relation_space_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1533,
+          "sha256": "21d17fea21ada323bc00a86c1bd6c9481f141c43171c939f61289a9dcc2ca332"
         },
         {
           "name": "question.md",
@@ -3675,8 +3675,8 @@
         {
           "name": "attachments/craft_superbox_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/156_CBSC-V4-PL-CRAFT16-WEAKKEY-052/public/attachments/craft_superbox_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1657,
+          "sha256": "7d4ee99c6eebe0b7ca6b10a6c651c0d47043d826c16bc746f6bf9f3ae685f814"
         },
         {
           "name": "question.md",
@@ -3702,8 +3702,8 @@
         {
           "name": "attachments/modadd_boomerang_tables_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/157_CBSC-V4-PD-MODADD16-BCTPART-053/public/attachments/modadd_boomerang_tables_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1785,
+          "sha256": "34afeb2c02712ff6e8b843d4adfe7300935d66546bf95c23af19037f3f4b8b37"
         },
         {
           "name": "question.md",
@@ -3729,8 +3729,8 @@
         {
           "name": "attachments/gift_lat_closure_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/158_CBSC-V4-PL-GIFT4-LATCLOSURE-054/public/attachments/gift_lat_closure_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1897,
+          "sha256": "589264620ab01fcde0bd0cce230e609c589157a1ea665169a769836fc65a1141"
         },
         {
           "name": "question.md",
@@ -3756,8 +3756,8 @@
         {
           "name": "attachments/skinny128_iulbct_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/159_CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055/public/attachments/skinny128_iulbct_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 3047,
+          "sha256": "a12324f92d786f9618a06e4dd0b63e521eb7b6ff15caf0e3b8981bcf5a8c54a0"
         },
         {
           "name": "question.md",
@@ -3783,8 +3783,8 @@
         {
           "name": "attachments/koala_dp_audit_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/160_CBSC-V4-PI-KOALA257-DP56-CALLBACK-056/public/attachments/koala_dp_audit_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2973,
+          "sha256": "1a4d0790691e55e8a4338152b6569a28e1387804ce35edeefbfc38c431a136d6"
         },
         {
           "name": "question.md",
@@ -3810,8 +3810,8 @@
         {
           "name": "attachments/deoxys_tk3_instantiation_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/161_CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057/public/attachments/deoxys_tk3_instantiation_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 3792,
+          "sha256": "d7392996721f6db38f6c3d1dd91ef973232fba2e46bdd26134e7ee4205a67fd7"
         },
         {
           "name": "question.md",
@@ -3837,8 +3837,8 @@
         {
           "name": "attachments/knot256_qdt_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/162_CBSC-V4-PD-KNOT256-QDTCANCEL10-058/public/attachments/knot256_qdt_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 3396,
+          "sha256": "0ca089c055c99990ae509698944bee25c067e2fd310aaf84a67be61180ddaef1"
         },
         {
           "name": "question.md",
@@ -3859,19 +3859,19 @@
       "task_family": "differential_cryptanalysis",
       "attack_type": "single_key_impossible_boomerang_four_state_unsat",
       "is_aggregate_stress": false,
-      "question": "# PRESENT-64 六轮四状态不可达性审计\n\n附件 `attachments/present64_ibd_instance.json` 给出一个 6 轮 PRESENT 轮核心和四条加密链的固定边界差分。四条链在每轮使用同一个轮密钥，但不限制不同轮密钥之间的关系。\n\n判定是否存在任意四个输入状态和六个公共轮密钥，能同时满足附件中的输入与输出差分约束。请给出可直接执行的完整验证代码、求解状态，以及能独立复核结论的局部矛盾或等价完备性证书。\n",
+      "question": "# PRESENT-64 六轮四状态不可达性审计\n\n附件 `attachments/present64_ibd_instance.json` 给出一个 6 轮 PRESENT 轮核心和四条加密链的固定边界差分。四条链在每轮使用同一个轮密钥，但不限制不同轮密钥之间的关系。\n\n判定是否存在任意四个输入状态和六个公共轮密钥，能同时满足附件中的输入与输出差分约束。请给出可直接执行的完整验证代码、求解状态，以及能独立复核结论的局部矛盾或等价完备性证书。\n\n",
       "files": [
         {
           "name": "attachments/present64_ibd_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/163_CBSC-V4-PD-PRESENT64-IBD6-059/public/attachments/present64_ibd_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1892,
+          "sha256": "db157451735ce3be2c14aca011adc19fa936d0d927cee963df937774abc4790f"
         },
         {
           "name": "question.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/163_CBSC-V4-PD-PRESENT64-IBD6-059/public/question.md",
-          "bytes": 526,
-          "sha256": "a074eb8457336e4f25962cfa956e4d16939a6fefcf314b4620fdb58d1b3420c5"
+          "bytes": 527,
+          "sha256": "0eeaab032c44ea56ffb9a43f27aa1baa8e2d94794ecf69965f7043dceffc4e81"
         }
       ]
     },
@@ -3891,8 +3891,8 @@
         {
           "name": "attachments/lblock4_tl1_instance.json",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/164_CBSC-V4-PD-LBLOCK4-KEYDIST-060/public/attachments/lblock4_tl1_instance.json",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 2627,
+          "sha256": "4cd64bcc3f78d12e5420ab44fdbece02a78d942bb93471361d1f26d32310dcf9"
         },
         {
           "name": "question.md",
@@ -3918,8 +3918,8 @@
         {
           "name": "attachments/lblock17_division_property_spec.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/165_CBSC-V4-PI-LBLOCK17-DP-AUDIT-061/public/attachments/lblock17_division_property_spec.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 3302,
+          "sha256": "3a05ef433013185969682b22dbdbbc7a282ed111b6b6dde2bbc4ba5ca214d84a"
         },
         {
           "name": "question.md",
@@ -3945,14 +3945,14 @@
         {
           "name": "attachments/present80_2plus2_instance.txt",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/166_CBSC-V4-PD-PRESENT80-KR18-062/public/attachments/present80_2plus2_instance.txt",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 30426,
+          "sha256": "9b4db8228a7a59c2097c18e68e4a18bfdfa709793f29c605e58388e8c23a3931"
         },
         {
           "name": "attachments/present80_key_recovery_model.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/166_CBSC-V4-PD-PRESENT80-KR18-062/public/attachments/present80_key_recovery_model.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 4508,
+          "sha256": "8ec5f13b1c1a2bd6c525a2ed928d7ca4047f41f00665e9158a3877491262ea37"
         },
         {
           "name": "question.md",
@@ -3978,14 +3978,14 @@
         {
           "name": "attachments/integral_resistance_model.md",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/167_CBSC-V4-PI-INV-IR3-AUDIT-063/public/attachments/integral_resistance_model.md",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 1749,
+          "sha256": "0955b4d99e4f2c2f8bdc4dae382aca769252263bf63b8ace5cb7fd552fec6e48"
         },
         {
           "name": "attachments/keyed_permutations.csv",
           "url": "data/cryptobench-sc-v4/4.1.0/tasks/167_CBSC-V4-PI-INV-IR3-AUDIT-063/public/attachments/keyed_permutations.csv",
-          "bytes": 0,
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "bytes": 640,
+          "sha256": "85790cbfb15f92bc33a03db7a7dcc0d5a2cb3fbb84753bfe40e1859acb93dd44"
         },
         {
           "name": "question.md",
