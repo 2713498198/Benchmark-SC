@@ -92,9 +92,15 @@ def derive_rule(oracle):
             return string_rule(expected["probability_approx"]), expected["probability_approx"]
         return None, None
 
-    # hard_task_oracle_v1 describes multi-field, replay, or semantically scored
-    # results and does not expose a single unambiguous final value; it stays
-    # dynamic rather than risk a wrong automatic extraction.
+    if schema == "hard_task_oracle_v1":
+        # A numeric oracle_replay.objective is the optimal trail weight, which
+        # is the requested final value for the weight/optimum tasks. Multi-value
+        # or witness-based tasks have no objective field and remain dynamic.
+        replay = oracle.get("oracle_replay") or {}
+        if isinstance(replay, dict) and isinstance(replay.get("objective"), numbers.Number) \
+                and not isinstance(replay.get("objective"), bool):
+            return numeric_rule(replay["objective"]), str(replay["objective"])
+        return None, None
 
     return None, None
 
