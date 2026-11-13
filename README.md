@@ -208,6 +208,8 @@ python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
 npm run agent:mock
 ```
 
+Codex、DeepSeek Harness 等不提供 HTTP 服务的本地 Agent 可通过 Runner 内置命令 Adapter 接入。按“本地 Runner”页面的配对流程，将 `--agent-config` 指向本机 CLI 配置即可；示例位于 `runner/examples/`。
+
 V4 隐藏材料交付后，先使用 `node scripts/validate-v4-materials.mjs <manifest.json> --public-catalog src/main/resources/static/data/cryptobench-sc-v4/catalog.json --materials-root <private-materials-dir>` 校验材料清单、文件哈希和 127 道题覆盖；清单及材料目录必须位于静态资源目录之外，校验输出不包含答案内容。
 
 登录平台后，在“开始测评”中使用 `http://127.0.0.1:8000`，点击“检查本地 Agent”，再创建 Mini-SPN 测评。服务端会轮询运行状态和日志，并在完成后生成带 `runId`、验证器版本和可信状态的私有报告。公开榜单接口 `GET /api/reports/public` 只返回已公开报告，不会返回其他用户的私有记录。

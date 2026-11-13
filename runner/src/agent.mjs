@@ -1,5 +1,8 @@
 // Call the user's local Agent HTTP protocol from the Runner process.
+import {runCommand} from './command-adapter.mjs';
+
 export async function analyze(profile,request){
+ if(profile?.adapter==='command'||profile?.mode==='command')return runCommand(profile,request);
  const endpoint=String(profile.endpoint||'').replace(/\/$/,'');
  if(!/^https?:\/\//i.test(endpoint))throw new Error('Agent endpoint 必须使用 http 或 https');
  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),(request.budget?.timeoutSeconds||300)*1000);
