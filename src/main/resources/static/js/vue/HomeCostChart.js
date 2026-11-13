@@ -1,14 +1,13 @@
 import {ref,reactive,computed,watch,onMounted,onBeforeUnmount} from '/vendor/vue/vue.esm-browser.prod.js';
 import {useApp,SvgIcon} from './shared.js';
 import RankChart from './RankChart.js';
-import {rankings} from '../data.js';
 import {datasetTitle} from '../core.js';
 import {leaderboardModel} from '../leaderboard-model.js';
 import {chartModel} from '../leaderboard-chart.js';
 import {executionSourceOptions} from '../execution-sources.js';
 
 export default {components:{SvgIcon,RankChart},setup(){
- const app=useApp(),filters=reactive({dataset:'mini-spn',version:'1.0.0',budget:'standard',source:'all',sort:'score'});
+ const app=useApp(),filters=reactive({dataset:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',source:'all',sort:'score'});
  const mode=ref('auto'),zoom=ref(false),snapshot=ref(null),updated=ref(null),failed=ref(false),loading=ref(false);
  const all=computed(()=>app.getDatasets()),datasets=computed(()=>[...new Map(all.value.map(d=>[d.id,d])).values()]);
  const versions=computed(()=>all.value.filter(d=>d.id===filters.dataset));
@@ -16,12 +15,12 @@ export default {components:{SvgIcon,RankChart},setup(){
  const publicData=computed(()=>leaderboardModel([],snapshot.value??app.state.publicReports,[],{...filters,type:'public'}));
  const sourceOptions=computed(()=>{
   const types=mode.value==='auto'?['public','demo']:[mode.value];
-  return executionSourceOptions(types.flatMap(type=>leaderboardModel(rankings,snapshot.value??app.state.publicReports,[],{...filters,source:'all',type}).cohort.map(e=>e.record)));
+  return executionSourceOptions(types.flatMap(type=>leaderboardModel([],snapshot.value??app.state.publicReports,[],{...filters,source:'all',type}).cohort.map(e=>e.record)));
  });
  watch(sourceOptions,options=>{if(!options.some(option=>option.value===filters.source))filters.source='all';});
  const type=computed(()=>mode.value==='auto'?(publicData.value.cohort.length?'public':'demo'):mode.value);
  const publicTrust=computed(()=>publicData.value.cohort.some(({record})=>record.verified===true&&record.verificationStatus==='verified')?'公开记录 · 已验证':'公开记录 · 未核验');
- const rows=computed(()=>type.value==='public'?publicData.value.visible.map(e=>e.record):leaderboardModel(rankings,snapshot.value??app.state.publicReports,[],{...filters,type:'demo'}).visible.map(e=>e.record));
+ const rows=computed(()=>type.value==='public'?publicData.value.visible.map(e=>e.record):leaderboardModel([],snapshot.value??app.state.publicReports,[],{...filters,type:'demo'}).visible.map(e=>e.record));
  const frontier=computed(()=>chartModel(rows.value,'cost').frontier.flatMap(p=>p.rows));
  const amount=value=>value!==0&&(value<.001||value>=1e6)?value.toExponential(1):value.toLocaleString('en-US',{maximumFractionDigits:3});
  const updateLabel=computed(()=>updated.value?new Date(updated.value).toLocaleTimeString('zh-CN',{hour12:false}):'尚未更新');

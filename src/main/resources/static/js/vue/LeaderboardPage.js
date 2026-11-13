@@ -1,13 +1,13 @@
 import {averageTime,secondsText} from '../report-metrics.js';
 import {reactive,ref,computed,watch,nextTick,onBeforeUnmount} from '/vendor/vue/vue.esm-browser.prod.js';
 import {useApp,SvgIcon} from './shared.js';
-import {datasets,rankings} from '../data.js';
+import {datasets} from '../data.js';
 import {datasetTitle,downloadFile,csv} from '../core.js';
 import {leaderboardModel,leaderboardCsvRows,validNumber,displayScore} from '../leaderboard-model.js';
 import RankChart from './RankChart.js';
 import {executionSourceLabel,executionSourceOptions} from '../execution-sources.js';
 
-const defaults={dataset:'mini-spn',version:'1.0.0',budget:'standard',source:'all',type:'demo',sort:'score'};
+const defaults={dataset:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',source:'all',type:'demo',sort:'score'};
 const amount=value=>validNumber(value)?value.toLocaleString('en-US',{maximumFractionDigits:3}):'—';
 const score=r=>displayScore(r)===null?'—':displayScore(r).toFixed(1)+'%';
 const source=r=>executionSourceLabel(r.source);
@@ -25,8 +25,8 @@ export default {components:{SvgIcon,RankChart},setup(){
  const all=computed(()=>app.getDatasets()),uniqueDatasets=computed(()=>[...new Map(all.value.map(d=>[d.id,d])).values()]);
  const versions=computed(()=>all.value.filter(d=>d.id===filters.dataset));
  const dataset=computed(()=>all.value.find(d=>d.id===filters.dataset&&d.version===filters.version)||datasets[0]);
- const data=computed(()=>leaderboardModel(rankings,app.state.publicReports||[],app.state.reports||[],filters,query.value));
- const sourceOptions=computed(()=>executionSourceOptions(leaderboardModel(rankings,app.state.publicReports||[],app.state.reports||[],{...filters,source:'all'}).cohort.map(e=>e.record)));
+ const data=computed(()=>leaderboardModel([],app.state.publicReports||[],app.state.reports||[],filters,query.value));
+ const sourceOptions=computed(()=>executionSourceOptions(leaderboardModel([],app.state.publicReports||[],app.state.reports||[],{...filters,source:'all'}).cohort.map(e=>e.record)));
  watch(sourceOptions,options=>{if(!options.some(option=>option.value===filters.source))filters.source='all';});
  const leader=computed(()=>data.value.leaders[0]?.record);
  const leadLabel=computed(()=>data.value.leaders.length>1?`${data.value.leaders.length} 项并列最高`:leader.value?`${leader.value.agent} · ${leader.value.model}`:'等待测评记录');

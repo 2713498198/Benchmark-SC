@@ -42,9 +42,8 @@ class BenchmarkApiIntegrationTest {
         assertThat(client.send("GET", "/index.html", null).getResponse().getContentAsString()).contains("id=\"app\"");
         assertThat(client.send("GET", "/js/app.js", null).getResponse().getStatus()).isEqualTo(200);
         assertThat(client.send("GET", "/vendor/vue/vue.esm-browser.prod.js", null).getResponse().getStatus()).isEqualTo(200);
-        JsonNode catalog = client.json(client.send("GET", "/data/cryptobench-sc-v4/catalog.json", null));
-        assertThat(catalog.path("tasks").size()).isEqualTo(127);
-        assertThat(client.send("GET", "/data/cryptobench-sc-v4/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.send("GET", "/data/cryptobench-sc-v4/catalog.json", null).getResponse().getStatus()).isEqualTo(404);
+        assertThat(client.send("GET", "/data/cryptobench-sc-v4/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(404);
         JsonNode current = client.json(client.send("GET", "/data/cryptobench-sc-v4/4.1.0/catalog.json", null));
         assertThat(current.path("dataset").path("version").asText()).isEqualTo("4.1.0");
         assertThat(current.path("tasks").size()).isEqualTo(170);

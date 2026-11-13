@@ -6,7 +6,7 @@ import {downloadFile,csv} from '../core.js';
 import {executionSourceLabel} from '../execution-sources.js';
 import RunProgress from './RunProgress.js';
 
-const defaultForm=()=>({name:'我的密码分析 Agent',source:'local',runnerId:'',image:'cryptobench-mock-agent:local',endpoint:'http://127.0.0.1:8000',model:models[0],datasetId:'mini-spn',version:'1.0.0',budget:'standard',scope:'full',seed:42,token:'',gatewayProviderId:'',gatewayKey:''});
+const defaultForm=()=>({name:'我的密码分析 Agent',source:'local',runnerId:'',image:'cryptobench-mock-agent:local',endpoint:'http://127.0.0.1:8000',model:models[0],datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',seed:42,token:'',gatewayProviderId:'',gatewayKey:''});
 const budgetName=b=>b==='extended'?'扩展 · 600s / 40 次调用':'标准 · 300s / 20 次调用';
 const usageLabel=u=>u?.inputTokens!=null&&u?.outputTokens!=null?`${u.inputTokens.toLocaleString()} 输入 / ${u.outputTokens.toLocaleString()} 输出 Token`:`未完整提供（${u?.knownTasks||0}/${u?.taskCount||0} 项）`;
 const usageSourceLabel=value=>({provider_gateway:'服务端网关记录',device_gateway_reported:'设备网关上报',device_reported:'执行设备上报',agent_reported:'Agent 自报',mixed:'混合来源',unknown:'未记录'}[value]||'未记录');
@@ -19,7 +19,7 @@ export default {components:{SvgIcon,RunProgress},setup(){
  const app=useApp(),{state,route}=app;
  const step=ref(1),connected=ref(false),connectionStatus=ref('尚未检查'),mode=ref('models'),form=reactive(defaultForm());
  if(pendingDraft&&pendingDraft.owner===state.user?.id)Object.assign(form,pendingDraft.form);pendingDraft=null;
- const duel=reactive({a:models[0],b:models[1],agentA:agents[0].id,agentB:agents[1].id,datasetId:'mini-spn',version:'1.0.0',budget:'standard',seed:42});
+ const duel=reactive({a:models[0],b:models[1],agentA:agents[0].id,agentB:agents[1].id,datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',seed:42});
  const credentials=reactive({main:'',a:'',b:''}),busy=ref(false),draftMode=ref(false),runLoading=ref(false);
  const dockerRuntime=ref({dockerEnabled:false,dockerAvailable:false,message:'正在检查 Docker 环境',allowedImages:[],limits:{}});
  const gatewayRuntime=ref({enabled:false,providers:[]}),executionOptionsError=ref('');
