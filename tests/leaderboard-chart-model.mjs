@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import {chartModel,chartAxes,renderRankChart} from '../src/main/resources/static/js/leaderboard-chart.js';
-import {rankings} from '../src/main/resources/static/js/data.js';
+const rankings=[
+ {id:'rank-cipher-pilot',rank:1,agent:'CipherPilot',score:91.7,time:38.6,averageTimeSeconds:38.6,totalTimeSeconds:4632,cost:2.84,source:'local'},
+ {id:'rank-sbox-sage',rank:2,agent:'S-box Sage',score:88.3,time:42.1,averageTimeSeconds:42.1,totalTimeSeconds:5052,cost:3.16,source:'local'},
+ {id:'rank-diff-hunter',rank:3,agent:'DiffHunter',score:85.8,time:35.4,averageTimeSeconds:35.4,totalTimeSeconds:4248,cost:0.76,source:'local'},
+ {id:'rank-round-key',rank:4,agent:'RoundKey',score:81.7,time:31.8,averageTimeSeconds:31.8,totalTimeSeconds:3816,cost:0.62,source:'local'},
+ {id:'rank-linear-lab',rank:5,agent:'LinearLab',score:77.5,time:46.2,averageTimeSeconds:46.2,totalTimeSeconds:5544,cost:null,source:'local'}
+];
 
 const demo=chartModel(rankings);
 assert.equal(demo.included,4);
