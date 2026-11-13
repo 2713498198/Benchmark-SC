@@ -538,12 +538,30 @@
     {
       "id": "041_CBSC-V2-PS-2013-LBLOCK-TABLE5-010",
       "question": "# Question 041. LBlock MILP 建模结果复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：LBlock 指定结果 eleven round MILP row\n- 任务类型：MILP 建模结果复核\n\n公开实验记录。一个 11 轮 LBlock 相关密钥 active-S-box MILP 实例包含 `958` 个 0-1 变量和 `1144` 个连续变量，共有 `7250` 条约束。求解器证明的活跃 S-box 下界为 `10`，原实验记录的运行时间为 `43793` 秒。\n\n任务。写脚本检查两个变量分量的合计值，把运行时间同时换算为小时，并输出一行结构化复核结果：轮数、两类变量数、总变量数、约束数、已证明的活跃 S-box 下界和原实验时间。说明变量数与约束数只描述该 MILP 编码规模，运行时间依赖原实验平台；不要从这一行推断未给出的 12 轮或更高轮结果。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"constraints\": 7250, \"min_active_sboxes\": 10, \"time_seconds\": 43793, \"variables_dummy\": 1144, \"variables_key_state\": 958, \"variables_total\": 2102}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "variables_key_state": "number",
+          "variables_dummy": "number",
+          "variables_total": "number",
+          "constraints": "number",
+          "min_active_sboxes": "number",
+          "time_seconds": "number"
+        }
+      },
       "category": "milp_table_row_reconstruction",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "variables_key_state": 958,
+          "variables_dummy": 1144,
+          "variables_total": 2102,
+          "constraints": 7250,
+          "min_active_sboxes": 10,
+          "time_seconds": 43793
+        },
+        "numericTolerance": 0.01
       }
     },
     {
@@ -562,23 +580,45 @@
     {
       "id": "043_CBSC-V2-PS-2013-PRESENT80-12ACTIVE-002",
       "question": "# Question 043. PRESENT 活跃 S 盒下界验证\n\n## 问题描述\n\n背景。对象为 PRESENT-80 的相关密钥差分 MILP/等价模型，分析任意连续 12 轮窗口。\n\n公开命题。相关密钥 MILP 模型在强制初始 80-bit key-register difference 非零并加入连续差分传播约束后，证明 PRESENT-80 的任意连续 12 轮窗口至少包含 16 个活跃 S-box。PRESENT 4-bit S-box 的最大 XOR-differential probability 为 `2^-2`。\n\n任务。把“12 轮窗口至少 16 个活跃 S-box”和 S-box MDP 编码为可执行边界检查，推导任意该窗口内单条 characteristic 的概率上界。报告活跃 S-box 下界、有效权重和概率；明确非零条件约束的是初始相关密钥差分，并说明脚本是在复核公开命题的推论，还是实际重新求解了完整 MILP。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"min_active_sboxes\": 16, \"probability_per_active_sbox\": \"at most 2^-2\", \"round_window\": 12}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "min_active_sboxes": "number",
+          "round_window": "number",
+          "probability_per_active_sbox": "string"
+        }
+      },
       "category": "active_sbox_lower_bound",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "min_active_sboxes": 16,
+          "round_window": 12,
+          "probability_per_active_sbox": "at most 2^-2"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "044_CBSC-V2-PS-2013-PRESENT80-7CUTS-003",
       "question": "# Question 044. PRESENT MILP cutting inequality 强化效果验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：PRESENT 80 seven round strengthening by extra inequalities\n- 任务类型：MILP cutting inequality 强化效果验证\n\n公开实验记录。PRESENT-80 的基础相关密钥 MILP 使用 S-box 差分传播的基本约束。强化版本对模型中每个 S-box 额外加入同一组 6 条 valid cutting-off inequalities；这些不等式只删除不可能的局部活动模式，不删除真实 characteristic。强化模型对任意连续 7 轮证明至少有 8 个活跃 S-box。更长轮数证明还使用“任意连续 12 轮至少 16 个活跃 S-box”的独立结果。\n\n任务。报告新增不等式数量和 7 轮活跃 S-box 下界，并用一个小型脚本检查：若两个不重叠 12 轮段各满足 16 个活跃 S-box、且单个 S-box 的 MDP 为 `2^-2`，它们如何产生 24 轮概率上界。解释 cutting-off inequality 必须保持 valid 才能支持下界证明，以及 7 轮强化结果在整体证明中是局部模型加强证据而不是一条具体 trail。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"extra_valid_inequalities\": 6, \"min_active_sboxes\": 8}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "extra_valid_inequalities": "number",
+          "min_active_sboxes": "number"
+        }
+      },
       "category": "milp_cutting_inequality_effect",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "extra_valid_inequalities": 6,
+          "min_active_sboxes": 8
+        },
+        "numericTolerance": 0.01
       }
     },
     {
@@ -597,12 +637,28 @@
     {
       "id": "046_CBSC-V2-PS-2013-SIMON48-15DIFF-006",
       "question": "# Question 046. SIMON48 单密钥 characteristic 与 differential 概率比较\n\n## 问题描述\n\n背景。对象为 15 轮 SIMON48 的单密钥 XOR 差分分析。需要区分单条 characteristic 概率与固定输入/输出差分下汇总 differential 概率。\n\n公开研究记录。对同一组 15 轮 SIMON48 输入/输出差分，已知一条兼容 characteristic 的概率为 `2^-46`。随后枚举并累加该端点下所有概率大于 `2^-54` 的兼容 characteristics，得到截断聚合 differential probability 约为 `2^-41.96`。搜索模型把 AND 操作的输入 bit 近似为独立变量，因此候选 trail 必须经过独立的 SIMON 差分传播复查。\n\n任务。写脚本计算单条 characteristic 和截断聚合 differential 的有效权重、数值概率及二者倍率，说明为什么多个兼容 trails 的概率和可以高于最佳单条 trail。报告枚举阈值并明确：`2^-41.96` 是在给定截断规则下的近似聚合值，不是未经误差分析的精确全 differential probability；MILP 候选也不能跳过独立有效性复查。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"aggregate_differential_probability\": \"2^-41.96\", \"aggregate_differential_weight\": 41.96, \"characteristic_probability\": \"2^-46\", \"characteristic_weight\": 46.0, \"summed_threshold\": \"all compatible characteristics with probability > 2^-54\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "characteristic_weight": "number",
+          "characteristic_probability": "string",
+          "aggregate_differential_weight": "number",
+          "aggregate_differential_probability": "string",
+          "summed_threshold": "string"
+        }
+      },
       "category": "single_key_differential_vs_characteristic",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "characteristic_weight": 46.0,
+          "characteristic_probability": "2^-46",
+          "aggregate_differential_weight": 41.96,
+          "aggregate_differential_probability": "2^-41.96",
+          "summed_threshold": "all compatible characteristics with probability > 2^-54"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
@@ -619,34 +675,94 @@
     {
       "id": "048_CBSC-V2-PS-2023-SPECK128-ALGB-011",
       "question": "# Question 048. SPECK128 差分攻击参数复核\n\n## 问题描述\n\n背景。给定 SPECK128/256 的 plaintext-structure 攻击参数行，需要复核 Algorithm B 的参数关系。\n\n公开实例。考虑 SPECK128/256 的 24 轮 key-recovery 参数比较，其中核心为一条 19 轮 differential trail，概率 `p=2^-119`，并具有 `nBIL=23`、`nFIL=2`。`nBIL`/`nFIL` 分别表示前置和后置模加中可利用的 backward/forward inactive lower bits。\n\n基线使用 split `1+19+4`，报告数据 `2^120`、时间 `2^248`、内存 `2^22`。Type-II structure 的 Algorithm-B 实例使用 split `2+19+3`，把目标 right-pair 系数取为 `mu=3`，报告数据 `mu*2^(119+1)`、时间 `2^231.58`、内存 `2^131`。这些时间和内存指数是该攻击模型的已给定输出，不应被表述成本题脚本重新执行了完整 key recovery。\n\n任务。用脚本复核 `mu*2^(119+1)` 的 log2 数据指数，报告 trail probability、`nBIL`、`nFIL`、两个 split 以及两行数据/时间/内存复杂度。计算新方案相对基线节省的时间指数、增加的数据指数和增加的内存指数，并解释该实例用额外数据与计数器空间换取了多少时间优势。不要把 19 轮 trail、24 轮攻击和完整 SPECK128/256 混为一谈。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"nBIL\": 23, \"nFIL\": 2, \"trail_probability\": \"2^-119\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "trail_probability": "string",
+          "nBIL": "number",
+          "nFIL": "number"
+        }
+      },
       "category": "differential_attack_parameter_reconstruction",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "trail_probability": "2^-119",
+          "nBIL": 23,
+          "nFIL": 2
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "049_CBSC-V2-PS-2023-SPECK32-ALGC3-013",
       "question": "# Question 049. SPECK32 差分攻击参数复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：SPECK32/64 Algorithm C three trail row\n- 任务类型：差分攻击参数复核\n\n公开实例。Algorithm C 同时使用 Type-I 与 Type-II plaintext structures，并允许多个兼容 trails 共同贡献。对 SPECK32/64，给定 9 轮核心 differential、split `2+9+3`、3 条 trails、`nBIL=3`、`nFIL=3`，三条 trail 的总概率为 `p_hat=2^-28.42`。取 right-pair 系数 `mu=3` 时，数据量公式为\n\n```text\nD = mu / p_hat * 2 = mu * 2^(28.42+1).\n```\n\n该攻击模型报告约 66% 成功率、时间 `2^60.58`、内存 `2^36`。\n\n任务。用脚本复核总概率的数值、数据复杂度指数及 split 总轮数，输出 algorithm、trail 数、`nBIL`、`nFIL`、总概率、成功率、split、数据、时间和内存。明确成功率及时间/内存是给定攻击模型的报告值，而脚本实际复核的是概率、轮数和复杂度表达式的一致性；不要把三条 trail 当成三次独立完整攻击。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"data\": \"2^31\", \"memory\": \"2^36\", \"nBIL\": 3, \"nFIL\": 3, \"split\": \"2+9+3\", \"success_rate_approx\": \"66%\", \"time\": \"2^60.58\", \"total_probability\": \"2^-28.42\", \"trails\": 3}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "trails": "number",
+          "nBIL": "number",
+          "nFIL": "number",
+          "total_probability": "string",
+          "success_rate_approx": "string",
+          "split": "string",
+          "data": "string",
+          "time": "string",
+          "memory": "string"
+        }
+      },
       "category": "differential_attack_parameter_reconstruction",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "trails": 3,
+          "nBIL": 3,
+          "nFIL": 3,
+          "total_probability": "2^-28.42",
+          "success_rate_approx": "66%",
+          "split": "2+9+3",
+          "data": "2^31",
+          "time": "2^60.58",
+          "memory": "2^36"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "050_CBSC-V2-PS-2023-SPECK32-ALGC5-014",
       "question": "# Question 050. SPECK32 差分攻击参数复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：SPECK32/64 Algorithm C five trail row\n- 任务类型：差分攻击参数复核\n\n公开实例。Algorithm C 同时使用 Type-I 与 Type-II plaintext structures，并允许多个兼容 trails 共同贡献。对 SPECK32/64，给定 9 轮核心 differential、split `2+9+3`、5 条 trails、`nBIL=2`、`nFIL=3`，五条 trail 的总概率为 `p_hat=2^-27.68`。取 right-pair 系数 `mu=3` 时，数据量公式为\n\n```text\nD = mu / p_hat * 2 = mu * 2^(27.68+1).\n```\n\n该攻击模型报告约 76% 成功率、时间 `2^60.58`、内存 `2^36`。\n\n任务。用脚本复核总概率的数值、数据复杂度指数及 split 总轮数，输出 algorithm、trail 数、`nBIL`、`nFIL`、总概率、成功率、split、数据、时间和内存。明确成功率及时间/内存是给定攻击模型的报告值，而脚本实际复核的是概率、轮数和复杂度表达式的一致性；不要把五条兼容 trails 的概率和误写成单条 characteristic probability。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"data\": \"2^30.26\", \"memory\": \"2^36\", \"nBIL\": 2, \"nFIL\": 3, \"split\": \"2+9+3\", \"success_rate_approx\": \"76%\", \"time\": \"2^60.58\", \"total_probability\": \"2^-27.68\", \"trails\": 5}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "trails": "number",
+          "nBIL": "number",
+          "nFIL": "number",
+          "total_probability": "string",
+          "success_rate_approx": "string",
+          "split": "string",
+          "data": "string",
+          "time": "string",
+          "memory": "string"
+        }
+      },
       "category": "differential_attack_parameter_reconstruction",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "trails": 5,
+          "nBIL": 2,
+          "nFIL": 3,
+          "total_probability": "2^-27.68",
+          "success_rate_approx": "76%",
+          "split": "2+9+3",
+          "data": "2^30.26",
+          "time": "2^60.58",
+          "memory": "2^36"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
@@ -665,188 +781,432 @@
     {
       "id": "052_CBSC-V2-PS-2405-GIFT64-FIDCOUNT-024",
       "question": "# Question 052. GIFT64 模糊不可能差分验证\n\n## 问题描述\n\n背景。对象为 5 轮 GIFT64 的 nibble-level fuzzy impossible differential 搜索；符号 * 和 - 都表示非零 nibble，但二者在模式中独立取值。\n\n任务。计算 5 轮 GIFT64 single-active-nibble fuzzy impossible differentials 的完整计数。采用 XOR difference；轮密钥和常数不影响差分。每轮依次应用 nibble-wise S-box 和 bit permutation：\n\n```text\nS = [1,A,4,C,6,F,3,9,2,D,B,7,5,0,8,E]\nP = [0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,\n     4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,\n     8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,\n     12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15]\n```\n\n`P[i]` 表示输入 bit `i` 移到输出 bit `P[i]`。64-bit 差分写成从左到右 16 个 hexadecimal nibbles。搜索全集为：输入恰有一个 active nibble，输出也恰有一个 active nibble，因此共有 `16*16` 个位置 pattern。输入符号 `*` 和输出符号 `-` 都独立遍历 `{1,...,F}`，每个位置 pattern 展开为 `15*15` 个 concrete endpoint pairs。\n\n如果一个位置 pattern 的 225 个 concrete pairs 在精确 S-box DDT support 和 P-layer 下全部不可达，则称该 symbolic fuzzy pattern 为 impossible。请用 SAT/SMT、双向传播或等价精确程序报告：\n\n1. impossible symbolic position patterns 的数量和完整位置列表；\n2. 这些 patterns 展开后的 impossible concrete endpoint pairs 总数；\n3. `*`、`-` 的精确定义以及为什么二者不能被当成包含 0 或要求相等的同一通配符。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"concrete_endpoint_pair_count\": 7200, \"count\": 7200, \"dash_symbol\": \"independently chosen nonzero nibble\", \"star_symbol\": \"any nonzero nibble\", \"symbolic_position_pattern_count\": 32}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "symbolic_position_pattern_count": "number",
+          "concrete_endpoint_pair_count": "number",
+          "count": "number",
+          "star_symbol": "string",
+          "dash_symbol": "string"
+        }
+      },
       "category": "fuzzy_impossible_differential",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "symbolic_position_pattern_count": 32,
+          "concrete_endpoint_pair_count": 7200,
+          "count": 7200,
+          "star_symbol": "any nonzero nibble",
+          "dash_symbol": "independently chosen nonzero nibble"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "053_CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
       "question": "# Question 053. GIFT64 模糊不可能差分验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT64\n- 轮数：5\n- 任务类型：模糊不可能差分验证\n- 分析模型：fuzzy impossible differential reachability\n\n任务。请只基于下面给出的轮函数和模式，验证 GIFT64 的 5 轮 fuzzy impossible differential 问题，并报告 input pattern、output pattern、`*` 与 `-` 的语义。\n\n采用 XOR difference；轮密钥和常数不影响差分。每轮先应用 nibble-wise S-box，再应用 bit permutation：\n\n```text\nS = [1,A,4,C,6,F,3,9,2,D,B,7,5,0,8,E]\nP = [0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,\n     4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,\n     8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,\n     12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15]\n```\n\n`P[i]` 表示输入 bit `i` 移到输出 bit `P[i]`；nibble 内按最低有效位到最高有效位编号。\n\n待验证模式为：\n\n- 输入差分：`00000000000000*0`\n- 输出差分：`00000000000000-0`\n\n十六进制差分串按 16 个 nibble 从左到右书写。`*` 表示该位置取任意非零 nibble；`-` 表示该位置取另一个独立的任意非零 nibble。二者都不能取 0，也不要求二者相等。\n\n请把该 pattern 展开为 `15*15=225` 个 concrete endpoint pairs，判断它是否可达，并报告可达 pair 数。用精确 S-box DDT support、P-layer 和 5 轮边界构造可执行搜索、MILP/SAT/SMT 或传播检查；单纯超时或没有找到 trail 不能证明 impossible。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"dash_symbol\": \"independently chosen nonzero nibble\", \"expanded_concrete_pairs\": 225, \"input_pattern\": \"00000000000000*0\", \"output_pattern\": \"00000000000000-0\", \"reachable_concrete_pairs\": 0, \"row\": 3, \"star_symbol\": \"any nonzero nibble\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "row": "number",
+          "input_pattern": "string",
+          "output_pattern": "string",
+          "star_symbol": "string",
+          "dash_symbol": "string",
+          "reachable_concrete_pairs": "number",
+          "expanded_concrete_pairs": "number"
+        }
+      },
       "category": "fuzzy_impossible_differential",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "row": 3,
+          "input_pattern": "00000000000000*0",
+          "output_pattern": "00000000000000-0",
+          "star_symbol": "any nonzero nibble",
+          "dash_symbol": "independently chosen nonzero nibble",
+          "reachable_concrete_pairs": 0,
+          "expanded_concrete_pairs": 225
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "054_CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
       "question": "# Question 054. GIFT64 模糊不可能差分验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT64\n- 轮数：5\n- 任务类型：模糊不可能差分验证\n- 分析模型：fuzzy impossible differential reachability\n\n任务。请只基于下面给出的轮函数和模式，验证 GIFT64 的 5 轮 fuzzy impossible differential 问题，并报告 input pattern、output pattern、`*` 与 `-` 的语义。\n\n采用 XOR difference；轮密钥和常数不影响差分。每轮先应用 nibble-wise S-box，再应用 bit permutation：\n\n```text\nS = [1,A,4,C,6,F,3,9,2,D,B,7,5,0,8,E]\nP = [0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,\n     4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,\n     8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,\n     12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15]\n```\n\n`P[i]` 表示输入 bit `i` 移到输出 bit `P[i]`；nibble 内按最低有效位到最高有效位编号。\n\n待验证模式为：\n\n- 输入差分：`00000000000*0000`\n- 输出差分：`000000000-000000`\n\n十六进制差分串按 16 个 nibble 从左到右书写。`*` 表示该位置取任意非零 nibble；`-` 表示该位置取另一个独立的任意非零 nibble。二者都不能取 0，也不要求二者相等。\n\n请把该 pattern 展开为 `15*15=225` 个 concrete endpoint pairs，判断它是否可达，并报告可达 pair 数。用精确 S-box DDT support、P-layer 和 5 轮边界构造可执行搜索、MILP/SAT/SMT 或传播检查；单纯超时或没有找到 trail 不能证明 impossible。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"dash_symbol\": \"independently chosen nonzero nibble\", \"expanded_concrete_pairs\": 225, \"input_pattern\": \"00000000000*0000\", \"output_pattern\": \"000000000-000000\", \"reachable_concrete_pairs\": 0, \"row\": \"public_pattern\", \"star_symbol\": \"any nonzero nibble\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "row": "string",
+          "input_pattern": "string",
+          "output_pattern": "string",
+          "star_symbol": "string",
+          "dash_symbol": "string",
+          "reachable_concrete_pairs": "number",
+          "expanded_concrete_pairs": "number"
+        }
+      },
       "category": "fuzzy_impossible_differential",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "row": "public_pattern",
+          "input_pattern": "00000000000*0000",
+          "output_pattern": "000000000-000000",
+          "star_symbol": "any nonzero nibble",
+          "dash_symbol": "independently chosen nonzero nibble",
+          "reachable_concrete_pairs": 0,
+          "expanded_concrete_pairs": 225
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "055_CBSC-V2-PS-2405-XOR3-INEQ-027",
       "question": "# Question 055. Three XOR 门不可能转移约束验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Three input XOR impossible transition inequalities\n- 任务类型：XOR 门不可能转移约束验证\n\n任务。对三输入 XOR 门 D = A xor B xor C 的 activity-transition 模型，枚举所有 0/1 输入输出活动模式，找出奇偶性不可能转移，并构造对应线性不等式。报告 forbidden transitions 和 inequalities。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"inputs\": 3}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "inputs": "number"
+        }
+      },
       "category": "xor_gate_impossible_transition_model",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "inputs": 3
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "056_CBSC-V2-PS-2405-XOR4-DDT-028",
       "question": "# Question 056. Four XOR 门 DDT 奇偶行验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Four input XOR DDT parity rows\n- 任务类型：XOR 门 DDT 奇偶行验证\n\n任务。对四输入 XOR 门 `y = a xor b xor c xor d` 的 activity DDT/奇偶行进行枚举验证。输入 activity 行用 4 比特表示 `(A,B,C,D)` 是否活跃，输出 activity 用 1 比特表示 `Y` 是否活跃。请针对下面两个指定输入行计算 `Y=0` 与 `Y=1` 的计数及奇偶性，并说明每个有效输出的计数：\n\n- 输入 activity 行 `0xB`，即二进制 `1011`\n- 输入 activity 行 `0xC`，即二进制 `1100`\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"count_per_valid_output\": 16, \"inputs\": 4}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "inputs": "number",
+          "count_per_valid_output": "number"
+        }
+      },
       "category": "xor_gate_ddt_row",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "inputs": 4,
+          "count_per_valid_output": 16
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
       "question": "# Question 057. DLCT 差分线性变换流程复核\n\n## 问题描述\n\n背景。对象为 Simon-like cipher 的 differential-linear 分析流程。输入是一个 DL trail 或候选 split，目标是得到更强的 transformed distinguisher。\n\n定义。给定一个 `R=Rd+Rm+Rl` 轮 differential-linear trail，其公开信息包括输入差分 `Delta_I`、输出 mask `Lambda_O`、轮数 split `(Rd,Rm,Rl)`、中心 trail 的 differential probability 和 linear correlation。将单条 trail 变换为固定端点 distinguisher 时：\n\n1. 枚举 `Rd` 轮内从 `Delta_I` 出发且 `p_i >= p_min` 的 differential trails，记录中间差分与概率 `(Delta_i,p_i)`；\n2. 反向枚举 `Rl` 轮内到达 `Lambda_O` 且 `abs(q_j) >= q_min` 的 linear trails，记录中间 mask 与有符号相关性 `(Lambda_j,q_j)`；\n3. 对每个 `(Delta_i,Lambda_j)` 计算 `Rm` 轮的有符号 DLCT/connective contribution `r_ij`；\n4. 计算 `CorD = sum_i sum_j p_i*r_ij*q_j^2`。求和必须保留 `r_ij` 的符号，不能把所有贡献先取绝对值。\n\n任务。实现上述变换的可执行框架或精确伪代码。自行构造一个包含正、负和零 `r_ij` 的小型测试实例，验证索引遍历、符号和 `q_j^2` 均被正确处理。分别降低 `p_min` 和 `q_min`，报告枚举项数与 `CorD` 的变化，并解释 lower bounds 如何在枚举成本与截断近似精度之间形成权衡。不要把截断求和结果声明为未经误差界证明的精确 correlation。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"lower_bound_role\": \"controls enumeration cost and approximation precision\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "lower_bound_role": "string"
+        }
+      },
       "category": "differential_linear_transform_method",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "lower_bound_role": "controls enumeration cost and approximation precision"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "058_CBSC-V2-PS-2408-SIMECK32-TABLE7-023",
       "question": "# Question 058. Simeck32 差分线性配置结果复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Simeck32 指定结果 first comparison row\n- 任务类型：差分线性配置结果复核\n\n公开实验记录。一个 12 轮 Simeck32 differential-linear 实例使用 split `(Rd,Rm,Rl)=(5,2,5)`。中心单条 DL trail 的绝对相关性 `CorT=2^-16.00`；枚举相同输入差分和输出 mask 下的兼容 differential/linear trails，并用有符号 DLCT contribution 聚合后，得到 `CorD=2^-9.00`。记录中的 gap 定义为 `(CorD-CorT)/CorT*100%`。\n\n任务。用脚本复核 split 总轮数、两个相关性的数值、`CorD/CorT` 倍率和 gap 百分比。报告 configuration、`CorT` 与 `CorD`，并解释为什么 `CorD` 是固定端点下的聚合 distinguisher correlation，而不是把单条 trail 的指数直接改写。明确这些给定记录不构成对全部 12 轮 Simeck32 distinguishers 的全局最优性证明。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"distinguisher_correlation\": \"2^-9.00\", \"trail_correlation\": \"2^-16.00\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "trail_correlation": "string",
+          "distinguisher_correlation": "string"
+        }
+      },
       "category": "differential_linear_table_row",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "trail_correlation": "2^-16.00",
+          "distinguisher_correlation": "2^-9.00"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "059_CBSC-V2-PS-2408-SIMON-FAMILY-021",
       "question": "# Question 059. Simon 算法族差分线性结果复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Simon family DL round extensions\n- 任务类型：算法族差分线性结果复核\n\n公开比较记录。相对于同一比较基线，理论 differential-linear distinguisher 的轮数变化如下：\n\n| 变体 | 基线轮数 | 新记录轮数 |\n|---|---:|---:|\n| Simon32 | 13 | 14 |\n| Simon48 | 16 | 17 |\n| Simon64 | 19 | 21 |\n| Simon96 | 25 | 26 |\n\n另有一个 32 轮 Simon128 distinguisher 的 estimated correlation 得到改进，但轮数没有增加；本题没有提供足以证明全局最优的搜索空间证书。\n\n任务。用脚本计算每个变体的轮数增量，分类哪些扩展 1 轮、哪些扩展 2 轮，并单独报告 Simon128 的声明属于“相关性改进”而非“轮数扩展”。说明该表是相对于指定基线的比较，不能被解释为完整 Simon 系列的安全轮数或 key-recovery 结果。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"simon128_claim\": \"improved estimated correlation for a 32-round distinguisher\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "simon128_claim": "string"
+        }
+      },
       "category": "family_result_summary",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "simon128_claim": "improved estimated correlation for a 32-round distinguisher"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "060_CBSC-V2-PS-2408-SIMON32-13DL-019",
       "question": "# Question 060. Simon32 差分线性相关性改进复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Simon32 thirteen round DL improvement\n- 任务类型：差分线性相关性改进复核\n\n公开实验记录。给定一个 13 轮 Simon32 differential-linear 实例，split 为 `(5,5,3)`。原单条 DL trail 的 5 轮 differential probability 为 `2^-8`，3 轮 linear approximation correlation 为 `2^-4`，连同 5 轮中间部分后，单条 trail 的总估计相关性为 `CorT=2^-16.63`。\n\n变换时从相同输入差分出发枚举 probability 至少 `2^-16` 的兼容 differential trails，并反向枚举绝对相关至少 `2^-8` 的兼容 linear trails；对中间 difference/mask 使用有符号 DLCT contribution，按 `sum_i sum_j p_i*r_ij*q_j^2` 聚合。该截断聚合给出 `CorD=2^-13.94`，使用 `2^32` 个样本的实验估计为 `2^-13.19`。\n\n任务。用脚本把三个相关性转为数值，计算变换相对单条 trail 的倍率，并比较理论聚合值与实验估计的数量级。报告原理论值、改进理论值、实验值和 split，说明改进来自固定端点下兼容贡献的 DLCT 聚合，而不是单纯把一条 trail 的概率调大。明确有限样本实验和截断枚举各自的证据边界。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"experimental_correlation\": \"2^-13.19\", \"improved_theoretical_correlation\": \"2^-13.94\", \"previous_theoretical_correlation\": \"2^-16.63\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "previous_theoretical_correlation": "string",
+          "improved_theoretical_correlation": "string",
+          "experimental_correlation": "string"
+        }
+      },
       "category": "differential_linear_improvement",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "previous_theoretical_correlation": "2^-16.63",
+          "improved_theoretical_correlation": "2^-13.94",
+          "experimental_correlation": "2^-13.19"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "061_CBSC-V2-PS-2408-SIMON32-14ORDER-020",
       "question": "# Question 061. Simon32 trail 与 distinguisher 相关性排序复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Simon32 fourteen round trail versus distinguisher ordering\n- 任务类型：trail 与 distinguisher 相关性排序复核\n\n公开实验记录。三个 14 轮 Simon32 differential-linear 候选的单条 trail 与固定端点聚合 distinguisher 数据如下；三元组是 `(Rd,Rm,Rl)`：\n\n| split | `CorT` | `CorD` |\n|---|---:|---:|\n| `(5,5,4)` | `2^-18.63` | `2^-15.63` |\n| `(5,6,3)` | `2^-17.49` | `2^-16.75` |\n| `(7,3,4)` | `2^-20.00` | `2^-15.36` |\n\n`CorT` 是一条中心 DL trail 的绝对相关性；`CorD` 是在相同输入差分和输出 mask 下枚举兼容 differential/linear trails、计算中间有符号 DLCT contribution 后的截断聚合相关性。\n\n任务。用脚本分别按 `CorT` 和 `CorD` 从高到低排序，输出两个排名及每行 `CorD/CorT` 倍率。判断最高 `CorT` 是否一定给出最高 `CorD`，并从聚合贡献角度解释排序反转。结论只能约束给定三个候选，不能外推成所有 DL trails 的普遍单调定理。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"ordering_lesson\": \"the highest-correlation trail need not yield the highest-correlation transformed distinguisher; the lowest-correlation trail in the table yields the best distinguisher\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "ordering_lesson": "string"
+        }
+      },
       "category": "differential_linear_ordering",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "ordering_lesson": "the highest-correlation trail need not yield the highest-correlation transformed distinguisher; the lowest-correlation trail in the table yields the best distinguisher"
+        },
+        "numericTolerance": 0.01
       }
     },
     {
       "id": "062_CBSC-V2-HARD-GIFT64-DIFF-KR-001",
       "question": "# Question 062. GIFT-64 密钥恢复复杂度复核\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：标准 GIFT-64，完整算法为 28 轮；本题只讨论其轮函数上的约化轮分析。\n- 攻击模型：single-key XOR differential key recovery。\n- 攻击范围：20 轮，按 `3 + 13 + 4` 分解为前置 3 轮、13 轮差分区分器和后置 4 轮。\n- 任务类型：给定研究记录的密钥恢复复杂度复核。\n\n采用以下研究记录作为公开输入：\n\n1. 先在 13 轮上按单条 characteristic 的概率搜索候选。概率为 `2^-62` 的 288 条最优 trails，以及随后概率为 `2^-63` 的 5184 条和概率为 `2^-63.415` 的 6272 条 trails，在扩展为 20 轮攻击时都因需要猜测的子密钥位过多而使时间复杂度超过 `2^128`，不能形成有效攻击。\n2. 将 trail 搜索阈值降到 `2^-64` 后，SAT 搜索得到 92,768 条 trails。其中 3,096 条满足参与子密钥枚举的位数 `GSBD < 112`；按相同输入、输出差分合并后得到 2,392 个 distinct differentials。\n3. 对每个 differential，继续枚举其中概率大于 `2^-71` 的兼容 trails 并求和估计 differential probability。概率最高的一组包含 32 个 probability `2^-61.313` 的 differentials；其中 `D00` 至 `D15` 的 `GSBD=107`，`D16` 至 `D31` 的 `GSBD=110`。本实例选用 `D03` 作为 13 轮区分器。\n4. 该区分器前接 3 轮、后接 4 轮。每个明文结构含 `2^48` 个选择明文并产生 `2^91` 个候选对；结构数取 `S=2^14.58`，因此 `N1=S*2^91`。经过前置筛选后，进入区分器的对数为 `ND=N1*2^-44`。正确密钥和错误密钥下的 right-pair 概率分别取 `p0=2^-61.313` 与 `p1=2^-64`，判定阈值为 1，目标成功率为 70%。\n5. 子密钥枚举阶段的时间折算为 `T1=N1*2^15.21` 次 20 轮加密；阈值为 1 时，错误密钥误报概率为 `beta=1-(1-p1)^ND`。剩余 21 位主密钥的穷举项为 `T2=2^128*beta*(1-2^-64)`。总时间取 `max(T1,T2)`；存储量按需要保存的明文/候选对主导项估计。注意这里公开的指数已经过小数截断：直接代入会得到约 `2^125.45`，原研究使用未截断中间量报告为约 `2^125.50`。答案应同时记录重算值与报告值，不能把 0.05 bit 的舍入差异判为模型错误。\n6. 对照基线是此前同为 20 轮的单密钥差分攻击，该基线需要完整的 `2^64` codebook。本题不讨论完整 28 轮 GIFT-64 的破译。\n\n任务。基于以上记录完成端到端复核：\n\n1. 说明为什么“概率最高的单条 13 轮 trail”不足以直接成为有效的 20 轮攻击依据，并解释从 trails 到 distinct differentials 的聚合与筛选过程。\n2. 说明 `D03` 在 `3 + 13 + 4` 轮攻击结构中的作用，并区分 characteristic probability 与 differential probability。\n3. 用脚本复核候选数量关系以及数据复杂度指数；根据给定二项分布参数计算或数值复核 `beta`、`T1`、`T2` 和总时间复杂度。\n4. 给出数据、时间和内存复杂度，并与完整 codebook 基线比较。\n5. 明确结论只适用于该 20 轮 single-key 实例，不能外推为完整 GIFT-64 破译。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"attack_rounds\": 20, \"data_complexity\": \"2^62.58 chosen plaintexts\", \"distinguisher_rounds\": 13, \"memory_complexity\": \"2^62.58\", \"selected_distinguisher\": \"D03\", \"time_complexity\": \"2^125.50\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "attack_rounds": "number",
+          "distinguisher_rounds": "number",
+          "selected_distinguisher": "string",
+          "data_complexity": "string",
+          "time_complexity": "string",
+          "memory_complexity": "string"
+        }
+      },
       "category": "key_recovery_complexity",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "attack_rounds": 20,
+          "distinguisher_rounds": 13,
+          "selected_distinguisher": "D03",
+          "data_complexity": "2^62.58 chosen plaintexts",
+          "time_complexity": "2^125.50",
+          "memory_complexity": "2^62.58"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "063_CBSC-V2-HARD-GIFT64-FAMILY-FID-003",
       "question": "# Question 063. 5 轮 GIFT64 不可能差分验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT64\n- 轮数：5\n- 任务类型：不可能差分验证\n- 分析模型：single output nibble fuzzy reachability map\n\n任务。For the following 5-round GIFT-64 differential propagation problem, determine the complete single-output-nibble reachability map.\n\nUse XOR differences. Ignore round constants and round keys, since they do not affect XOR-difference propagation. A round consists of applying the GIFT-64 S-box independently to each nibble and then applying the bit permutation below.\n\nS-box, in hexadecimal order:\n\n```\nS = [1, A, 4, C, 6, F, 3, 9, 2, D, B, 7, 5, 0, 8, E]\n```\n\nBit permutation `P`, where output bit `P[i]` receives input bit `i`:\n\n```\nP = [\n  0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,\n  4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,\n  8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,\n  12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15\n]\n```\n\nThe input difference has exactly one active nibble: the rightmost nibble is non-zero and the other 15 nibbles are zero.\n\nFor each possible output position from left to right, 1 through 16, decide whether there exists any 5-round differential propagation whose output difference has exactly one active nibble at that position and zero in all other output nibbles. The active input and output nibble values may be any non-zero values and do not need to be equal.\n\nReport the complete map in left-to-right output-position order. For every position, state `reachable` or `impossible`. Preserve enough evidence for the result to be checked, such as code, logs, solver output, or a reproducible argument.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"input_condition.active_nibble\": \"rightmost nibble\", \"input_condition.active_nibble_from_right\": 0, \"input_condition.active_values\": \"1..F\", \"input_condition.other_input_nibbles\": \"zero\", \"output_scan.active_values\": \"1..F\", \"output_scan.other_output_nibbles\": \"zero\", \"output_scan.positions\": \"left-to-right positions 1..16\", \"summary.impossible_count\": 2, \"summary.reachable_count\": 14, \"summary.unknown_count\": 0}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "input_condition.active_nibble": "string",
+          "input_condition.active_nibble_from_right": "number",
+          "input_condition.active_values": "string",
+          "input_condition.other_input_nibbles": "string",
+          "output_scan.positions": "string",
+          "output_scan.active_values": "string",
+          "output_scan.other_output_nibbles": "string",
+          "summary.reachable_count": "number",
+          "summary.impossible_count": "number",
+          "summary.unknown_count": "number"
+        }
+      },
       "category": "impossible_differential",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "input_condition.active_nibble": "rightmost nibble",
+          "input_condition.active_nibble_from_right": 0,
+          "input_condition.active_values": "1..F",
+          "input_condition.other_input_nibbles": "zero",
+          "output_scan.positions": "left-to-right positions 1..16",
+          "output_scan.active_values": "1..F",
+          "output_scan.other_output_nibbles": "zero",
+          "summary.reachable_count": 14,
+          "summary.impossible_count": 2,
+          "summary.unknown_count": 0
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "064_CBSC-V2-HARD-GIFT64-FUZZY-ID-001",
       "question": "# Question 064. GIFT64 不可能差分验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT64\n- 轮数：5\n- 任务类型：不可能差分验证\n- 分析模型：fuzzy impossible differential reachability\n\n任务。请只基于下面给出的 GIFT64 轮函数信息，判断指定输入/输出差分模式在 5 轮差分传播中是否可达，并给出可复核证据。\n\nGIFT64 差分传播采用 XOR difference。轮密钥加和轮常数对 XOR difference 没有影响，因此本题只需要建模 S-box 层和 bit permutation 层。\n\nS-box 为：\n\n`S = [1, A, 4, C, 6, F, 3, 9, 2, D, B, 7, 5, 0, 8, E]`\n\nbit permutation 使用如下映射，表示输入 bit `i` 经过线性层后到输出 bit `P[i]`：\n\n`P = [0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15]`\n\n十六进制差分串按通常 16 个 nibble 从左到右书写。待判断的 fuzzy pattern 是：\n\n- 输入差分：`000000000000000*`\n- 输出差分：`0000000000-00000`\n\n其中 `*` 表示输入位置取 `{1,2,...,F}` 中任意非零 nibble；`-` 表示输出位置取 `{1,2,...,F}` 中任意非零 nibble。二者彼此独立，不要求相等，也都不能取 0。\n\n请回答：\n\n1. 这个 5 轮输入/输出 fuzzy differential pattern 是可达还是不可达？\n2. 请说明你怎样把它展开为具体差分对，并给出足够让人复核的证据，例如 SAT/SMT/MILP 模型、DDT 支撑检查、脚本、求解器日志或等价的可执行验证。\n3. 请说明你的结论只覆盖什么范围，避免把它误写成完整 GIFT64 攻击或普通高概率差分 characteristic。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"granularity\": \"fuzzy impossible differential\", \"input_difference_pattern\": \"000000000000000*\", \"output_difference_pattern\": \"0000000000-00000\", \"rounds\": 5, \"status\": \"impossible / zero-probability reachability\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "rounds": "number",
+          "granularity": "string",
+          "input_difference_pattern": "string",
+          "output_difference_pattern": "string",
+          "status": "string"
+        }
+      },
       "category": "impossible_differential",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "rounds": 5,
+          "granularity": "fuzzy impossible differential",
+          "input_difference_pattern": "000000000000000*",
+          "output_difference_pattern": "0000000000-00000",
+          "status": "impossible / zero-probability reachability"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "065_CBSC-V2-HARD-GIFT64-HIDDEN-FID-002",
       "question": "# Question 065. GIFT64 不可能差分验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT64\n- 任务类型：不可能差分验证\n- 分析模型：fuzzy impossible differential reachability\n\n任务。题目：判断一个 5 轮 GIFT64 差分模式是否可达\n\n请只基于下面给出的 GIFT64 轮函数信息，判断指定输入/输出差分模式在 5 轮差分传播中是否可达，并给出可复核证据。\n\nGIFT64 差分传播采用 XOR difference。轮密钥加和轮常数对 XOR difference 没有影响，因此本题只需要建模 S-box 层和 bit permutation 层。\n\nS-box 为：\n\n`S = [1, A, 4, C, 6, F, 3, 9, 2, D, B, 7, 5, 0, 8, E]`\n\nbit permutation 使用如下映射，表示输入 bit `i` 经过线性层后到输出 bit `P[i]`：\n\n`P = [0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15]`\n\n十六进制差分串按通常 16 个 nibble 从左到右书写。待判断的 fuzzy pattern 是：\n\n- 输入差分：最右侧 nibble 为任意非零值，其他 15 个 nibble 全为 0。\n- 输出差分：从左数第 7 个 nibble 为任意非零值，其他 15 个 nibble 全为 0。\n\n这里“任意非零值”表示 `{1,2,...,F}` 中的一个 nibble 值；输入处的非零值和输出处的非零值彼此独立，不要求相等，也都不能取 0。\n\n请回答：\n\n1. 这个 5 轮输入/输出 fuzzy differential pattern 是可达还是不可达？\n2. 如果不可达，请说明你怎样把它展开为具体差分对，并给出足够让人复核的证据，例如 SAT/SMT/MILP 模型、DDT 支撑检查、脚本、求解器日志或等价的可执行验证。\n3. 请说明你的结论只覆盖什么范围，避免把它误写成完整 GIFT64 攻击或普通高概率差分 characteristic。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"expanded_concrete_pairs\": 225, \"granularity\": \"fuzzy impossible differential\", \"input_difference_pattern\": \"000000000000000*\", \"output_difference_pattern\": \"000000-000000000\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "granularity": "string",
+          "input_difference_pattern": "string",
+          "output_difference_pattern": "string",
+          "expanded_concrete_pairs": "number"
+        }
+      },
       "category": "impossible_differential",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "granularity": "fuzzy impossible differential",
+          "input_difference_pattern": "000000000000000*",
+          "output_difference_pattern": "000000-000000000",
+          "expanded_concrete_pairs": 225
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "066_CBSC-V2-HARD-PRESENT64-BDPT-CODEVERIFY-031",
       "question": "# Question 066. 9 轮 PRESENT BDPT 积分区分器代码复核\n\n## 问题描述\n\n背景。PRESENT 使用 64-bit 状态，S-box 为 [c,5,6,b,9,0,a,d,3,e,f,8,4,7,1,2]，P-layer 为 P(i)=16*i mod 63 (0<=i<=62), P(63)=63。每轮包含 16 个并行 4-bit S-box、P-layer 和 round-key XOR。输入模式中 a 表示活跃明文比特，c 表示固定常量比特。\n\n任务。使用 BDPT（三子集 division property）或严格等价模型，计算 9 轮后输出 bit 的 `b/?` balance pattern。采用标准 PRESENT 64-bit round：16 个并行 4-bit S-box，随后是 bit permutation；轮密钥 XOR 必须按 BDPT 的 key-XOR 规则处理。\n\n```text\nS = [c,5,6,b,9,0,a,d,3,e,f,8,4,7,1,2]\nP(i) = 16*i mod 63  (0 <= i <= 62),  P(63)=63\n```\n\nbit 编号采用 global LSB0；输出 pattern 按 bit 63 到 bit 0 打印，并分成两个 32-bit 字符串。输入中的 `a` 表示该 plaintext bit 遍历活动变量，`c` 表示固定常量，因此数据复杂度为 `2^(a 的数量)`。输出中的 `b` 表示模型证明该 bit 在完整输入集合上 balanced，`?` 表示该模型未证明 balanced，而不是证明 unbalanced。\n\nBDPT 状态必须同时保留集合 `K` 与带重数的集合 `L`。S-box 层应从 PRESENT S-box 的布尔/ANF 或等价真值关系生成局部传播；相同 `L` 向量的偶数重数需要按奇偶性抵消。每轮可视为 17 个部分：16 个 S-box 部分和一个 P-layer 加 round-key XOR 部分；key-XOR 可能把由 `L` 生成的向量插入 `K`，不能简单把轮密钥当成与积分传播无关的常量。若采用其他模型，必须说明它为何与这些判定语义等价。\n\n对每个 case 的 64 个输出 unit vectors 分别做可达性/停止规则查询，并从查询日志自动组装最终 pattern，不得在搜索代码中硬编码平衡位置。需要验证两个输入：\n\n1. (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, aaaaaaaaaaaaaaaaaaaaaaaaaaaacccc)\n2. (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac)\n\n对每个输入输出 64-bit pattern、balanced bit 数量、global-LSB0 位置、运行时间和后端。随机抽样、少量明文枚举或论文表格引用不能替代完整符号判定；若模型与原 BDPT 有差异，应报告差异和结论边界。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"non_attack_statement\": \"These are integral distinguisher facts for 9-round PRESENT under the BDPT/MILP search model, not a complete key-recovery attack against full PRESENT.\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "non_attack_statement": "string"
+        }
+      },
       "category": "division_property_integral_search",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "non_attack_statement": "These are integral distinguisher facts for 9-round PRESENT under the BDPT/MILP search model, not a complete key-recovery attack against full PRESENT."
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "067_CBSC-V2-HARD-SIMON32-DL-SEARCH-002",
       "question": "# Question 067. 14 轮 Simon32/64 differential linear distinguisher search with observable process\n\n## 问题描述\n\n背景。Simon32/64 使用 Simon-like ARX/AND 结构。目标是搜索 14 轮 differential-linear distinguisher，需要同时处理前向 differential、后向 linear approximation 和中间连接。\n\n任务。请自行选择 MILP、MIQCP、SAT/SMT、枚举或脚本搜索方法，寻找并复核 14 轮 Simon32/64 的 differential-linear distinguisher。只使用下面定义的实例，不需要依赖未提供的论文算法编号或表格。\n\nSimon32/64 的状态由两个 16-bit word `(L,R)` 构成。位旋转均限制在 16 bit 内，一轮为\n\n```text\nF(L) = (ROL_1(L) AND ROL_8(L)) XOR ROL_2(L)\n(L',R') = (R XOR F(L) XOR k_i, L).\n```\n\n使用 64-bit master key 的 4 个 16-bit word 作为 `k_0,...,k_3`。后续轮密钥按\n\n```text\ntmp = ROR_3(k_(i-1))\ntmp = tmp XOR k_(i-3)\ntmp = tmp XOR ROR_1(tmp)\nk_i = k_(i-4) XOR tmp XOR 0xfffc XOR z0[(i-4) mod 62]\n```\n\n生成，其中\n\n```text\nz0 = 11111010001001010110000111001101111101000100101011000011100110\n```\n\n且字符串从左到右依次提供 `z0[0],z0[1],...`。若实现采用相反 word/bit convention，必须给出等价映射和自检，不能混用两种 convention。\n\n只比较以下三种 14 轮分解，三元组依次表示 differential part、中间 connective part 和 linear part 的轮数：\n\n```text\n(5,5,4), (5,6,3), (7,3,4)\n```\n\n对固定输入 XOR difference `Delta` 和输出 linear mask `Gamma`，实验相关性按\n\n```text\nsigned_sum = sum_j (-1)^parity((C_j XOR C'_j) AND Gamma)\nc = signed_sum / N\n```\n\n计算，其中 `(P_j,P'_j)` 满足 `P_j XOR P'_j=Delta`，两者在同一 master key 下加密，`N` 是样本对数。搜索必须使用固定随机种子，并报告 master key 的选取方式、样本数、`signed_sum`、`c` 和 `log2(abs(c))`。应使用分阶段筛选、模型生成候选或其他系统方法，不能只靠少量随机 pair 碰撞。\n\n最终报告你找到的最佳输入差分、输出 mask、轮数 split、单条 trail 的估计相关性（若模型产生该量）和实测 distinguisher correlation，并给出代码运行证据。明确区分 `CorT`（单条 DL trail）和 `CorD`（固定端点下兼容贡献形成的 distinguisher），也不要把 distinguisher 误写成 key-recovery attack。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"core_answer.acceptable_experimental_band\": \"For local experimental search, correlations in the rough 2^-13 to 2^-16 range may be plausible if the run documents sampling method, key choice, and uncertainty.\", \"core_answer.best_known_paper_pair.paper_experimental_correlation\": \"2^-14.48 with 2^32 samples\", \"core_answer.best_known_paper_pair.paper_table_cord\": \"2^-15.36\", \"core_answer.important_boundary\": \"A measured high-correlation pair is a 14-round distinguisher candidate, not a key-recovery attack.\", \"reference_run_observation.correlation\": 0.00029733777046203613, \"reference_run_observation.delta_in_32bit\": \"0x00802100\", \"reference_run_observation.gamma_out_32bit\": \"0x40000900\", \"reference_run_observation.log2_abs_correlation\": -11.715609640834181, \"reference_run_observation.samples\": 67108864, \"reference_run_observation.signed_sum\": 19954}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "core_answer.best_known_paper_pair.paper_table_cord": "string",
+          "core_answer.best_known_paper_pair.paper_experimental_correlation": "string",
+          "core_answer.acceptable_experimental_band": "string",
+          "core_answer.important_boundary": "string",
+          "reference_run_observation.delta_in_32bit": "string",
+          "reference_run_observation.gamma_out_32bit": "string",
+          "reference_run_observation.samples": "number",
+          "reference_run_observation.signed_sum": "number",
+          "reference_run_observation.correlation": "number",
+          "reference_run_observation.log2_abs_correlation": "number"
+        }
+      },
       "category": "differential_linear_search",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "core_answer.best_known_paper_pair.paper_table_cord": "2^-15.36",
+          "core_answer.best_known_paper_pair.paper_experimental_correlation": "2^-14.48 with 2^32 samples",
+          "core_answer.acceptable_experimental_band": "For local experimental search, correlations in the rough 2^-13 to 2^-16 range may be plausible if the run documents sampling method, key choice, and uncertainty.",
+          "core_answer.important_boundary": "A measured high-correlation pair is a 14-round distinguisher candidate, not a key-recovery attack.",
+          "reference_run_observation.delta_in_32bit": "0x00802100",
+          "reference_run_observation.gamma_out_32bit": "0x40000900",
+          "reference_run_observation.samples": 67108864,
+          "reference_run_observation.signed_sum": 19954,
+          "reference_run_observation.correlation": 0.00029733777046203613,
+          "reference_run_observation.log2_abs_correlation": -11.715609640834181
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "068_CBSC-V2-HARD-SIMON32-DL-TRANSFORM-001",
       "question": "# Question 068. Simon32 差分线性变换复核\n\n## 问题描述\n\n背景。Simon32 使用 Simon-like 轮函数。目标是复核一个 14 轮 differential-linear distinguisher：该实例需要比较单条 DL trail 的 correlation 与经过 transformation 后得到的 distinguisher correlation。这里的重点不是搜索任意最优 trail，而是判断“最高 trail correlation 是否必然导出最高 distinguisher correlation”。\n\n任务。下面给出一个 14 轮 Simon32 differential-linear 变换实验的完整公开输入。三元组 `(Rd,Rm,Rl)` 分别表示 differential part、中间 connective part 和 linear part 的轮数。\n\n对给定输入差分 `Delta_I` 和输出 mask `Lambda_O`，变换流程为：\n\n1. 枚举 `Rd` 轮内从 `Delta_I` 出发、概率不低于阈值的兼容 differential trails，记录中间差分与概率 `(Delta_i,p_i)`；\n2. 反向枚举 `Rl` 轮内到达 `Lambda_O`、绝对相关不低于阈值的兼容 linear trails，记录中间 mask 与相关性 `(Lambda_j,q_j)`；\n3. 对每个中间 pair 计算 `Rm` 轮的 DLCT/connective contribution `r_ij`；\n4. 以 `CorD = sum_i sum_j p_i * r_ij * q_j^2` 汇总固定端点下的 distinguisher correlation。\n\n以下是三个候选 trail 及相同端点聚合后的记录：\n\n| 配置 `(Rd,Rm,Rl)` | 单条 trail 相关性 `CorT` | transformed distinguisher 相关性 `CorD` |\n|---|---:|---:|\n| `(5,5,4)` | `2^-18.63` | `2^-15.63` |\n| `(5,6,3)` | `2^-17.49` | `2^-16.75` |\n| `(7,3,4)` | `2^-20.00` | `2^-15.36` |\n\n第三行的输入差分和输出 mask 分别为\n\n```text\nDelta_I  = (0x0100, 0x0645)\nLambda_O = (0x8000, 0x2002)\n```\n\n对该 pair 使用 `2^32` 个样本得到的实验绝对相关约为 `2^-14.48`。该实验量是有限样本估计，不等于形式化最优性证明。\n\n请完成以下复核：\n\n1. 用脚本把六个相关性写成数值，按 `CorT` 和 `CorD` 分别排序，并计算每行 `CorD/CorT-1` 的百分比。\n2. 给出三个配置的对比，判断最高 `CorT` 是否给出最高 `CorD`，并解释兼容 trails 聚合为何可能改变排序。\n3. 报告该记录中最佳 transformed distinguisher 的输入差分、输出 mask、estimated correlation 和 experimental correlation。\n4. 检查实验值与估计值的数量级关系，并说明有限样本结果支持到什么程度。\n5. 明确该实例验证的是差分线性 distinguisher 的变换与聚合效应，不是 key-recovery attack，也不是所有候选上的全局最优性证明。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"best_distinguisher_estimated_correlation\": \"2^-15.36\", \"best_distinguisher_experimental_correlation\": \"2^-14.48\", \"best_distinguisher_input_difference\": \"(0x100, 0x645)\", \"best_distinguisher_output_mask\": \"(0x8000, 0x2002)\", \"rounds\": 14}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "rounds": "number",
+          "best_distinguisher_input_difference": "string",
+          "best_distinguisher_output_mask": "string",
+          "best_distinguisher_estimated_correlation": "string",
+          "best_distinguisher_experimental_correlation": "string"
+        }
+      },
       "category": "differential_linear_transformation",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "rounds": 14,
+          "best_distinguisher_input_difference": "(0x100, 0x645)",
+          "best_distinguisher_output_mask": "(0x8000, 0x2002)",
+          "best_distinguisher_estimated_correlation": "2^-15.36",
+          "best_distinguisher_experimental_correlation": "2^-14.48"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
@@ -864,12 +1224,24 @@
     {
       "id": "070_CBSC-V2-HARD-SPECK128-FIXEDIO-015",
       "question": "# Question 070. 15 轮 Speck128/128 固定端点差分特征优化\n\n## 问题描述\n\n背景。固定条件如下：\n- 任务类型：密码分析复核\n\n任务。Solve the following fixed-boundary XOR differential characteristic problem for the 15-round Speck128/128 permutation.\n\nUse the standard Speck128 round on two 64-bit words:\n\n```\nx_{r+1} = (ROR_8(x_r) + y_r) mod 2^64\ny_{r+1} = ROL_3(y_r) XOR x_{r+1}\n```\n\nRound-key XORs may be ignored for XOR-difference characteristic propagation. The modular addition transition is the only probabilistic operation. The weight of one round is `-log2` of the XOR-differential probability of that modular addition transition, and the total characteristic weight is the sum over the 15 rounds.\n\nFixed input difference:\n\n```\n(Delta_x_0, Delta_y_0) = (0x0000900f00480001, 0x0100001003084008)\n```\n\nFixed output difference after 15 rounds:\n\n```\n(Delta_x_15, Delta_y_15) = (0x00000800a0000202, 0x0200480c84018012)\n```\n\nTask: find the minimum possible total differential weight over all 15-round characteristics satisfying these two boundaries. Give one characteristic attaining your claimed minimum, including all 16 round-boundary differences and all 15 per-round weights. Preserve enough reproducible evidence for the answer to be checked, such as code, logs, a solver model, or an independent replay of every round weight.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"minimum_weight\": 115, \"optimality_reason\": \"The listed witness has weight 115. Bellini et al. Table 1 reports Speck128 15-round global best characteristic weight 115; therefore no fixed-boundary characteristic for these endpoints can have weight below 115.\", \"probability\": \"2^-115\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "minimum_weight": "number",
+          "probability": "string",
+          "optimality_reason": "string"
+        }
+      },
       "category": "legacy_block_cipher_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "minimum_weight": 115,
+          "probability": "2^-115",
+          "optimality_reason": "The listed witness has weight 115. Bellini et al. Table 1 reports Speck128 15-round global best characteristic weight 115; therefore no fixed-boundary characteristic for these endpoints can have weight below 115."
+        },
+        "numericTolerance": 0.0
       }
     },
     {
@@ -959,12 +1331,20 @@
     {
       "id": "077_CBSC-V2-HARD-SPECK32-VTDP-CODEVERIFY-ZH-032",
       "question": "# Question 077. 6 轮 SPECK32 VTDP 积分区分器代码复核\n\n## 问题描述\n\n背景。SPECK32 使用两个 16-bit word，6 轮 ARX 结构：x1=(ROR_7(x0)+y0) mod 2^16，x2=x1 xor k，y1=ROL_2(y0) xor x2。输入 activity mask 中 1 表示活跃比特，0 表示固定比特。\n\n任务。使用 VTDP（三子集变体 division property）或严格等价模型，计算 6 轮后输出 bit 的 `0/*/?` pattern。SPECK32/64 状态由两个 16-bit words 构成，一轮定义为\n\n```text\nx1 = (ROR_7(x0) + y0) mod 2^16\nx2 = x1 XOR round_key\ny1 = ROL_2(y0) XOR x2\n```\n\n输入 mask 中 bit `1` 表示该 plaintext bit 遍历活动变量，bit `0` 表示固定，因此两个 mask 的 Hamming weight 均应由代码计算并转换为数据复杂度。canonical 输出顺序为第一个 16-bit word 后接第二个 word；每个 word 内按 MSB 到 LSB 打印，并写成 8 个 4-bit 分组。\n\n输出分类采用：`?` 表示 VTDP 未得到 non-unknown 结论；`0` 表示可证明 even parity；`*` 表示 VTDP 得到 non-unknown/even-or-odd 信息但不归为 `0`。`*` 不是普通活跃 bit 通配符。\n\nVTDP 必须同时跟踪 `K` 和保留重复项的 `L`，使用 variant XOR 规则；模加传播必须处理 carry 的非线性，不能把加法替换为 XOR。round-key XOR 也不能直接删除：`L` 中的信息可能生成向量并插入 `K`。仅有 K 的普通 two-subset model 不能作为第二个 case 的完整 VTDP 证据；严格等价的 SAT/SMT/MILP/BDD/代数模型可以接受，但必须说明映射。\n\n对每个 case 的 32 个输出 unit vectors 分别查询或推导，再由逐 bit 日志自动生成 pattern。需要验证两个输入 mask：\n\n1. (0xffff, 0xffdf)\n2. (0xffff, 0xffbf)\n\n对每个输入输出 canonical pattern、非 unknown bit 的 word-local LSB0 位置和解释。必须返回可执行代码和运行日志；不得硬编码最终位置，不得用随机抽样或部分明文枚举冒充完整积分证明，并明确结果是 6 轮积分区分器而不是完整 key-recovery attack。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"non_attack_statement\": \"These are integral distinguisher facts for 6-round SPECK32, not a complete key-recovery attack.\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "non_attack_statement": "string"
+        }
+      },
       "category": "division_property_integral_search",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "non_attack_statement": "These are integral distinguisher facts for 6-round SPECK32, not a complete key-recovery attack."
+        },
+        "numericTolerance": 0.0
       }
     },
     {
@@ -1110,12 +1490,22 @@
     {
       "id": "088_CBSC-V2-STRICT-SPECK128-20DP-ID9R01-009",
       "question": "# Question 088. 20 轮 Speck128/128 fixed endpoint differential probability 固定端点\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck128/128\n- 轮数：20\n- 任务类型：fixed endpoint differential probability 固定端点\n- word size：64\n- 旋转参数：{\"alpha\": 8, \"beta\": 3}\n- 输入差分：[\"0x0124000c00000000\", \"0x0801042004000000\"]\n- 输出差分：[\"0x8004000080000124\", \"0x8420040080000801\"]\n\n任务。使用 Speck128/128 的标准两分支 Speck 轮函数，word size 为 64 bit，轮数为 20。旋转参数为 {\"alpha\": 8, \"beta\": 3}。\n\n令 n、alpha、beta 分别取上面的 word size 与旋转参数，标准 round-core 明确定义为：x_(r+1) = (ROR_alpha(x_r) + y_r) mod 2^n；y_(r+1) = ROL_beta(y_r) XOR x_(r+1)。差分 pair 的书写顺序始终是 (Delta_x, Delta_y)。round-key XOR 是固定 XOR 常量，不改变 single-key XOR-difference propagation。\n\n本题的 aggregate probability 定义为：固定 Delta_0 和 Delta_R 后，对所有中间 round-boundary differences Delta_1,...,Delta_(R-1)，求每条兼容 characteristic 的逐轮 modular-addition XOR-transition probability 乘积，再对这些乘积求和。局部模加概率必须由精确 carry/DDT 计数得到。单条 trail、当前最好 trail 或只枚举到某个阈值的部分和都不等于未经误差界证明的完整 aggregate probability。给定输入差分 ['0x0124000c00000000', '0x0801042004000000'] 和输出差分 ['0x8004000080000124', '0x8420040080000801']，计算该固定输入/输出差分对的 aggregate XOR differential probability。必须汇总所有兼容 characteristics，不要只报告单条可行 trail 或当前找到的最好 trail。报告有效权重 -log2(p)、概率近似值和模型/枚举证据。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"effective_weight\": 124.19, \"probability_approx\": \"2^-124.19\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "effective_weight": "number",
+          "probability_approx": "string"
+        }
+      },
       "category": "fixed_endpoint_differential_probability_no_paper_title",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "effective_weight": 124.19,
+          "probability_approx": "2^-124.19"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
@@ -1177,133 +1567,301 @@
     {
       "id": "093_CBSC-V3-NA-GIFT128-3R-AID-EXC-007",
       "question": "# Question 093. 3 GIFT-128 local truncated propagation\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT 128\n- 轮数：3\n- 任务类型：local truncated propagation\n- 分析模型：fault induced truncated cluster exception\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider the 128-bit GIFT bit permutation below. Bits are numbered from 0 as the least significant bit. If input bit `i` is active before the permutation, then output bit `P[i]` is active after the permutation.\n\n```\nP = [\n   96,  1, 34, 67, 64, 97,  2, 35, 32, 65, 98,  3,  0, 33, 66, 99,\n  100,  5, 38, 71, 68,101,  6, 39, 36, 69,102,  7,  4, 37, 70,103,\n  104,  9, 42, 75, 72,105, 10, 43, 40, 73,106, 11,  8, 41, 74,107,\n  108, 13, 46, 79, 76,109, 14, 47, 44, 77,110, 15, 12, 45, 78,111,\n  112, 17, 50, 83, 80,113, 18, 51, 48, 81,114, 19, 16, 49, 82,115,\n  116, 21, 54, 87, 84,117, 22, 55, 52, 85,118, 23, 20, 53, 86,119,\n  120, 25, 58, 91, 88,121, 26, 59, 56, 89,122, 27, 24, 57, 90,123,\n  124, 29, 62, 95, 92,125, 30, 63, 60, 93,126, 31, 28, 61, 94,127\n]\n```\n\nUse this truncated model for GIFT-128 rounds:\n\n- The S-box layer is nibble-wise. If any bit in a nibble is active before the S-box layer, then the possible output support of that nibble is the full 4-bit nibble.\n- The pLayer is the bit permutation `P` above.\n- An admissible input difference is a full active 8-bit window `((1 << 8) - 1) << k` for one integer `k` with `0 <= k < 120`.\n\nAfter exactly three rounds, enumerate the 120 admissible windows and answer:\n\n1. How many values of `k` produce full 128-bit support after three rounds?\n2. Which `k` values are they?\n3. For these exceptional windows, should they be treated as forming a useful three-round truncated cluster, or as fully diffused cases? Give a reproducible derivation or check.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"exception_count\": 7, \"full_support\": \"0xffffffffffffffffffffffffffffffff\", \"interpretation\": \"The seven exceptional AIDs only give full diffusion after three rounds, so they do not form a useful restricted three-round cluster.\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "exception_count": "number",
+          "full_support": "string",
+          "interpretation": "string"
+        }
+      },
       "category": "local_truncated_propagation",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "exception_count": 7,
+          "full_support": "0xffffffffffffffffffffffffffffffff",
+          "interpretation": "The seven exceptional AIDs only give full diffusion after three rounds, so they do not form a useful restricted three-round cluster."
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "094_CBSC-V3-NA-GIFT64-2R-TID-006",
       "question": "# Question 094. 2 GIFT-64 local truncated propagation\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT 64\n- 轮数：2\n- 任务类型：local truncated propagation\n- 分析模型：fault induced truncated impossible differential\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider the 64-bit GIFT bit permutation below. Bits are numbered from 0 as the least significant bit. If input bit `i` is active before the permutation, then output bit `P[i]` is active after the permutation.\n\n```\nP = [\n  0,17,34,51,48,1,18,35,32,49,2,19,16,33,50,3,\n  4,21,38,55,52,5,22,39,36,53,6,23,20,37,54,7,\n  8,25,42,59,56,9,26,43,40,57,10,27,24,41,58,11,\n  12,29,46,63,60,13,30,47,44,61,14,31,28,45,62,15\n]\n```\n\nUse the following truncated-difference model for two GIFT-64 rounds:\n\n- The S-box layer is nibble-wise. If any bit in a nibble is active before the S-box layer, then the possible output support of that nibble is the full 4-bit nibble.\n- The pLayer is the bit permutation `P` above.\n- An admissible byte fault at the input of the first round is any nonzero active-bit mask of Hamming weight at most 8 contained in one contiguous 8-bit window.\n- A target truncated pattern `T` is conforming if every active bit of `T` is contained in at least one possible two-round support. It does not need to be equal to a maximal support.\n\nFor the two-round target mask\n\n```\nT = 0x0000888800003333\n```\n\ncan an admissible byte fault produce a conforming truncated pattern after two rounds? Report `YES` or `NO`, and give a reproducible derivation or check.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"subset_check\": \"(0x0000888800003333 & ~0x9999cccc66663333) == 0\", \"target_mask\": \"0x0000888800003333\", \"witness_support\": \"0x9999cccc66663333\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "target_mask": "string",
+          "witness_support": "string",
+          "subset_check": "string"
+        }
+      },
       "category": "local_truncated_propagation",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "target_mask": "0x0000888800003333",
+          "witness_support": "0x9999cccc66663333",
+          "subset_check": "(0x0000888800003333 & ~0x9999cccc66663333) == 0"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "095_CBSC-V3-NA-GIFT64-LNC-RIGHTKEY-040",
       "question": "# Question 095. 8-round core of related-key characteristic GIFT-64 differential dependency right key space\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT 64\n- 轮数：8 round core of related key characteristic\n- 任务类型：differential dependency right key space\n- 分析模型：gift64 linearised nonlinear constraint probability adjustment\n\n任务。A reduced GIFT-64 related-key differential characteristic has a stated Markov\nprobability of `2^-50`. A value-restriction analysis finds the following\nconstraints on round-key bits for the characteristic to be compatible:\n\n1. `k87 xor k95 = 0`\n2. `k30 = 1`\n3. `k68 = 1`\n4. `k76 = 1`\n5. `k80 xor k88 = 1`\n6. `k17 xor k25 = 0`\n7. `k4 xor k12 xor k38 xor k40 xor k80 xor k95 xor k121 xor k123 = 1`\n8. `k12 xor k88 xor k122 xor k123 = 1`\n\nAll equations are over `F_2`. Treat the listed key-bit variables as independent\nmaster-key coordinates unless the equations relate them.\n\nClassify the following claims as `TRUE` or `FALSE`, with short reasoning:\n\n| claim | statement |\n|---|---|\n| C1 | The eight listed constraints have rank 8 over `F_2`. |\n| C2 | The right-key space is a `2^-8` fraction of the whole key space. |\n| C3 | The remaining probability over right keys is still `2^-50`, because key constraints do not change the differential probability. |\n| C4 | The remaining probability not explained by the key-space restriction is `2^-42`. |\n| C5 | The two multi-round linearised nonlinear constraints may be ignored when estimating the right-key-space dimension. |\n\nReturn a table with rows `C1` to `C5` and a `truth` column containing only\n`TRUE` or `FALSE`, followed by concise reasoning.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"final_table\": \"C1 TRUE; C2 TRUE; C3 FALSE; C4 TRUE; C5 FALSE\", \"key_space\": \"2^-8\", \"lnc_included\": \"linearised nonlinear constraints count toward right-key-space dimension\", \"rank\": \"8\", \"remaining_probability\": \"2^-42\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "final_table": "string",
+          "rank": "string",
+          "key_space": "string",
+          "remaining_probability": "string",
+          "lnc_included": "string"
+        }
+      },
       "category": "differential_dependency_right_key_space",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "final_table": "C1 TRUE; C2 TRUE; C3 FALSE; C4 TRUE; C5 FALSE",
+          "rank": "8",
+          "key_space": "2^-8",
+          "remaining_probability": "2^-42",
+          "lnc_included": "linearised nonlinear constraints count toward right-key-space dimension"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "096_CBSC-V3-NA-GIFT64-TRAIL-REPLAY-031",
       "question": "# Question 096. 12 GIFT-64 differential trail replay\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：GIFT 64\n- 轮数：12\n- 任务类型：differential trail replay\n- 分析模型：single characteristic validity and weight replay\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider the 64-bit round-core of GIFT with the following 4-bit S-box:\n\n```\nS = [1, 10, 4, 12, 6, 15, 3, 9, 2, 13, 11, 7, 5, 0, 8, 14]\n```\n\nUse the public GIFT-64 bit permutation below. A set bit at expanded bit position `i` moves to expanded bit position `P[i]`.\n\n```\nP = [\n  0, 17, 34, 51, 48, 1, 18, 35, 32, 49, 2, 19, 16, 33, 50, 3,\n  4, 21, 38, 55, 52, 5, 22, 39, 36, 53, 6, 23, 20, 37, 54, 7,\n  8, 25, 42, 59, 56, 9, 26, 43, 40, 57, 10, 27, 24, 41, 58, 11,\n  12, 29, 46, 63, 60, 13, 30, 47, 44, 61, 14, 31, 28, 45, 62, 15\n]\n```\n\nRepresent a 64-bit state as 16 hexadecimal nibbles from left to right, and within each nibble enumerate bits least-significant bit first. For a differential transition through one S-box, compute the DDT count from the S-box above and use weight `log2(16 / count)`. A transition with DDT count 0 is invalid.\n\nThe following table gives a candidate 12-round differential characteristic. For rounds 0 through 10, `next_x_hex` is supposed to be the pLayer output of `y_after_sbox_hex`; round 11 has no following pLayer check.\n\n```\nround  x_input_hex       y_after_sbox_hex  next_x_hex\n0      00000600000000c0  0000020000000040  0204000000000000\n1      0204000000000000  0505000000000000  0000500000005000\n2      0000500000005000  0000200000002000  0000020200000000\n3      0000020200000000  0000050500000000  0000050000000500\n4      0000050000000500  0000020000000200  0202000000000000\n5      0202000000000000  0505000000000000  0000500000005000\n6      0000500000005000  0000200000002000  0000020200000000\n7      0000020200000000  0000050500000000  0000050000000500\n8      0000050000000500  0000020000000200  0202000000000000\n9      0202000000000000  0505000000000000  0000500000005000\n10     0000500000005000  0000800000008000  0000000000000808\n11     0000000000000808  0000000000000303  -\n```\n\nDetermine whether this candidate is a valid 12-round differential characteristic under the conventions above. If it is valid, report the total differential weight, the differential probability as a power of two, the total number of active S-boxes, and the round-weight vector. If it is invalid, identify the first invalid round and the reason.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"active_sbox_count\": 24, \"primary_weight\": 58.0, \"probability\": \"2^-58\", \"round_weights\": \"4 4 6 4 6 4 6 4 6 4 6 4\", \"state_bit_order\": \"left-to-right nibbles, least-significant-bit first within each nibble\", \"validity\": \"YES\", \"weight_formula\": \"sum log2(16 / DDT[dx][dy]) over active S-box transitions\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "validity": "string",
+          "primary_weight": "number",
+          "probability": "string",
+          "active_sbox_count": "number",
+          "round_weights": "string",
+          "state_bit_order": "string",
+          "weight_formula": "string"
+        }
+      },
       "category": "differential_trail_replay",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "validity": "YES",
+          "primary_weight": 58.0,
+          "probability": "2^-58",
+          "active_sbox_count": 24,
+          "round_weights": "4 4 6 4 6 4 6 4 6 4 6 4",
+          "state_bit_order": "left-to-right nibbles, least-significant-bit first within each nibble",
+          "weight_formula": "sum log2(16 / DDT[dx][dy]) over active S-box transitions"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "097_CBSC-V3-NA-IBD-PRESENT80-6R-001",
       "question": "# Question 097. 6 轮 PRESENT-80 impossible boomerang distinguisher verification\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：PRESENT 80\n- 轮数：6\n- 任务类型：impossible boomerang distinguisher verification\n- 分析模型：generalized bct contradiction\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider PRESENT-80 at the difference level. Use the standard PRESENT 4-bit S-box\n\n```\nS = [c, 5, 6, b, 9, 0, a, d, 3, e, f, 8, 4, 7, 1, 2]\n```\n\nand the standard bit permutation\n\n```\nP(i) = 16*i mod 63 for 0 <= i <= 62, and P(63) = 63.\n```\n\nRound-key XOR does not change XOR differences. A round consists of S-box layer followed by the bit permutation, except that the final bit permutation is omitted in the question below.\n\nFor 6 rounds of PRESENT-80 without the last bit permutation, analyze the boomerang quartet with\n\n```\nalpha  = 0x0000000000000001\nalpha' = 0x0000000000000001\nbeta   = 0x0000000000000001\nbeta'  = 0x0000000000000005\n```\n\nDecide whether this tuple is a valid impossible boomerang distinguisher under the generalized boomerang-connectivity-table viewpoint. Report YES or NO, and provide enough reproducible evidence to distinguish a true contradiction from a failed search. A useful answer should identify where the contradiction arises or provide an executable verifier.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"backward_set\": \"{(1,0,1,0),(0,1,1,0)}\", \"claim\": \"valid generalized-BCT impossible boomerang distinguisher\", \"contradiction_round_boundary\": \"between round 2 forward and round 3 backward at the least significant S-box bit tuple\", \"forward_set\": \"{(1,1,0,0),(1,1,1,1)}\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "claim": "string",
+          "contradiction_round_boundary": "string",
+          "forward_set": "string",
+          "backward_set": "string"
+        }
+      },
       "category": "impossible_boomerang_distinguisher_verification",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "claim": "valid generalized-BCT impossible boomerang distinguisher",
+          "contradiction_round_boundary": "between round 2 forward and round 3 backward at the least significant S-box bit tuple",
+          "forward_set": "{(1,1,0,0),(1,1,1,1)}",
+          "backward_set": "{(1,0,1,0),(0,1,1,0)}"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "098_CBSC-V3-NA-INVARIANT-P0-WEAKKEY-038",
       "question": "# Question 098. arbitrary_rounds_under_self_related_constants Robin/iSCREAM-like LS-design invariant subspace attack consequence\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Robin/iSCREAM like LS design\n- 轮数：arbitrary rounds under self related constants\n- 任务类型：invariant subspace attack consequence\n- 分析模型：ls design p0 self similarity weak keys\n\n任务。Consider a 128-bit LS-design state represented as 16 columns of 8 bits.\nThe same master key is added in every round. A column permutation `P0`\nfixes columns `0,1,2,3,4,5,6,7` and swaps\n\n`8<->12`, `9<->13`, `10<->14`, `11<->15`.\n\nAssume the S-box layer is column-wise and the linear layer commutes with `P0`.\nThe round constants are also fixed by `P0`, so keys satisfying `K = P0(K)` are\nweak keys for the invariant-subspace attack. For self-related plaintexts, the\nfirst 8 ciphertext columns can be used to test the first 8 key columns\nindependently of the rest of the key; the remaining part of a weak key is\nconstrained by `P0`.\n\nClassify the following claims as `TRUE` or `FALSE`, and give short reasoning.\n\n| claim | statement |\n|---|---|\n| C1 | The equality/invariant space induced by `P0` has dimension 96 over `F_2`. |\n| C2 | The proportion of weak keys satisfying `K = P0(K)` is `2^-32`. |\n| C3 | The attack's full key-recovery time is `2^96`, because 64 independent key bits and then 32 symmetric key bits must be exhaustively multiplied. |\n| C4 | The attack can recover a weak key with time complexity `2^64` using self-related plaintext/ciphertext information. |\n| C5 | Once the key and round constants are self-related by `P0`, the invariant-subspace distinguisher is essentially independent of the number of rounds. |\n\nReturn a table with rows `C1` to `C5` and a `truth` column containing only\n`TRUE` or `FALSE`, followed by concise reasoning.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"complexity_boundary\": \"2^64, not 2^96\", \"density_derivation\": \"4 swapped 8-bit pairs impose 32 key constraints, so 2^-32\", \"dimension_derivation\": \"128 - 4*8 = 96\", \"final_table\": \"C1 TRUE; C2 TRUE; C3 FALSE; C4 TRUE; C5 TRUE\", \"round_independence\": \"iterative invariant subspace under self-related key/constants\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "final_table": "string",
+          "dimension_derivation": "string",
+          "density_derivation": "string",
+          "complexity_boundary": "string",
+          "round_independence": "string"
+        }
+      },
       "category": "invariant_subspace_attack_consequence",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "final_table": "C1 TRUE; C2 TRUE; C3 FALSE; C4 TRUE; C5 TRUE",
+          "dimension_derivation": "128 - 4*8 = 96",
+          "density_derivation": "4 swapped 8-bit pairs impose 32 key constraints, so 2^-32",
+          "complexity_boundary": "2^64, not 2^96",
+          "round_independence": "iterative invariant subspace under self-related key/constants"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "099_CBSC-V3-NA-LBLOCK-KS-CONTRADICTION-004",
       "question": "# Question 099. local relation from round 2 to round 5 LBlock key schedule transition verification\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：LBlock\n- 轮数：local relation from round 2 to round 5\n- 任务类型：key schedule transition verification\n- 分析模型：related key trail validity check\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nIn an LBlock related-key analysis, suppose the 32-bit round subkey difference at round 2 is\n\n```\nDelta sk_2 = 0x00030000\n```\n\nand a proposed trail requires the 32-bit round subkey difference at round 5 to be\n\n```\nDelta sk_5 = 0x01800000\n```\n\nUse the following local LBlock key-schedule relation. For any round `i < 9`, the nibble at bit positions 27..24 of `sk_{i+3}` is produced by applying `s8` to the nibble at bit positions 20..17 of `sk_i`:\n\n```\nsk_{i+3}[27..24] = s8(sk_i[20..17])\n```\n\nThe LBlock `s8` table is:\n\n```\ns8 = [8, 7, e, 5, f, d, 0, 6, b, c, 9, a, 2, 4, 1, 3]\n```\n\nDecide whether the two subkey differences above can be simultaneously satisfied by the correct LBlock key schedule. Report YES or NO, and give a reproducible check of the relevant `s8` differential transition.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"claim\": \"invalid key-schedule transition\", \"ddt_count\": 0, \"reason\": \"For s8=[8,7,e,5,f,d,0,6,b,c,9,a,2,4,1,3], s8(x) xor s8(x xor 1) is never 1.\", \"required_transition\": \"s8 differential transition 0x1 -> 0x1\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "claim": "string",
+          "required_transition": "string",
+          "ddt_count": "number",
+          "reason": "string"
+        }
+      },
       "category": "key_schedule_transition_verification",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "claim": "invalid key-schedule transition",
+          "required_transition": "s8 differential transition 0x1 -> 0x1",
+          "ddt_count": 0,
+          "reason": "For s8=[8,7,e,5,f,d,0,6,b,c,9,a,2,4,1,3], s8(x) xor s8(x xor 1) is never 1."
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "100_CBSC-V3-NA-LBLOCK-KS-DERIVE-005",
       "question": "# Question 100. local derivation from round 2 to round 5 LBlock key schedule relation derivation\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：LBlock\n- 轮数：local derivation from round 2 to round 5\n- 任务类型：key schedule relation derivation\n- 分析模型：related key trail validity check\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider the LBlock 80-bit key register written as\n\n```\nK = k79 k78 ... k1 k0\n```\n\nAt the beginning of round `i`, the 32-bit round subkey is the high part of the register:\n\n```\nsk_i = k79 k78 ... k48\n```\n\nThe update from round `i` to round `i+1` is:\n\n```\n1. rotate the 80-bit register left by 29 bit positions;\n2. replace k79..k76 by s9(k79..k76);\n3. replace k75..k72 by s8(k75..k72);\n4. xor the public round counter into k50..k46.\n```\n\nThe round counter is public and has no related-key difference. The two key-schedule S-boxes are\n\n```\ns8 = [8, 7, e, 5, f, d, 0, 6, b, c, 9, a, 2, 4, 1, 3]\ns9 = [b, 5, f, 0, 7, 2, 9, d, 4, 8, 1, c, e, a, 3, 6]\n```\n\nA proposed related-key trail requires the following two 32-bit round-subkey differences:\n\n```\nDelta sk_2 = 0x00030000\nDelta sk_5 = 0x01800000\n```\n\nCan these two subkey differences occur simultaneously under the correct LBlock key schedule? Report YES or NO, and give a reproducible derivation or check. Do not assume the encryption-round S-boxes are interchangeable with `s8` and `s9`.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"claim\": \"invalid key-schedule transition\", \"ddt_count\": 0, \"derived_relation\": \"sk_{i+3}[27..24] = s8(sk_i[20..17])\", \"required_transition\": \"s8 differential transition 0x1 -> 0x1\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "claim": "string",
+          "derived_relation": "string",
+          "required_transition": "string",
+          "ddt_count": "number"
+        }
+      },
       "category": "key_schedule_relation_derivation",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "claim": "invalid key-schedule transition",
+          "derived_relation": "sk_{i+3}[27..24] = s8(sk_i[20..17])",
+          "required_transition": "s8 differential transition 0x1 -> 0x1",
+          "ddt_count": 0
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "101_CBSC-V3-NA-LBLOCK-KS-TABLE-009",
       "question": "# Question 101. 17 subkey constraints LBlock key schedule table validity\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：LBlock\n- 轮数：17 subkey constraints\n- 任务类型：key schedule table validity\n- 分析模型：related key trail key schedule check\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider the LBlock 80-bit key register\n\n```\nK = k79 k78 ... k1 k0\n```\n\nAt the beginning of round `i`, the 32-bit round subkey is the high part of the register:\n\n```\nsk_i = k79 k78 ... k48\n```\n\nThe update from round `i` to round `i+1` is:\n\n```\n1. rotate the 80-bit register left by 29 bit positions;\n2. replace k79..k76 by s9(k79..k76);\n3. replace k75..k72 by s8(k75..k72);\n4. xor the public round counter into k50..k46.\n```\n\nThe counter is public and has no related-key difference. The key-schedule S-boxes are:\n\n```\ns8 = [8, 7, e, 5, f, d, 0, 6, b, c, 9, a, 2, 4, 1, 3]\ns9 = [b, 5, f, 0, 7, 2, 9, d, 4, 8, 1, c, e, a, 3, 6]\n```\n\nA proposed related-key trail requires this one-based sequence of 32-bit round-subkey XOR differences:\n\n```\nsk_1   = 0x00000000\nsk_2   = 0x00030000\nsk_3   = 0x00000000\nsk_4   = 0x00000000\nsk_5   = 0x01800000\nsk_6   = 0x00000000\nsk_7   = 0x00000006\nsk_8   = ?0000000\nsk_9   = 0x00000000\nsk_10  = 0x00000ab0, where a in {0,1,2,3} and b in {0,4,8,c}\nsk_11  = 0x00000000\nsk_12  = 0x00000000\nsk_13  = 0x000gd000, where g in {0,1} and d in {0,2,4,6,8,a,c,e}\nsk_14  = 0x00000000\nsk_15  = 0x00000000\nsk_16  = 0x00?00000\nsk_17  = 0x00000000\n```\n\nHere `?` means the nibble is unconstrained by the proposed trail. Can the complete sequence above be produced by the correct LBlock key schedule for any master-key pair and any allowed choices of `a,b,g,d,?`? Report `YES` or `NO`, and give a reproducible derivation or check. Do not substitute the encryption-round S-boxes for `s8` and `s9`.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"ddt_count\": 0, \"derived_relation\": \"sk_{i+3}[27..24] = s8(sk_i[20..17]) for i < 9\", \"required_transition\": \"s8 differential transition 0x1 -> 0x1\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "derived_relation": "string",
+          "required_transition": "string",
+          "ddt_count": "number"
+        }
+      },
       "category": "key_schedule_table_validity",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "derived_relation": "sk_{i+3}[27..24] = s8(sk_i[20..17]) for i < 9",
+          "required_transition": "s8 differential transition 0x1 -> 0x1",
+          "ddt_count": 0
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "102_CBSC-V3-NA-MIDORI64-INVARIANT-PARITY-010",
       "question": "# Question 102. 15 and 16 Midori-64-style zero-key permutation invariant boundary check\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Midori 64 style zero key permutation\n- 轮数：15 and 16\n- 任务类型：invariant boundary check\n- 分析模型：nonlinear invariant projection\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nConsider the following Midori-64-style permutation on 16 nibbles. The state is a list\n\n```\nx[0], x[1], ..., x[15]\n```\n\nwhere every entry is a 4-bit integer. The S-box is\n\n```\nSb0 = [c, a, d, 3, e, b, f, 7, 8, 9, 1, 5, 0, 2, 4, 6]\n```\n\n`ShuffleCell` maps a state `x` to `y` by\n\n```\nShuffleCell = [0, 10, 5, 15, 14, 4, 11, 1, 9, 3, 12, 6, 7, 13, 2, 8]\ny[i] = x[ShuffleCell[i]]\n```\n\n`MixColumn` is applied independently to each group of four consecutive nibbles:\n\n```\n(a, b, c, d) -> (b xor c xor d, a xor c xor d, a xor b xor d, a xor b xor c)\n```\n\nThe 15 round-constant rows are:\n\n```\nRC[0]  = [0,0,0,1,0,1,0,1,1,0,1,1,0,0,1,1]\nRC[1]  = [0,1,1,1,1,0,0,0,1,1,0,0,0,0,0,0]\nRC[2]  = [1,0,1,0,0,1,0,0,0,0,1,1,0,1,0,1]\nRC[3]  = [0,1,1,0,0,0,1,0,0,0,0,1,0,0,1,1]\nRC[4]  = [0,0,0,1,0,0,0,0,0,1,0,0,1,1,1,1]\nRC[5]  = [1,1,0,1,0,0,0,1,0,1,1,1,0,0,0,0]\nRC[6]  = [0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,0]\nRC[7]  = [0,0,0,0,1,0,1,1,1,1,0,0,1,1,0,0]\nRC[8]  = [1,0,0,1,0,1,0,0,1,0,0,0,0,0,0,1]\nRC[9]  = [0,1,0,0,0,0,0,0,1,0,1,1,1,0,0,0]\nRC[10] = [0,1,1,1,0,0,0,1,1,0,0,1,0,1,1,1]\nRC[11] = [0,0,1,0,0,0,1,0,1,0,0,0,1,1,1,0]\nRC[12] = [0,1,0,1,0,0,0,1,0,0,1,1,0,0,0,0]\nRC[13] = [1,1,1,1,1,0,0,0,1,1,0,0,1,0,1,0]\nRC[14] = [1,1,0,1,1,1,1,1,1,0,0,1,0,0,0,0]\n```\n\nFor a parameter `b`, adding a round-constant row means replacing every nibble `x[j]` by\n\n```\nx[j] xor (RC[r][j] << b)\n```\n\nUse zero whitening key and zero round keys. For `R` rounds, the permutation is:\n\n```\ninitial whitening xor by zero key;\nfor r = 0..R-2:\n    SubCell on all nibbles;\n    ShuffleCell;\n    MixColumn on the four consecutive columns;\n    add RC[r] into bit b;\n    xor zero round key;\nfinal SubCell;\nfinal whitening xor by zero key.\n```\n\nDefine the output projection\n\n```\nG(x) = xor over j=0..15 of (bit0(x[j]) xor bit2(x[j]))\n```\n\nwhere `bit0` is the least significant bit of a nibble.\n\nFor `b = 1`, decide both of the following statements:\n\n```\nA. For R = 15, G(E_R(x)) xor G(x) is constant over all 64-bit inputs x.\nB. For R = 16, G(E_R(x)) xor G(x) is constant over all 64-bit inputs x.\n```\n\nReport YES or NO for each statement. If a statement is YES, report the constant. Give a reproducible derivation or computation and include at least one sanity check for the zero plaintext.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"B.constant\": 0}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "B.constant": "number"
+        }
+      },
       "category": "invariant_boundary_check",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "B.constant": 0
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "103_CBSC-V3-NA-RKIBD-SPECK64128-9R-002",
       "question": "# Question 103. 9 轮 Speck64/128 related key impossible boomerang verification\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck64/128\n- 轮数：9\n- 任务类型：related key impossible boomerang verification\n- 分析模型：speck rk ibd\n- word bits：32\n- ROR/alpha：8\n- ROL/beta：3\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nUse the standard Speck64/128 round on two 32-bit words:\n\n```text\nx_(i+1) = (ROR_8(x_i) + y_i mod 2^32) xor k_i\ny_(i+1) = ROL_3(y_i) xor x_(i+1)\n```\n\nThe 128-bit master key is written from most-significant to least-significant 32-bit words as `(l_2,l_1,l_0,k_0)`. Generate 27 round keys with\n\n```text\nl_(i+3) = (ROR_8(l_i) + k_i mod 2^32) xor i\nk_(i+1) = ROL_3(k_i) xor l_(i+3),     i = 0,...,25.\n```\n\nThe modular addition makes this key schedule nonlinear at the XOR-difference level. Derive round-key differences from concrete paired master keys or an exact related-key transition model; do not XOR-expand the master-key difference as if the schedule were linear.\n\nConsider four master keys `K0,K1,K2,K3`. The two-related-keys quartet uses\n\n```text\nK0 xor K1 = kappa\nK2 xor K3 = kappa\nK1 xor K2 = 0\nK0 xor K3 = 0\nkappa = 0x00000080000000000000000000000000.\n```\n\nThus only two distinct master keys occur, but all four quartet branches and their round-key sequences must be modeled. Analyze 9 rounds for\n\n```text\nalpha  = 0x0000000000000000\nalpha' = 0x0000000000000000\nbeta   = 0x8000000080000004\nbeta'  = 0x8000000080000000.\n```\n\nA compatible RT3 related-key boomerang trail is a four-branch sequence satisfying the exact Speck rounds and key schedules above, the two input boundaries `(alpha,alpha')`, and the two output boundaries `(beta,beta')`. The tuple is an impossible boomerang distinguisher exactly when no such 9-round RT3 trail exists. An ordinary two-branch differential UNSAT check is not equivalent.\n\nAn accepted proof strategy may split the 9 rounds into a probability-one related-key differential prefix followed by a central RT3 impossibility check. If using that strategy, derive and connect the prefix and central boundary explicitly; merely asserting that such a prefix exists is not evidence.\n\nDecide YES or NO and provide reproducible evidence: a contradiction/certificate over all compatible RT3 trails, an exact state/key-difference propagation verifier, or a concrete counterexample quartet. A timeout or failure to find a quartet is not a proof of impossibility.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"claim\": \"valid two-related-keys Speck64/128 RK-IBD\"}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "claim": "string"
+        }
+      },
       "category": "related_key_impossible_boomerang_verification",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "claim": "valid two-related-keys Speck64/128 RK-IBD"
+        },
+        "numericTolerance": 0.0
       }
     },
     {
       "id": "104_CBSC-V3-NA-SIMON64-ID-COMPLEXITY-008",
       "question": "# Question 104. 22-round attack parameter row SIMON-64-128 attack complexity replay\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：SIMON 64 128\n- 轮数：22 round attack parameter row\n- 任务类型：attack complexity replay\n- 分析模型：impossible differential key recovery complexity\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nYou are given the following log-domain complexity model for an impossible-differential key-recovery attack.\n\nLet the block size be `n`, the master-key size be `kappa`, the bit filters be `cb, cf`, the input/output difference dimensions be `db, df`, the number of involved guessed key bits be `kg`, and the surviving wrong-key exponent parameter be `g`.\n\nDefine\n\n```\nLG(g) = log2(g) - 0.53\nNexp = cb + cf + LG(g)\n```\n\nThe data-complexity exponent is\n\n```\nD = max(\n      min((Nexp + n + 1 - db) / 2,\n          (Nexp + n + 1 - df) / 2),\n      Nexp + n + 1 - db - df\n    )\n```\n\nThe three dominant time terms have exponents\n\n```\nT1 = Nexp\nT2 = kg + LG(g)\nT3 = kappa - g\n```\n\nAssume the partial-encryption cost factor is small enough that the final time exponent is\n\n```\nT = max(T1, T2, T3)\n```\n\nThe memory exponent is\n\n```\nM = min(Nexp, kg)\n```\n\nFor this parameter set\n\n```\nn = 64\nkappa = 128\ncb = 36\ncf = 45\ndb = 46\ndf = 45\nkg = 93\ng = 30\n```\n\ncompute the exponents `D`, `T`, and `M` to two decimal places. Also state which term dominates the time exponent. Give a reproducible calculation.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "",
+      "expectedAnswer": "{\"D\": 59.376891, \"LG\": 4.376891, \"M\": 85.376891, \"Nexp\": 85.376891, \"T\": 98.0, \"T1\": 85.376891, \"T2\": 97.376891, \"T3\": 98.0}",
       "publicFiles": [],
-      "input": {},
+      "input": {
+        "answerFormat": {
+          "LG": "number",
+          "Nexp": "number",
+          "D": "number",
+          "T1": "number",
+          "T2": "number",
+          "T3": "number",
+          "T": "number",
+          "M": "number"
+        }
+      },
       "category": "attack_complexity_replay",
       "verification": {
-        "type": "dynamic"
+        "type": "fields",
+        "fields": {
+          "LG": 4.376891,
+          "Nexp": 85.376891,
+          "D": 59.376891,
+          "T1": 85.376891,
+          "T2": 97.376891,
+          "T3": 98.0,
+          "T": 98.0,
+          "M": 85.376891
+        },
+        "numericTolerance": 0.0
       }
     },
     {

@@ -19,7 +19,7 @@ assert private["version"] == "4.1.0"
 assert private["evaluatorVersion"] == "cryptobench-sc-v4-evaluator-1.0.0"
 assert len(tasks) == 170 == len(public_ids)
 
-allowed = {"numeric", "string", "one-of", "boolean", "exact-json", "dynamic", "workspace-validator"}
+allowed = {"numeric", "string", "one-of", "boolean", "exact-json", "dynamic", "workspace-validator", "fields"}
 ids = set()
 deterministic = 0
 for task in tasks:
@@ -41,6 +41,8 @@ for task in tasks:
         assert rule.get("relativeTolerance", 0) >= 0
     elif rule_type in ("string", "one-of", "exact-json", "boolean"):
         assert "expected" in rule or rule_type == "one-of"
+    elif rule_type == "fields":
+        assert isinstance(rule.get("fields"), dict) and rule["fields"], f"{task['id']}: fields rule empty"
 
 assert ids == public_ids, "private catalog must cover exactly the public tasks"
 assert deterministic >= 65, f"deterministic coverage regressed: {deterministic}"

@@ -94,4 +94,22 @@ class CryptobenchV4EvaluatorTest {
         assertThat(result.path("passed").asBoolean()).isFalse();
         assertThat(result.path("reason").asText()).contains("未启用");
     }
+
+    @Test
+    void fieldsRuleChecksEveryField() {
+        TaskDefinition task = task("fields", "{\"type\":\"fields\",\"numericTolerance\":0.01,"
+                + "\"fields\":{\"data_complexity\":\"2^62.58\",\"distinguisher\":\"D03\",\"reachable\":false}}");
+        ObjectNode answer = mapper.createObjectNode();
+        answer.put("data_complexity", "2^62.58 chosen plaintexts");
+        answer.put("distinguisher", "D03");
+        answer.put("reachable", false);
+        ObjectNode response = mapper.createObjectNode().put("status", "completed");
+        response.putObject("artifact").set("answer", answer);
+        assertThat(evaluator.evaluate(task, response).path("passed").asBoolean()).isTrue();
+
+        ObjectNode wrong = answer.deepCopy();
+        wrong.put("distinguisher", "D04");
+        response.putObject("artifact").set("answer", wrong);
+        assertThat(evaluator.evaluate(task, response).path("passed").asBoolean()).isFalse();
+    }
 }
