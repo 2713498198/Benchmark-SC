@@ -93,7 +93,11 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
             expected = expected.toLowerCase(Locale.ROOT);
             submitted = submitted.toLowerCase(Locale.ROOT);
         }
-        return expected.equals(submitted);
+        if (expected.equals(submitted)) return true;
+        Double expectedWeight = probabilityWeight(expected);
+        Double submittedWeight = probabilityWeight(submitted);
+        return expectedWeight != null && submittedWeight != null
+                && Math.abs(expectedWeight - submittedWeight) < 1e-9;
     }
 
     private boolean oneOfMatch(JsonNode rule, JsonNode actual) {
@@ -110,5 +114,22 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
 
     private static String normalize(String value) {
         return value == null ? "" : value.replaceAll("\\s+", "").trim();
+    }
+
+    /**
+     * Parse a probability written as a power of two (2^-41, 2^(-41), 2^{-41},
+     * 1/2^41) into its weight, so equivalent notations compare equal.
+     */
+    private static Double probabilityWeight(String value) {
+        String cleaned = value == null ? "" : value.replace("(", "").replace(")", "").replace("{", "").replace("}", "");
+        java.util.regex.Matcher power = java.util.regex.Pattern
+                .compile("2\\s*\\^\\s*(-\\d+(?:\\.\\d+)?)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(cleaned);
+        if (power.matches()) return Math.abs(Double.parseDouble(power.group(1)));
+        java.util.regex.Matcher reciprocal = java.util.regex.Pattern
+                .compile("1\\s*/\\s*2\\s*\\^\\s*(\\d+(?:\\.\\d+)?)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(cleaned);
+        if (reciprocal.matches()) return Double.parseDouble(reciprocal.group(1));
+        return null;
     }
 }

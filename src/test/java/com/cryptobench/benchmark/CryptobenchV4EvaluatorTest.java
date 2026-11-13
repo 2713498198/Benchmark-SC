@@ -53,6 +53,15 @@ class CryptobenchV4EvaluatorTest {
     }
 
     @Test
+    void stringRuleAcceptsEquivalentProbabilityNotation() {
+        TaskDefinition task = task("string", "{\"type\":\"string\",\"expected\":\"2^-41\",\"ignoreCase\":true}");
+        assertThat(evaluator.evaluate(task, answer("2^(-41)")).path("passed").asBoolean()).isTrue();
+        assertThat(evaluator.evaluate(task, answer("2^{-41}")).path("passed").asBoolean()).isTrue();
+        assertThat(evaluator.evaluate(task, answer("1/2^41")).path("passed").asBoolean()).isTrue();
+        assertThat(evaluator.evaluate(task, answer("1/2^40")).path("passed").asBoolean()).isFalse();
+    }
+
+    @Test
     void booleanRuleMatchesExactly() {
         TaskDefinition task = task("boolean", "{\"type\":\"boolean\",\"expected\":false}");
         assertThat(evaluator.evaluate(task, answer(false)).path("passed").asBoolean()).isTrue();
