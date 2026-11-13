@@ -1,7 +1,6 @@
 package com.cryptobench.benchmark.auth.service;
 
 import com.cryptobench.benchmark.auth.repository.PasswordResetCodeRepository;
-import com.cryptobench.benchmark.auth.repository.PasswordResetRepository;
 import com.cryptobench.benchmark.auth.repository.SessionRepository;
 import com.cryptobench.benchmark.auth.repository.UserRepository;
 import com.cryptobench.benchmark.config.PasswordResetCodeProperties;
@@ -18,13 +17,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** A code proves mailbox access; only a separate one-use high-entropy grant permits changing a password. */
+/** 验证码用于证明邮箱所有权，独立的一次性授权才允许修改密码。 */
 @Service
 public class PasswordResetCodeService {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final long HOUR = 3_600_000L, QUARTER_HOUR = 900_000L, FIVE_MINUTES = 300_000L;
     private final PasswordResetCodeRepository repository;
-    private final PasswordResetRepository legacy;
     private final UserRepository users;
     private final SessionRepository sessions;
     private final PasswordService passwords;
@@ -32,10 +30,10 @@ public class PasswordResetCodeService {
     private final MailCipher cipher;
     private final PasswordResetCodeProperties properties;
 
-    public PasswordResetCodeService(PasswordResetCodeRepository repository, PasswordResetRepository legacy,
+    public PasswordResetCodeService(PasswordResetCodeRepository repository,
             UserRepository users, SessionRepository sessions, PasswordService passwords, PasswordResetNotifier notifier,
             MailCipher cipher, PasswordResetCodeProperties properties) {
-        this.repository = repository; this.legacy = legacy; this.users = users; this.sessions = sessions;
+        this.repository = repository; this.users = users; this.sessions = sessions;
         this.passwords = passwords; this.notifier = notifier; this.cipher = cipher; this.properties = properties;
     }
 
@@ -126,7 +124,7 @@ public class PasswordResetCodeService {
         var grant = validToken(token) ? repository.validGrant(hash(token), now).orElse(null) : null;
         if (grant == null || users.findById(grant.userId()).isEmpty()) throw grantExpired();
         if (!grant.challengeId().equals(challengeId)) throw failure(HttpStatus.BAD_REQUEST, "reset_challenge_mismatch", "当前验证与页面不匹配，请刷新页面后重试");
-        // Expensive password work precedes the atomic consume; transaction failures never spend the grant.
+        // 先完成耗时的密码计算，再原子消费授权，避免事务失败时提前消耗授权。
         String encoded = passwords.encode(password);
         now = System.currentTimeMillis();
         if (repository.consumeGrant(grant.hash(), challengeId, now) != 1) throw grantExpired();
@@ -136,7 +134,7 @@ public class PasswordResetCodeService {
     }
 
     private void invalidateUser(String userId, long now) {
-        repository.invalidateUser(userId, now); legacy.invalidateByUser(userId, now); notifier.cancelResets(userId);
+        repository.invalidateUser(userId, now); notifier.cancelResets(userId);
     }
     private static String normalizeEmail(String value) {
         String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);

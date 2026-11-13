@@ -53,8 +53,8 @@ public class MailTransport {
         while (!pending.isEmpty()) {
             Throwable failure = pending.removeFirst(); if (!seen.add(failure)) continue;
             if (failure instanceof MailAuthenticationException) return new DeliveryException("smtp_authentication_failed", false);
-            Integer code = failure instanceof SMTPAddressFailedException address ? address.getReturnCode()
-                    : failure instanceof SMTPSendFailedException send ? send.getReturnCode() : null;
+            Integer code = failure instanceof SMTPAddressFailedException address ? Integer.valueOf(address.getReturnCode())
+                    : failure instanceof SMTPSendFailedException send ? Integer.valueOf(send.getReturnCode()) : null;
             if (code != null && code >= 500 && code < 600) return new DeliveryException("smtp_" + code, false);
             if (code != null && code >= 400 && code < 500) temporary = code;
             if (failure instanceof SendFailedException failed && failed.getInvalidAddresses() != null && failed.getInvalidAddresses().length > 0) invalidRecipient = true;
@@ -97,11 +97,10 @@ public class MailTransport {
         helper.setFrom(properties.getFrom()); helper.setTo(payload.path("email").asText());
         boolean invite = "admin_invite".equals(payload.path("type").asText());
         boolean code = "password_reset_code".equals(payload.path("type").asText());
-        helper.setSubject(invite ? "CryptoBench 管理员邀请" : code ? "CryptoBench 找回密码验证码" : "CryptoBench 密码重置");
+        helper.setSubject(invite ? "CryptoBench 管理员邀请" : "CryptoBench 找回密码验证码");
         String content = code ? "你的 CryptoBench 找回密码验证码是：\n" + payload.path("code").asText()
                 + "\n请在找回密码页面输入此验证码。验证码仅能使用一次，请勿提供给他人。"
-                : (invite ? "你收到了一份 CryptoBench 管理员邀请。\n" : "请使用以下链接重置 CryptoBench 密码。\n")
-                    + payload.path(invite ? "inviteUrl" : "resetUrl").asText();
+                : "你收到了一份 CryptoBench 管理员邀请。\n" + payload.path("inviteUrl").asText();
         helper.setText(content + "\n有效期至：" + payload.path("expiresAt").asText()
                 + "\n如果你未请求此操作，请忽略这封邮件。", false);
         sender.send(message);

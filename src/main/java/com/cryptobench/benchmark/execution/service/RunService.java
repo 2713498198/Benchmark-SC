@@ -10,6 +10,8 @@ import com.cryptobench.benchmark.execution.repository.RunRepository;
 import com.cryptobench.benchmark.report.service.ReportService;
 import com.cryptobench.benchmark.gateway.GatewayProperties;
 import com.cryptobench.benchmark.gateway.ModelGatewayService;
+import com.cryptobench.benchmark.runner.model.RunnerJob;
+import com.cryptobench.benchmark.runner.service.RunnerService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -51,6 +53,7 @@ public class RunService {
     private final ReportService reports;
     private final ModelGatewayService gateways;
     private final GatewayProperties gatewayProperties;
+    private final RunnerService runnerService;
     private final com.fasterxml.jackson.databind.ObjectMapper mapper;
     private final TransactionTemplate transactions;
     private final String workerId = UUID.randomUUID().toString();
@@ -71,7 +74,8 @@ public class RunService {
                       ServerCostCalculator costs, ReportService reports,
                       com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker,
                       PlatformTransactionManager transactionManager,
-                      ModelGatewayService gateways, GatewayProperties gatewayProperties) {
+                      ModelGatewayService gateways, GatewayProperties gatewayProperties,
+                      RunnerService runnerService) {
         this.runs = runs;
         this.catalog = catalog;
         this.agent = agent;
@@ -82,6 +86,7 @@ public class RunService {
         this.transactions = new TransactionTemplate(transactionManager);
         this.gateways = gateways;
         this.gatewayProperties = gatewayProperties;
+        this.runnerService = runnerService;
     }
 
     @PostConstruct
@@ -221,7 +226,7 @@ public class RunService {
         requireLocalExecution(input, HttpStatus.BAD_REQUEST);
         String source = input.path("source").asText("local").trim().toLowerCase(Locale.ROOT);
         String kind = input.path("kind").asText("evaluation").trim().toLowerCase(Locale.ROOT);
-        if (!List.of("local", "docker").contains(source) || !List.of("evaluation", "pk").contains(kind)) {
+        if (!List.of("local", "docker", "runner").contains(source) || !List.of("evaluation", "pk").contains(kind)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "运行类型或执行来源无效");
         }
         String endpoint = optionalText(input, "endpoint");
@@ -229,6 +234,7 @@ public class RunService {
         try {
             if ("local".equals(source)) endpoint = AgentHttpClient.normalize(requireText(input, "endpoint"));
             if ("docker".equals(source) && image == null) throw new IllegalArgumentException("Docker 执行需要 image");
+            if ("runner".equals(source) && optionalText(input, "runnerId") == null) throw new IllegalArgumentException("runnerId is required for Runner execution");
         } catch (IllegalArgumentException exception) {
             throw new ApiException(HttpStatus.BAD_REQUEST, exception.getMessage());
         }
@@ -245,14 +251,16 @@ public class RunService {
         List<TaskDefinition> all = catalogSnapshot.tasks();
         List<TaskDefinition> selected = new ArrayList<>("sample".equals(scope) ? all.subList(0, Math.min(8, all.size())) : all);
         if (selected.isEmpty()) throw new ApiException(HttpStatus.BAD_REQUEST, "测评集没有可执行任务");
-        List<Participant> participants = participants(input, kind, endpoint, optionalText(input, "token"));
+        if ("runner".equals(source)) runnerService.requireOwnedActive(user.id(), requireText(input, "runnerId"));
+        List<Participant> participants = participants(input, kind, endpoint,
+                "runner".equals(source) ? null : optionalText(input, "token"));
         String model = modelFor(participants), id = "run_" + UUID.randomUUID();
         ObjectNode config = mapper.createObjectNode();
         config.put("schema", "cryptobench-execution-plan-v1");
         config.put("datasetId", datasetId); config.put("version", version);
         config.put("seed", seed); config.put("budget", budget); config.put("scope", scope);
         config.put("model", model); config.put("kind", kind); config.put("source", source);
-        config.put("executorType", "server");
+        config.put("executorType", "runner".equals(source) ? "runner" : "server");
         config.put("agentName", participants.getFirst().agent());
         config.put("evaluatorVersion", catalogSnapshot.evaluatorVersion());
         config.put("catalogSha256", catalogSnapshot.catalogSha256());
@@ -260,6 +268,7 @@ public class RunService {
         if (pricingSnapshot != null) config.set("pricingSnapshot", pricingSnapshot.deepCopy());
         if (endpoint != null) config.put("endpoint", endpoint);
         if (image != null) config.put("image", image);
+        if ("runner".equals(source)) config.put("runnerId", requireText(input, "runnerId"));
         config.set("participants", publicParticipants(participants));
         Map<String, String> secrets = new LinkedHashMap<>();
         participants.forEach(participant -> {
@@ -348,6 +357,7 @@ public class RunService {
             throw new ApiException(HttpStatus.CONFLICT, "当前运行已经结束，不能取消");
         }
         if (!runs.cancel(id)) return get(user, id);
+        if ("runner".equals(run.source())) runnerService.cancelRun(id);
         Future<?> job = activeJobs.get(id);
         if (job != null) job.cancel(true);
         credentials.remove(id);
@@ -409,7 +419,8 @@ public class RunService {
     }
 
     private static boolean isLocalExecution(ObjectNode config) {
-        return "server".equals(config.path("executorType").asText("server"))
+        return ("server".equals(config.path("executorType").asText("server"))
+                || "runner".equals(config.path("executorType").asText()))
                 && !config.hasNonNull("bridgeId") && !config.hasNonNull("localAgentId");
     }
 
@@ -488,6 +499,11 @@ public class RunService {
             List<TaskDefinition> tasks;
             try { tasks = selectedTasks(run); }
             catch (RuntimeException unavailable) { runs.pause(id, generation, "catalog_changed", "题库快照无法匹配，请基于原配置新建实验"); return; }
+            // Runner execution keeps private Agent access on the user's machine.
+            if ("runner".equals(run.source())) {
+                executeRunnerTasks(id, generation, run, tasks);
+                return;
+            }
             List<Participant> participants = recoveredParticipants(run.config(), credentials.getOrDefault(id, Map.of()));
             String endpoint = optionalText(run.config(), "endpoint");
             String source = run.source();
@@ -618,6 +634,92 @@ public class RunService {
                 if (interrupted) Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /** Execute selected tasks through the Runner and keep scoring inside the website. */
+    private void executeRunnerTasks(String id, long generation, Run run, List<TaskDefinition> tasks) throws Exception {
+        String runnerId = run.config().path("runnerId").asText("");
+        if (runnerId.isBlank()) throw new IllegalStateException("Runner configuration is missing runnerId");
+        runnerService.requireOwnedActive(run.ownerId(), runnerId);
+        List<Participant> participants = recoveredParticipants(run.config(), Map.of());
+        List<ParticipantRuntime> runtime = new ArrayList<>();
+        int timeout = "extended".equals(run.budget()) ? 600 : 300;
+        for (Participant participant : participants) {
+            runtime.add(new ParticipantRuntime(participant, participant.agentVersion()));
+            for (TaskDefinition task : tasks) {
+                if (!runs.isCurrent(id, generation)) return;
+                String key = taskKey(participant.key(), task.id());
+                RunTask stored = runs.findTasks(id).stream().filter(item -> item.taskId().equals(key)).findFirst().orElseThrow();
+                if (List.of("passed", "failed").contains(stored.status())) continue;
+                int attempt = runs.beginTask(id, key, generation);
+                if (attempt < 0) return;
+                long nano = System.nanoTime();
+                ObjectNode request = runnerRequest(id, run, participant, task, key, attempt, timeout);
+                String jobId = runnerService.enqueue(run.ownerId(), runnerId, id, generation, key, attempt, request);
+                log(id, "INFO", "Runner task dispatched: " + task.id());
+                RunnerJob job = runnerService.await(jobId, (timeout + 30L) * 1000L);
+                if (job == null || List.of("queued", "leased").contains(job.status())) {
+                    runs.finishTask(id, key, generation, attempt, "timeout", null,
+                            errorResult("timeout", "Runner did not return before the task budget"), false, 0d, null, elapsedMillis(nano));
+                    runs.finish(id, generation, "timeout", "runner_timeout", "Runner did not complete within the task budget", null);
+                    return;
+                }
+                ObjectNode response = job.result() == null || !job.result().path("response").isObject()
+                        ? null : (ObjectNode) job.result().path("response");
+                if (response == null || !"completed".equals(job.status())) {
+                    ObjectNode error = errorResult(job.status(), job.errorMessage() == null ? "Runner returned no valid result" : job.errorMessage());
+                    String failureStatus = "timeout".equals(job.status()) ? "timeout" : "failed";
+                    runs.finishTask(id, key, generation, attempt, failureStatus, null, error, false, 0d, null, elapsedMillis(nano));
+                    runs.finish(id, generation, failureStatus, "timeout".equals(failureStatus) ? "runner_timeout" : "runner_execution_failed", error.path("reason").asText(), null);
+                    return;
+                }
+                ObjectNode verification = catalog.evaluate(run.datasetId(), run.version(), task, response);
+                String status = verification.path("status").asText("invalid");
+                if (!List.of("passed", "failed").contains(status)) status = "invalid";
+                Double cost = costs.calculate(run.config().get("pricingSnapshot") instanceof ObjectNode price ? price : null,
+                        participant.model(), response);
+                if (!runs.finishTask(id, key, generation, attempt, status, response, verification,
+                        verification.path("passed").asBoolean(false), verification.path("score").asDouble(0), cost,
+                        elapsedMillis(nano))) return;
+                log(id, "INFO", participant.label() + " / " + task.id() + " complete: " + status);
+                if ("invalid".equals(status)) {
+                    runs.finish(id, generation, "failed", "agent_execution_failed", "Runner result failed validation", null);
+                    return;
+                }
+            }
+        }
+        finishRunnerRun(id, generation, run, tasks, runtime);
+    }
+
+    /** Build a public task envelope; evaluator answers never enter this payload. */
+    private ObjectNode runnerRequest(String id, Run run, Participant participant, TaskDefinition task,
+                                     String key, int attempt, int timeout) {
+        ObjectNode request = mapper.createObjectNode();
+        request.put("runId", id); request.put("taskId", task.id()); request.put("participant", participant.key());
+        request.put("attempt", attempt); request.put("idempotencyKey", id + ":" + key);
+        request.put("agentName", participant.agent()); request.put("model", participant.model()); request.put("seed", run.seed());
+        ObjectNode dataset = request.putObject("dataset"); dataset.put("id", run.datasetId()); dataset.put("version", run.version());
+        ObjectNode publicTask = request.putObject("task"); publicTask.put("question", task.question());
+        publicTask.set("input", task.input()); publicTask.put("category", task.category());
+        publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
+        request.put("deadline", Instant.now().plusSeconds(timeout).toString());
+        ObjectNode budget = request.putObject("budget"); budget.put("timeoutSeconds", timeout);
+        budget.put("maxAgentCalls", "extended".equals(run.budget()) ? 40 : 20);
+        return request;
+    }
+
+    private void finishRunnerRun(String id, long generation, Run run, List<TaskDefinition> tasks,
+                                 List<ParticipantRuntime> runtime) {
+        transactions.executeWithoutResult(transaction -> {
+            Run current = runs.find(id, true).orElseThrow();
+            if (!runs.isCurrent(id, generation)) return;
+            runs.recount(id); current = runs.find(id, false).orElseThrow();
+            ObjectNode report = report(id, current.kind(), current.source(), current.datasetId(), current.version(), tasks,
+                    runtime, current.passedTasks(), current.completedTasks(), current.scope(), current.budget(), current.seed(), current.model());
+            String reportId = reports.createVerified(current.ownerId(), id, report);
+            if (!runs.finish(id, generation, "completed", null, null, reportId)) throw new IllegalStateException("Run completion lost its claim");
+            log(id, "INFO", "Runner run completed; report saved");
+        });
     }
 
     private void gatewayPolicy(ObjectNode config) {

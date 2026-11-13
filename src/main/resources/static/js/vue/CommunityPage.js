@@ -8,15 +8,15 @@ import PasswordRecovery from './PasswordRecovery.js';
 
 export default {components:{SvgIcon,CustomDatasetAdmin,PricingAdmin,InvitationAdmin,PasswordRecovery},setup(){
  const app=useApp(),{state,route}=app;const path=computed(()=>route.value.split('?')[0]),tab=computed(()=>new URLSearchParams(route.value.split('?')[1]).get('tab')||'runs');
- const isRecovery=computed(()=>path.value==='/forgot-password'||path.value==='/reset-password'&&!new URLSearchParams(route.value.split('?')[1]).get('token'));
+ const isRecovery=computed(()=>path.value==='/forgot-password'||path.value==='/reset-password');
  let adminRequest=0,alive=true;
  const auth=ref({name:'',email:'',password:'',token:''});
- watch(route,value=>{if(value.startsWith('/reset-password')||value.startsWith('/admin-invite'))auth.value.token=new URLSearchParams(value.split('?')[1]).get('token')||'';},{immediate:true});
+ watch(route,value=>{if(value.startsWith('/admin-invite'))auth.value.token=new URLSearchParams(value.split('?')[1]).get('token')||'';},{immediate:true});
  const allData=computed(()=>[...datasets,...state.customDatasets.filter(d=>d.published)]);
  const datasetName=id=>allData.value.find(d=>d.id===id)?.name||id;
  async function finishAuth(boot,path,msg){auth.value.password='';auth.value.token='';app.applyBootstrap(boot);app.navigate(path);app.toast(msg);}
  async function demo(role){try{await app.api('/api/auth/demo',{method:'POST',body:{role}});await finishAuth(await app.api('/api/bootstrap'),role==='admin'?'/admin':'/workspace','已进入演示账号');}catch(err){app.toast(err.message);}}
- async function submit(){try{if(path.value==='/reset-password'){await app.api('/api/auth/reset',{method:'POST',body:{token:auth.value.token,password:auth.value.password}});auth.value.password='';auth.value.token='';app.toast('密码已重置，请重新登录');app.navigate('/login');return;}if(path.value==='/admin-invite'){await app.api('/api/auth/admin-invitations/accept',{method:'POST',body:{token:auth.value.token,password:auth.value.password}});app.toast('管理员账号已创建，请登录');app.navigate('/login');return;}const register=path.value==='/register';await app.api(register?'/api/auth/register':'/api/auth/login',{method:'POST',body:auth.value});const boot=await app.api('/api/bootstrap');await finishAuth(boot,boot.user?.role==='admin'?'/admin':'/workspace',register?'账号已创建':'登录成功');}catch(err){app.toast(err.message);}}
+ async function submit(){try{if(path.value==='/admin-invite'){await app.api('/api/auth/admin-invitations/accept',{method:'POST',body:{token:auth.value.token,password:auth.value.password}});app.toast('管理员账号已创建，请登录');app.navigate('/login');return;}const register=path.value==='/register';await app.api(register?'/api/auth/register':'/api/auth/login',{method:'POST',body:auth.value});const boot=await app.api('/api/bootstrap');await finishAuth(boot,boot.user?.role==='admin'?'/admin':'/workspace',register?'账号已创建':'登录成功');}catch(err){app.toast(err.message);}}
  async function logout(){try{await app.api('/api/auth/logout',{method:'POST'});app.applyBootstrap({});app.navigate('/');}catch(err){app.toast(err.message);}}
  function addConnection(){app.confirm('添加 Agent 连接','','connection');}
  function editConnection(connection){Object.assign(app.connection,{id:connection.id,name:connection.name,url:connection.url,model:connection.model});app.confirm('编辑 Agent 连接','','connection-edit');}

@@ -1,0 +1,43 @@
+{
+  "schema_version": "skinny64_tk2_key_dependency_instance_v1",
+  "primitive": "SKINNY-64-128/TK2",
+  "rounds": 13,
+  "state_order": "Every 16-hex-digit state is row-major: character 4*r+c is state row r, column c. Round and position indices are zero based.",
+  "sbox": [12, 6, 9, 0, 1, 10, 2, 11, 3, 8, 5, 13, 4, 14, 7, 15],
+  "round_constants": [1, 3, 7, 15, 31, 62, 61, 59, 55, 47, 30, 60, 57],
+  "round_function": [
+    "Apply the S-box independently to all 16 nibbles.",
+    "For round constant rc, XOR rc&0xf into state[0,0], (rc>>4)&0x3 into state[1,0], and 0x2 into state[2,0].",
+    "XOR current_tk1[r,c] xor current_tk2[r,c] into state[r,c] for rows r=0,1 only.",
+    "ShiftRows maps output[r,c] = input[r,(c-r) mod 4].",
+    "For each column with ShiftRows output (x0,x1,x2,x3), MixColumns returns (x0 xor x2 xor x3, x0, x1 xor x2, x0 xor x2)."
+  ],
+  "tweakey_schedule": {
+    "permutation": [9, 15, 8, 13, 10, 14, 12, 11, 0, 1, 2, 3, 4, 5, 6, 7],
+    "permutation_semantics": "After each round, first set next_tkq[i] = current_tkq[permutation[i]] for q=1,2.",
+    "tk1_update": "No LFSR is applied to TK1.",
+    "tk2_update": "After the permutation, apply LFSR2 to next_tk2[i] for i=0,...,7 only; positions 8,...,15 are unchanged.",
+    "lfsr2": "For nibble bits (x3,x2,x1,x0), LFSR2 returns (x2,x1,x0,x2 xor x3).",
+    "round_tweakey": "Round r uses current_tk1[i] xor current_tk2[i] at positions i=0,...,7."
+  },
+  "related_tweakey_semantics": "Execution 0 uses arbitrary master (TK1,TK2). Execution 1 uses (TK1 xor delta_tk1, TK2 xor delta_tk2). Both executions then follow the same schedule.",
+  "delta_tk1": "0000000805020000",
+  "delta_tk2": "0000000c060c0000",
+  "trail_boundary_semantics": "state_boundaries[r] is the state XOR difference immediately before the S-box of round r for r=0,...,12; state_boundaries[13] is the difference after round 12 MixColumns.",
+  "state_boundaries": [
+    "0000820000800000",
+    "4000000004104000",
+    "0000a00000020002",
+    "0630000000000600",
+    "1000000000000000",
+    "0000000000000000",
+    "0000000000000000",
+    "00a000a0000000a0",
+    "05000000000b0000",
+    "00000c0000000000",
+    "000000000b000000",
+    "0001000000000001",
+    "0080000000010000",
+    "0840004008b00840"
+  ]
+}

@@ -48,7 +48,17 @@ public class TaskCatalogService {
             if (resource == null || !resource.startsWith("/evaluation/") || resource.contains("/static/")) {
                 throw new IllegalStateException("Evaluator catalog must be a private evaluation resource for " + key);
             }
-            List<TaskDefinition> registered = snapshot(key.datasetId(), key.version()).tasks();
+            // Structure is validated even while a built-in evaluator is still
+            // gated by executionReady(); the execution gate itself is applied in
+            // snapshot(), so registering a not-yet-ready catalog cannot break boot.
+            JsonNode root;
+            try (InputStream input = getClass().getResourceAsStream(resource)) {
+                if (input == null) throw new IllegalStateException("Execution catalog missing for " + key);
+                root = mapper.readTree(input);
+            } catch (IOException exception) {
+                throw new IllegalStateException("Cannot read execution catalog for " + key, exception);
+            }
+            List<TaskDefinition> registered = tasksFromCatalog(key.datasetId(), key.version(), root, evaluator.evaluatorVersion());
             if (registered.isEmpty()) throw new IllegalStateException("Evaluator catalog is empty for " + key);
             Set<String> ids = new HashSet<>();
             for (TaskDefinition task : registered) {
@@ -58,11 +68,24 @@ public class TaskCatalogService {
         });
     }
 
+    private List<TaskDefinition> tasksFromCatalog(String datasetId, String version, JsonNode root, String evaluatorVersion) {
+        List<TaskDefinition> result = new ArrayList<>();
+        for (JsonNode task : root.path("tasks")) {
+            result.add(new TaskDefinition(task.path("id").asText(), task.path("question").asText(),
+                    task.path("expectedAnswer").asText(), strings(task.path("publicFiles")),
+                    strings(task.path("requiredTools")), strings(task.path("requiredCapabilities")),
+                    task.path("input").isObject() ? task.path("input") : mapper.createObjectNode(),
+                    task.path("category").asText(""), task.path("verification")));
+        }
+        return result;
+    }
+
     public ExecutionCatalog snapshot(String datasetId, String version) {
         BenchmarkEvaluator evaluator = evaluators.get(new DatasetVersion(datasetId, version));
         JsonNode root;
         String evaluatorVersion;
         boolean custom = evaluator == null;
+        if (evaluator != null && !evaluator.executionReady()) throw unbound();
         if (custom) {
             ObjectNode summary = datasets.findPublic(datasetId, version).orElseThrow(this::unbound);
             if (!summary.path("executionReady").asBoolean() || !CustomDatasetRules.SCHEMA.equals(summary.path("schema").asText())) throw unbound();
@@ -78,14 +101,7 @@ public class TaskCatalogService {
             } catch (IOException exception) { throw new IllegalStateException("Cannot read execution catalog", exception); }
             evaluatorVersion = evaluator.evaluatorVersion();
         }
-        List<TaskDefinition> result = new ArrayList<>();
-        for (JsonNode task : root.path("tasks")) {
-            result.add(new TaskDefinition(task.path("id").asText(), task.path("question").asText(),
-                    custom ? null : task.path("expectedAnswer").asText(), strings(task.path("publicFiles")),
-                    strings(task.path("requiredTools")), strings(task.path("requiredCapabilities")),
-                    task.path("input").isObject() ? task.path("input") : mapper.createObjectNode(),
-                    task.path("category").asText(""), task.path("verification")));
-        }
+        List<TaskDefinition> result = tasksFromCatalog(datasetId, version, root, evaluatorVersion);
         return new ExecutionCatalog(result, evaluatorVersion, custom ? CustomDatasetRules.publicHash((ObjectNode) root, true)
                 : CustomDatasetRules.builtInPublicHash(root, datasetId, version, evaluatorVersion));
     }

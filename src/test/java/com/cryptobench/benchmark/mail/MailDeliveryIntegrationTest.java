@@ -2,10 +2,8 @@ package com.cryptobench.benchmark.mail;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.auth.repository.AdminInvitationRepository;
-import com.cryptobench.benchmark.auth.repository.PasswordResetRepository;
 import com.cryptobench.benchmark.auth.repository.UserRepository;
 import com.cryptobench.benchmark.auth.service.AdminAccountService;
-import com.cryptobench.benchmark.auth.service.PasswordResetService;
 import com.cryptobench.benchmark.auth.service.PasswordResetNotifier;
 import com.cryptobench.benchmark.common.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,10 +34,8 @@ import static org.assertj.core.api.Assertions.*;
 @ActiveProfiles("test")
 class MailDeliveryIntegrationTest {
     @Autowired AdminAccountService admins;
-    @Autowired PasswordResetService resets;
     @Autowired PasswordResetNotifier notifier;
     @Autowired AdminInvitationRepository invitations;
-    @Autowired PasswordResetRepository resetTokens;
     @Autowired UserRepository users;
     @Autowired MailProperties properties;
     @Autowired MailRepository messages;
@@ -126,8 +122,6 @@ class MailDeliveryIntegrationTest {
         properties.setMode("disabled");
         assertThatThrownBy(this::invite).isInstanceOf(ApiException.class).hasMessageContaining("尚未就绪");
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_admin_invitations", Integer.class)).isZero();
-        resets.request(actor.email());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_password_reset_tokens WHERE user_id=?", Integer.class, actor.id())).isZero();
     }
 
     @Test void resendRotatesTheLinkAndRevokeCancelsQueuedMail() {
@@ -160,24 +154,6 @@ class MailDeliveryIntegrationTest {
         invitations.insert(id, UUID.randomUUID() + "@example.com", "Old invitation", hash(old), actor.id(), Instant.now().toString(), System.currentTimeMillis() + 60_000);
         assertThat(admins.invitations("pending", "legacy_unknown", 0, 20).items()).hasSize(1);
         assertThat(admins.acceptInvitation(old, "password8").role()).isEqualTo("admin");
-        resetTokens.insert(hash(old), actor.id(), System.currentTimeMillis() + 60_000, Instant.now().toString());
-        resets.reset(old, "password8");
-        assertThat(resetTokens.find(hash(old)).orElseThrow().usedAt()).isNotNull();
-    }
-
-    @Test void newPasswordResetCancelsOldQueuedLinkAndConsumptionCancelsTheNewMessage() {
-        resets.request(actor.email());
-        var first = resetMessage(); String old = token(first.id());
-        resets.request(actor.email());
-        var second = resetMessage(); String fresh = token(second.id());
-        assertThat(second.id()).isNotEqualTo(first.id());
-        assertThat(delivery.delivery(first.id()).state()).isEqualTo("cancelled");
-        assertThatThrownBy(() -> resets.reset(old, "password8")).hasMessageContaining("无效或已过期");
-        assertThatThrownBy(() -> resets.reset(fresh, "1".repeat(7))).hasMessageContaining("格式无效");
-        assertThatThrownBy(() -> resets.reset(fresh, "1".repeat(25))).hasMessageContaining("格式无效");
-        resets.reset(fresh, "1".repeat(24));
-        assertThat(delivery.delivery(second.id()).state()).isEqualTo("cancelled");
-        assertCleared(second.id());
     }
 
     @Test void transactionRollbackDoesNotLeaveDeliverableMessages() {
@@ -259,7 +235,6 @@ class MailDeliveryIntegrationTest {
         return notifier.sendCode(actor.email(), challenge, "003917", Instant.ofEpochMilli(expires), actor.id());
     }
     private AdminAccountService.InvitationResult invite() { return admins.invite(actor, UUID.randomUUID() + "@example.com", "Invitee"); }
-    private MailRepository.Message resetMessage() { return jdbc.query("SELECT id FROM benchmark_mail_messages WHERE purpose='password_reset' AND owner_id=? AND state='queued'", (r, i) -> messages.find(r.getString(1)).orElseThrow(), actor.id()).getFirst(); }
     private String token(String id) {
         var message = messages.find(id).orElseThrow();
         try { return mapper.readTree(cipher.decrypt(id, message.purpose(), message.reference(), message.encrypted())).path("token").asText(); }

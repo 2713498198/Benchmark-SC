@@ -300,14 +300,21 @@ class ExecutionApiIntegrationTest {
     }
 
     @Test
-    void refusesV4UntilARegisteredServerEvaluatorAndPrivateCatalogExist() throws Exception {
+    void refusesLegacyV4AndAcceptsV41() throws Exception {
         Client client = registeredClient();
         String endpoint = "http://127.0.0.1:" + agent.getAddress().getPort();
-        MvcResult response = client.send("POST", "/api/runs", Map.of(
+        MvcResult legacy = client.send("POST", "/api/runs", Map.of(
                 "datasetId", "cryptobench-sc-v4", "version", "4.0.0", "scope", "sample",
                 "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
-        assertThat(response.getResponse().getStatus()).isEqualTo(400);
-        assertThat(client.json(response).path("error").asText()).contains("尚未绑定服务端验证器");
+        assertThat(legacy.getResponse().getStatus()).isEqualTo(400);
+        assertThat(client.json(legacy).path("error").asText()).contains("尚未绑定服务端验证器");
+
+        MvcResult current = client.send("POST", "/api/runs", Map.of(
+                "datasetId", "cryptobench-sc-v4", "version", "4.1.0", "scope", "sample",
+                "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
+        assertThat(current.getResponse().getStatus()).isEqualTo(202);
+        assertThat(client.json(current).path("runId").asText()).isNotBlank();
+        client.send("POST", "/api/runs/" + client.json(current).path("runId").asText() + "/cancel", null);
     }
 
     @Test

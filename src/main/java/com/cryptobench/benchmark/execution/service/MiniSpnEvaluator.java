@@ -25,6 +25,9 @@ public class MiniSpnEvaluator implements BenchmarkEvaluator {
     @Override
     public String taskResource() { return "/evaluation/mini-spn/1.0.0/tasks.json"; }
 
+    @Override
+    public boolean executionReady() { return true; }
+
     public ObjectNode evaluate(TaskDefinition task, ObjectNode response) {
         ObjectNode result = mapper.createObjectNode();
         result.put("evaluatorVersion", "mini-spn-evaluator-1.0.0");

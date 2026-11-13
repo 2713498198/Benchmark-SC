@@ -18,5 +18,8 @@ public interface BenchmarkEvaluator {
     /** Classpath resource containing the private execution task catalog. */
     String taskResource();
 
+    /** Built-in evaluators must explicitly opt into execution after release checks. */
+    default boolean executionReady() { return false; }
+
     ObjectNode evaluate(TaskDefinition task, ObjectNode response);
 }

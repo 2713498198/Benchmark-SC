@@ -4,12 +4,13 @@ import {appKey,SvgIcon} from './vue/shared.js';
 import HomePage from './vue/HomePage.js';
 import ResourcesPage from './vue/ResourcesPage.js';
 import ArenaPage from './vue/ArenaPage.js';
+import RunnerPage from './vue/RunnerPage.js';
 import CommunityPage from './vue/CommunityPage.js';
 import LeaderboardPage from './vue/LeaderboardPage.js';
 import {createRunState} from './run-state.js';
 
 const state=reactive({user:null,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null,runLogs:[],runNetworkError:'',bootstrapError:'',demoEnabled:false});
-const labels={'/':'首页','/datasets':'测评集','/tools':'测评工具','/leaderboard':'测评榜单','/arena':'PK 竞技'};
+const labels={'/':'首页','/datasets':'测评集','/tools':'测评工具','/leaderboard':'测评榜单','/arena':'PK 竞技','/runner':'本地 Runner'};
 function parseRoute(){try{const route=decodeURI(location.hash.slice(1)||'/');return route.startsWith('/')?route:'/'+route;}catch{return '/404';}}
 async function api(path,options={}){
  const init={credentials:'same-origin',...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}};
@@ -28,9 +29,9 @@ function applyBootstrap(boot){bootstrapEpoch++;if(state.user?.id!==boot.user?.id
 async function hydrate(){const epoch=++bootstrapEpoch;try{const boot=await api('/api/bootstrap');if(epoch!==bootstrapEpoch)return false;applyBootstrap(boot);return true;}catch(error){if(epoch===bootstrapEpoch)state.bootstrapError=error.message;return false;}}
 function navigate(path){location.hash=path;}
 
-const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,CommunityPage,LeaderboardPage},setup(){
+const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,RunnerPage,CommunityPage,LeaderboardPage},setup(){
  const route=ref(parseRoute()),toastMessage=ref(''),menuOpen=ref(false),dialog=ref(null),modal=reactive({kind:'',title:'',message:'',action:null,entries:[]}),connection=reactive({id:'',name:'',url:'',model:''});let toastTimer;
- const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|reset-password|admin-invite|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
+ const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(r==='/runner')return RunnerPage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|reset-password|admin-invite|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
  const active=computed(()=>route.value.split('?')[0]);
  function toast(message){toastMessage.value=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastMessage.value='',3700);}
  function closeModal(){modal.kind='';modal.action=null;if(dialog.value?.open)dialog.value.close();}

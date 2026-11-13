@@ -1,0 +1,28 @@
+{
+  "schema_version": "rx_add_constant_instances_v1",
+  "word_size": 32,
+  "bit_order": "Bit 0 is the least significant bit. Hexadecimal values encode ordinary unsigned 32-bit integers.",
+  "rotation": "ROL_k is a cyclic left rotation within 32 bits.",
+  "addition": "Every addition discards the carry beyond bit 31.",
+  "constant_hex": "0xb7e15162",
+  "instances": [
+    {
+      "instance_id": "A",
+      "rotation": 5,
+      "delta_hex": "0x3b2b9dc7",
+      "output_delta_hex": "0xd0a6dfae"
+    },
+    {
+      "instance_id": "B",
+      "rotation": 19,
+      "delta_hex": "0x7a5cc617",
+      "output_delta_hex": "0x3f0fd040"
+    },
+    {
+      "instance_id": "C",
+      "rotation": 27,
+      "delta_hex": "0x4cb17217",
+      "output_delta_hex": "0xd13f2867"
+    }
+  ]
+}

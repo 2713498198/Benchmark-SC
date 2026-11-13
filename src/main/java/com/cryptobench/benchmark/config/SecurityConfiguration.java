@@ -29,7 +29,9 @@ public class SecurityConfiguration {
         csrfRepository.setCookieCustomizer(cookie -> cookie.sameSite("Lax").secure(properties.secureCookie()));
         // STATELESS 表示不创建 Spring 的 HttpSession，自定义数据库会话仍会在每个请求中验证。
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
+                // Runner requests authenticate with their own bearer token and cannot obtain a browser CSRF cookie.
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/runner/**")
+                        .csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
@@ -44,6 +46,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/datasets/custom", "/api/datasets/custom/validate").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/datasets/*/versions/*/catalog").permitAll()
                         .requestMatchers("/api/connections", "/api/connections/**").authenticated()
+                        .requestMatchers("/api/runner/**").permitAll()
+                        .requestMatchers("/api/runners", "/api/runners/**").authenticated()
                         .requestMatchers("/api/agent/**", "/api/runs/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/reports", "/api/reports/**").permitAll()
                         .requestMatchers("/api/reports", "/api/reports/**").authenticated()

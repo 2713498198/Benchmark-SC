@@ -6,7 +6,6 @@ import com.cryptobench.benchmark.auth.dto.PasswordResetRequest;
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.auth.service.AuthService;
 import com.cryptobench.benchmark.auth.service.SessionService;
-import com.cryptobench.benchmark.auth.service.PasswordResetService;
 import com.cryptobench.benchmark.auth.service.PasswordResetCodeService;
 import com.cryptobench.benchmark.auth.service.PasswordResetFlowException;
 import com.cryptobench.benchmark.config.BenchmarkProperties;
@@ -41,16 +40,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService auth;
     private final SessionService sessions;
-    private final PasswordResetService resets;
     private final PasswordResetCodeService codes;
     private final BenchmarkProperties properties;
     private static final String RESET_COOKIE = "cb_reset_grant";
 
-    public AuthController(AuthService auth, SessionService sessions, PasswordResetService resets,
-            PasswordResetCodeService codes, BenchmarkProperties properties) {
+    public AuthController(AuthService auth, SessionService sessions, PasswordResetCodeService codes,
+            BenchmarkProperties properties) {
         this.auth = auth;
         this.sessions = sessions;
-        this.resets = resets;
         this.codes = codes;
         this.properties = properties;
     }
@@ -140,15 +137,6 @@ public class AuthController {
             HttpServletRequest request, HttpServletResponse response) {
         noStore(response);
         codes.complete(resetToken(request), string(input, "challengeId"), string(input, "password"), string(input, "confirmPassword"));
-        resetCookie(request, response, "", 0);
-        return Map.of("ok", true);
-    }
-
-    @PostMapping(value = "/reset", consumes = "application/json")
-    public Map<String, Boolean> reset(@RequestBody PasswordResetRequest input,
-            HttpServletRequest request, HttpServletResponse response) {
-        noStore(response);
-        resets.reset(string(input, "token"), string(input, "password"));
         resetCookie(request, response, "", 0);
         return Map.of("ok", true);
     }
