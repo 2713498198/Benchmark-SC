@@ -3,14 +3,15 @@ import {SvgIcon} from './shared.js';
 
 export default {components:{SvgIcon},props:{run:Object,logs:Array,networkError:String,credentials:Object,busy:Boolean},emits:['cancel','resume','retry','new','refresh'],setup(props){
  const active=computed(()=>['queued','running'].includes(props.run?.status));
- const executorRemoved=computed(()=>props.run?.pauseReason==='executor_removed'||!!(props.run?.config?.executorType&&props.run.config.executorType!=='server'));
+ const executorRemoved=computed(()=>props.run?.pauseReason==='executor_removed'||!!(props.run?.config?.executorType&&!['server','runner'].includes(props.run.config.executorType)));
+ const executionLocation=computed(()=>props.run?.config?.executorType==='runner'?'本地 Runner':'本机执行');
  const names={queued:'等待执行',running:'任务正在执行',paused:'执行已暂停',completed:'测评已完成',cancelled:'任务已取消',failed:'执行失败',timeout:'任务执行超时'};
  const needed=computed(()=>{const required=new Set(props.run?.credentialsRequired||[]);if(!active.value){for(const p of props.run?.config?.participants||[])if(p.credentialRequired)required.add(p.key);if(props.run?.config?.gateway?.credentialRequired)required.add('gateway');}return [...required];});
  const interrupted=computed(()=>(props.run?.tasks||[]).filter(task=>task.status==='interrupted'));
  const participantName=key=>props.run?.config?.participants?.find(p=>p.key===key)?.label||({main:'Agent',a:'参赛方 A',b:'参赛方 B',gateway:'模型网关'}[key]||key);
- return {active,executorRemoved,names,needed,participantName,interrupted};
+  return {active,executorRemoved,executionLocation,names,needed,participantName,interrupted};
 },template:`<section class="stack" data-run-progress>
- <div class="run-heading"><div class="result-state"><span><SvgIcon :name="run.status==='completed'?'check':'activity'" :size="22"/></span><div><h3>{{names[run.status]||run.status}}</h3><p>{{run.runId}} · {{executorRemoved?'历史执行方式（已移除）':'本机执行'}}</p></div></div><span class="badge" :class="run.status==='completed'?'green':'blue'">{{names[run.status]||run.status}}</span></div>
+  <div class="run-heading"><div class="result-state"><span><SvgIcon :name="run.status==='completed'?'check':'activity'" :size="22"/></span><div><h3>{{names[run.status]||run.status}}</h3><p>{{run.runId}} · {{executorRemoved?'历史执行方式（已移除）':executionLocation}}</p></div></div><span class="badge" :class="run.status==='completed'?'green':'blue'">{{names[run.status]||run.status}}</span></div>
  <div v-if="networkError" class="callout" role="alert">{{networkError}}<button class="btn small" @click="$emit('refresh')">重新连接</button></div>
  <div v-if="executorRemoved" class="callout" data-executor-removed>此实验使用的执行方式已移除，无法继续或按原配置重试。可以新建实验，重新配置本机 Agent。</div>
  <div class="progress"><span :style="{width:(run.progressPercent||0)+'%'}"></span></div>

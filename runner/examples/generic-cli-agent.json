@@ -1,0 +1,21 @@
+{
+  "name": "My CLI Agent",
+  "model": "replace-with-model-name",
+  "version": "replace-with-agent-version",
+  "adapter": "command",
+  "command": "replace-with-executable",
+  "args": [
+    "--non-interactive",
+    "--input",
+    "{prompt}"
+  ],
+  "stdin": "none",
+  "output": "json",
+  "cwd": ".",
+  "timeoutSeconds": 300,
+  "env": {
+    "EXAMPLE_AGENT_MODE": "benchmark"
+  },
+  "includeStderr": true,
+  "promptTemplate": "你正在完成密码分析基准任务。Run: {runId}; Task: {taskId}。\n任务：\n{taskJson}\n请给出最终答案，并说明可复核的推导和证据。"
+}

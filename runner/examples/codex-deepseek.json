@@ -1,0 +1,23 @@
+{
+  "name": "Codex CLI + DeepSeek",
+  "model": "deepseek-flash",
+  "version": "deepseek-api",
+  "adapter": "command",
+  "command": "codex",
+  "args": [
+    "--model",
+    "deepseek-flash",
+    "--sandbox",
+    "workspace-write",
+    "--ask-for-approval",
+    "never",
+    "exec",
+    "--json",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "-"
+  ],
+  "stdin": "prompt",
+  "output": "jsonl",
+  "timeoutSeconds": 600
+}

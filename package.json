@@ -34,6 +34,7 @@
     "test:password-recovery": "node tests/password-recovery.mjs && node tests/password-recovery-browser.mjs",
     "test:password-recovery:integration": "node tests/run-password-recovery-integration.mjs",
     "test:custom-datasets": "node tests/custom-datasets-browser.mjs",
+    "test:runner-command": "node tests/runner-command-adapter.mjs",
     "test:pricing": "node tests/pricing-admin.mjs",
     "test:gateway": "node tests/model-gateway.mjs",
     "test:workflow:mock": "node tests/workflow-browser.mjs",

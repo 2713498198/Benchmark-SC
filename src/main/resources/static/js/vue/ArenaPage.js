@@ -72,13 +72,37 @@ export default {components:{SvgIcon,RunProgress},setup(){
   executionOptionsError.value=results[0].status==='rejected'?results[0].reason.message:'';
  }
  async function loadRunners(){
-  if(!state.user)return;runnerLoading.value=true;try{runners.value=await app.api('/api/runners');if(!form.runnerId&&runners.value.length)form.runnerId=runners.value[0].id;}catch(error){executionOptionsError.value=error.message;}finally{runnerLoading.value=false;}
+  if(!state.user)return;runnerLoading.value=true;try{runners.value=await app.api('/api/runners');if(!runners.value.some(item=>item.id===form.runnerId))form.runnerId=(runners.value.find(item=>item.online)||runners.value[0])?.id||'';}catch(error){executionOptionsError.value=error.message;}finally{runnerLoading.value=false;}
  }
  async function createPairing(){try{pairing.value=await app.api('/api/runners/pair',{method:'POST'});app.toast('配对码已生成，十分钟内有效');}catch(error){app.toast(error.message);}}
  watch(()=>state.user?.id,id=>{gatewayRuntime.value={enabled:false,providers:[]};if(id){loadExecutionOptions();loadRunners();}},{immediate:true});
  async function checkConnection(){
   if(!state.user){app.toast('请先登录后测试 Agent');app.navigate('/login');return;}
-  const user=state.user.id;try{if(form.source==='runner'){const selected=runners.value.find(item=>item.id===form.runnerId);if(!selected||!selected.online)throw Error('Runner 不在线，请先启动本地 Runner');connected.value=true;connectionStatus.value='Runner 在线 · '+selected.displayName;form.agentVersion=selected.runnerVersion||'unknown';return;}const body=form.source==='docker'?{source:'docker',image:form.image}:{source:'local',endpoint:form.endpoint,token:form.token};const result=await app.api('/api/agent/check',{method:'POST',body});if(!alive||state.user?.id!==user)return;const advertised=Array.isArray(result.capabilities?.models)?result.capabilities.models.filter(Boolean):[];agentModels.value=advertised;if(!gatewayProvider.value&&advertised.length&&!advertised.includes(form.model))form.model=advertised[0];connected.value=true;connectionStatus.value='已连接 · '+(result.health?.version||'Agent');form.agentVersion=result.health?.version||result.capabilities?.agentVersion||'';}catch(err){if(alive&&state.user?.id===user){connected.value=false;connectionStatus.value=err.message||'Agent 连接失败';}}
+  const user=state.user.id;
+  try{
+   if(form.source==='runner'){
+    await loadRunners();
+    if(!runners.value.length)throw Error('当前登录账号没有已配对的 Runner，请使用当前账号重新配对');
+    const selected=runners.value.find(item=>item.id===form.runnerId);
+    if(!selected||!selected.online)throw Error('Runner 不在线，请先启动本地 Runner');
+    const advertised=Array.isArray(selected.agents?.profiles)?selected.agents.profiles.filter(item=>item&&item.model):[];
+    agentModels.value=[...new Set(advertised.map(item=>item.model))];
+    if(agentModels.value.length&&!agentModels.value.includes(form.model))form.model=agentModels.value[0];
+    const profile=advertised.find(item=>item.model===form.model)||advertised[0];
+    if(profile?.name)form.name=profile.name;
+    connected.value=true;connectionStatus.value='Runner 在线 · '+selected.displayName;form.agentVersion=profile?.version||selected.runnerVersion||'unknown';
+    return;
+   }
+   const body=form.source==='docker'?{source:'docker',image:form.image}:{source:'local',endpoint:form.endpoint,token:form.token};
+   const result=await app.api('/api/agent/check',{method:'POST',body});
+   if(!alive||state.user?.id!==user)return;
+   const advertised=Array.isArray(result.capabilities?.models)?result.capabilities.models.filter(Boolean):[];
+   agentModels.value=advertised;
+   if(!gatewayProvider.value&&advertised.length&&!advertised.includes(form.model))form.model=advertised[0];
+   connected.value=true;connectionStatus.value='已连接 · '+(result.health?.version||'Agent');form.agentVersion=result.health?.version||result.capabilities?.agentVersion||'';
+  }catch(err){
+   if(alive&&state.user?.id===user){connected.value=false;connectionStatus.value=err.message||'Agent 连接失败';}
+  }
  }
  function next(){if(step.value===1&&(!connected.value||!form.name.trim())){app.toast('请先完成 Agent 连接检查');return;}if(step.value===3){begin('evaluation',{...form});return;}step.value++;}
  function trackCreated(created){app.runState.track(created);clearCredentials();draftMode.value=false;if(created.kind==='evaluation')step.value=4;app.navigate((created.kind==='pk'?'/arena':'/evaluate')+'?run='+encodeURIComponent(created.runId));}

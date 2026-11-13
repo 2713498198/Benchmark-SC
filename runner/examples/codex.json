@@ -1,0 +1,21 @@
+{
+  "name": "Codex CLI",
+  "model": "codex-cli",
+  "version": "local",
+  "adapter": "command",
+  "command": "codex",
+  "args": [
+    "--sandbox",
+    "workspace-write",
+    "--ask-for-approval",
+    "never",
+    "exec",
+    "--json",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "-"
+  ],
+  "stdin": "prompt",
+  "output": "jsonl",
+  "timeoutSeconds": 300
+}
