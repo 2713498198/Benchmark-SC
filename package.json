@@ -12,6 +12,7 @@
     "validate:v4-materials": "node scripts/validate-v4-materials.mjs",
     "validate:v4-release": "python scripts/validate-v4-release.py",
     "test:v4-1-import": "python tests/verify-v4-1-import.py",
+    "test:v4-evaluator-catalog": "python tests/verify-v4-evaluator-catalog.py",
     "test:cryptobench-import": "python tests/import-cryptobench-overlay.py",
     "test:v4-validator-registry": "python tests/validate-v4-validator-registry.py",
     "test:evaluator": "node tests/evaluator-catalog.mjs",
