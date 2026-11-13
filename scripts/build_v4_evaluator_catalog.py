@@ -86,29 +86,10 @@ def derive_rule(oracle):
             return boolean_rule(oa["reachable"]), str(oa["reachable"])
         return None, None
 
-    if schema == "hard_task_oracle_v1":
-        replay = oracle.get("oracle_replay") or {}
-        if isinstance(replay, dict) and isinstance(replay.get("objective"), numbers.Number) \
-                and not isinstance(replay.get("objective"), bool):
-            return numeric_rule(replay["objective"]), str(replay["objective"])
-        core = oracle.get("expected_core_answer") or {}
-        if isinstance(core, dict):
-            scalars = {k: v for k, v in core.items() if scalar(v)}
-            if len(scalars) == 1:
-                k, v = next(iter(scalars.items()))
-                if isinstance(v, bool):
-                    return boolean_rule(v), str(v)
-                if isinstance(v, numbers.Number):
-                    return numeric_rule(v), str(v)
-                return string_rule(v), v
-        return None, None
-
-    if schema == "hard_failure_oracle_v1":
-        expected = oracle.get("expected") or {}
-        if isinstance(expected, dict) and isinstance(expected.get("effective_weight"), numbers.Number):
-            tolerance = (oracle.get("tolerances") or {}).get("effective_weight_abs", 0.01)
-            return numeric_rule(expected["effective_weight"], absolute=tolerance), str(expected["effective_weight"])
-        return None, None
+    # hard_task_oracle_v1 and hard_failure_oracle_v1 answer schemas describe
+    # multi-field, replay, or semantically scored results. They do not expose a
+    # single unambiguous final value, so they stay dynamic rather than risk a
+    # wrong automatic extraction.
 
     return None, None
 

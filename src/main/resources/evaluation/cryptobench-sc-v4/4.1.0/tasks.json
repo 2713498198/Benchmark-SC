@@ -486,57 +486,45 @@
     {
       "id": "037_CBSC-V2-PS-2013-DESL-8RK-009",
       "question": "# Question 037. DESL 相关密钥差分特征计算\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：DESL eight round related key characteristic\n- 任务类型：相关密钥差分特征计算\n\n公开研究记录。一次 DESL 相关密钥 MILP 搜索得到一条 8 轮 characteristic，累积有效权重为 `34.78`；原实验在当时的 PC 上用时少于 10 分钟。该模型若不增加非平凡条件，会在 5 秒内找到“无活跃 S-box、概率为 1”的退化相关密钥 characteristic。研究中采用的排除条件是：整个 characteristic 至少有一个活跃 S-box。\n\n任务。请写脚本或形式化检查器复核 `weight=34.78` 与 `probability=2^-34.78` 的换算，并说明为何“至少一个活跃 S-box”只能排除上述平凡解，而不能单独证明给定 8 轮 characteristic 全局最优。报告有效权重、概率近似值、原实验搜索时间和 anti-trivial condition；必须把历史运行时间与本次实际运行时间分开。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "34.78",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "related_key_characteristic",
       "verification": {
-        "type": "numeric",
-        "expected": 34.78,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "038_CBSC-V2-PS-2013-LBLOCK-13FACT-005",
       "question": "# Question 038. LBlock 活跃 S 盒下界与概率上界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：LBlock 13 round 指定命题 复核\n- 任务类型：活跃 S 盒下界与概率上界验证\n\n公开命题。对 LBlock 的 13 轮相关密钥 XOR-differential characteristic，已由 MILP 下界模型证明：\n\n1. 每条 characteristic 至少有 13 个活跃 S-box；\n2. 若恰有 13 个活跃 S-box，则至少一个活跃 S-box 的转移概率不超过 `2^-3`，其余活跃 S-box 的转移概率均不超过 LBlock S-box 的 MDP `2^-2`。\n\n任务。把上述命题编码成一个可执行的边界检查或小型优化模型，推导 13 轮 characteristic 的概率上界。报告最小活跃 S-box 数、特殊活跃 S-box 的概率上界、总有效权重和概率上界。说明该推导依赖的是已给出的 MILP 命题，而不是本次脚本重新证明完整 LBlock MILP 模型。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "27.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "active_sbox_probability_fact",
       "verification": {
-        "type": "numeric",
-        "expected": 27.0,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "039_CBSC-V2-PS-2013-LBLOCK-14CHAR-008",
       "question": "# Question 039. LBlock 相关密钥差分特征计算\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：LBlock 14 round related key characteristic\n- 任务类型：相关密钥差分特征计算\n\n公开研究记录。一次 LBlock 相关密钥搜索得到一条 14 轮 characteristic：包含 20 个活跃 S-box，累积概率为 `2^-49`，原实验搜索时间少于 4 小时。作为比较，研究开展前已公开的 13 轮和 14 轮 LBlock 相关密钥 characteristics 的概率分别为 `2^-53` 和 `2^-65`。这里的运行时间依赖原机器和求解器，不是密码学不变量。\n\n任务。用脚本把三个概率转换为有效权重和数值近似，比较新 14 轮 characteristic 相对两条既有 characteristic 的概率倍率。报告新 characteristic 的轮数、活跃 S-box 数、概率和原实验时间，并明确：这些数据说明找到了一条更高概率的 14 轮 characteristic，但仅凭该记录不能证明它是全局最优，也不能证明完整 LBlock 被攻破。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "49.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "related_key_characteristic",
       "verification": {
-        "type": "numeric",
-        "expected": 49.0,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "040_CBSC-V2-PS-2013-LBLOCK-FULL-004",
       "question": "# Question 040. LBlock 相关密钥差分概率上界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Full LBlock related key differential bound\n- 任务类型：相关密钥差分概率上界验证\n\n公开命题。LBlock 的完整轮数为 32。对其相关密钥 XOR-differential characteristics，已知任意连续 13 轮段的概率不超过 `2^-27`。在把 32 轮分为 `13 + 13 + 6` 时，附加的 6 轮段至少贡献 3 个活跃 S-box；LBlock S-box 的最大差分概率为 `2^-2`。\n\n任务。写一个可执行边界计算器，使用以上三个独立上界因子推导 32 轮 characteristic 的概率上界，报告每个中间因子、总有效权重和概率近似值。解释分段乘法成立所依赖的 characteristic/Markov 权重求和语义，并明确这里约束的是单条 related-key differential characteristic，不是已经聚合所有兼容 trails 的 differential probability。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "60.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "related_key_differential_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 60.0,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -553,15 +541,12 @@
     {
       "id": "042_CBSC-V2-PS-2013-PRESENT128-7RK-007",
       "question": "# Question 042. PRESENT 相关密钥差分特征计算\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：PRESENT 128 seven round related key characteristic\n- 任务类型：相关密钥差分特征计算\n\n公开研究记录。给定一条 7 轮 PRESENT-128 相关密钥 XOR-differential characteristic。其加密过程共有 4 个活跃 S-box，密钥调度中的活跃 S-box 数为 0；加密过程的 4 个转移中，一个概率为 `2^-3`，另外三个各为 `2^-2`。搜索目标明确要求加密过程至少存在一个活跃 S-box，以排除无活跃加密 S-box 的概率 1 退化解。\n\n任务。写脚本复核各 S-box 概率因子的乘积、总有效权重和概率近似值，并报告 encryption/key-schedule 两部分的活跃 S-box 数和 probability pattern。解释“密钥调度中 0 个活跃 S-box”不等于整个 characteristic 是平凡概率 1 解，也不要仅凭给定 witness 宣称全局最优。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "11.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "related_key_characteristic",
       "verification": {
-        "type": "numeric",
-        "expected": 11.0,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -589,15 +574,12 @@
     {
       "id": "045_CBSC-V2-PS-2013-PRESENT80-RK24-001",
       "question": "# Question 045. PRESENT 相关密钥差分概率上界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：PRESENT 80 24 round related key differential bound\n- 任务类型：相关密钥差分概率上界验证\n\n公开命题。对 PRESENT-80 的 related-key XOR-differential characteristic 模型，初始 80-bit key-register difference 被约束为非零。MILP 已证明任意连续 12 轮至少包含 16 个活跃 S-box；PRESENT S-box 的最大差分概率为 `2^-2`。本题把 24 轮划分为两个不重叠的连续 12 轮段。\n\n任务。写脚本复核两个 12 轮下界如何组合成 24 轮 characteristic probability upper bound，报告每段及总计的活跃 S-box 下界、总有效权重和概率。说明“已证明的下界 + 每盒 MDP”为什么是对所有满足模型的 characteristics 的上界，而不仅是一条已找到 trail 的概率；同时明确该结论针对 related-key characteristic，不自动等于聚合 differential probability。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "64.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "related_key_differential_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 64.0,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -658,15 +640,12 @@
     {
       "id": "051_CBSC-V2-PS-2023-SPECK48-FIXEDDIFF-015",
       "question": "# Question 051. 12 轮 Speck48/72 固定输入输出差分概率计算\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck48/72\n- 轮数：12\n- 任务类型：固定输入输出差分概率计算\n- word size：24\n- 旋转参数：{\"alpha\": 8, \"beta\": 3}\n- 输入差分：[\"0x0800c8\", \"0x080800\"]\n- 输出差分：[\"0x840084\", \"0xa00080\"]\n\n任务。使用 Speck48/72 的标准两分支 Speck 轮函数，word size 为 24 bit，轮数为 12。旋转参数为 {\"alpha\": 8, \"beta\": 3}。\n\n令 n、alpha、beta 分别取上面的 word size 与旋转参数，标准 round-core 明确定义为：x_(r+1) = (ROR_alpha(x_r) + y_r) mod 2^n；y_(r+1) = ROL_beta(y_r) XOR x_(r+1)。差分 pair 的书写顺序始终是 (Delta_x, Delta_y)。round-key XOR 是固定 XOR 常量，不改变 single-key XOR-difference propagation。\n\n本题的 aggregate probability 定义为：固定 Delta_0 和 Delta_R 后，对所有中间 round-boundary differences Delta_1,...,Delta_(R-1)，求每条兼容 characteristic 的逐轮 modular-addition XOR-transition probability 乘积，再对这些乘积求和。局部模加概率必须由精确 carry/DDT 计数得到。单条 trail、当前最好 trail 或只枚举到某个阈值的部分和都不等于未经误差界证明的完整 aggregate probability。给定输入差分 ['0x0800c8', '0x080800'] 和输出差分 ['0x840084', '0xa00080']，计算该固定输入/输出差分对的 aggregate XOR differential probability。必须汇总所有兼容 characteristics，不要只报告单条可行 trail 或当前找到的最好 trail。报告有效权重 -log2(p)、概率近似值和模型/枚举证据。\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "46.78",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "fixed_endpoint_differential_probability",
       "verification": {
-        "type": "numeric",
-        "expected": 46.78,
-        "absoluteTolerance": 0.08,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -882,85 +861,67 @@
     {
       "id": "071_CBSC-V2-HARD-SPECK128-FREEOPT-010",
       "question": "# Question 071. 15 轮 Speck128/128 差分特征搜索\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck128/128\n- 轮数：15\n- 任务类型：差分特征搜索\n- 分析模型：xor differential characteristic\n- word bits：64\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：find a characteristic with total weight <= 115\n\n任务。For the Speck128/128 permutation, use the standard Speck round on two 64-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^64) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: find a valid 15-round XOR differential characteristic with nonzero input difference and total weight at most 115. Report the full sequence of 16 round-boundary differences `(Delta_x_i, Delta_y_i)` in hexadecimal, the per-round weights, the total weight, and enough reproducible evidence to let another person verify the characteristic.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "115.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_witness_search",
       "verification": {
-        "type": "numeric",
-        "expected": 115.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "072_CBSC-V2-HARD-SPECK128-LBPROOF-013",
       "question": "# Question 072. 19 轮 Speck128/128 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck128/128\n- 轮数：19\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：64\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 118\n\n任务。For the Speck128/128 permutation, use the standard Speck round on two 64-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^64) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists a 19-round XOR differential characteristic with nonzero input difference and total weight at most 118. Give a yes/no answer and enough reproducible evidence for the decision. If you conclude that no such characteristic exists, the evidence should be stronger than simply failing to find one.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "119.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 119.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "073_CBSC-V2-HARD-SPECK128-LBPROOF-019",
       "question": "# Question 073. 19 轮 Speck128/128 差分特征权重下界本地证明\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck128/128\n- 轮数：19\n- 任务类型：差分特征权重下界本地证明\n- 分析模型：bounded weight nonexistence proof\n- word bits：64\n- ROR/alpha：8\n- ROL/beta：3\n- 判定问题：exists nonzero input characteristic with total weight <= 118\n\n任务。For the Speck128/128 permutation, use the standard Speck round on two 64-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^64) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists a 19-round XOR differential characteristic with nonzero input difference and total weight at most 118.\n\nIf such a characteristic exists, give the full round-by-round trail and independently replay its modular-addition weights.\n\nIf no such characteristic exists, your answer must be supported by a machine-checkable artifact generated in this run, such as a solver model/log proving UNSAT for weight at most 118, or an optimization run proving objective 119. An external citation, a timeout, or failure to find a trail is not sufficient evidence for the final conclusion.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "119.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound_strict_local_certificate",
       "verification": {
-        "type": "numeric",
-        "expected": 119.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "074_CBSC-V2-HARD-SPECK32-FIXEDIO-004",
       "question": "# Question 074. 9 轮 Speck32/64 差分特征优化搜索\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck32/64\n- 轮数：9\n- 任务类型：差分特征优化搜索\n- 分析模型：fixed boundary differential path search\n- word bits：16\n- ROR/alpha：7\n- ROL/beta：2\n\n任务。Solve the following fixed-boundary differential characteristic problem for the 9-round Speck32/64 permutation.\n\nUse the standard Speck32/64 round on two 16-bit words:\n\n```\nx_{r+1} = (ROR_7(x_r) + y_r) mod 2^16\ny_{r+1} = ROL_2(y_r) XOR x_{r+1}\n```\n\nFor XOR differences, round constants and key additions do not affect the difference propagation, so only the modular addition transition contributes probability weight.\n\nFixed input difference:\n\n```\n(x_0, y_0) = (0x2014, 0x0800)\n```\n\nFixed output difference after 9 rounds:\n\n```\n(x_9, y_9) = (0x0085, 0x0285)\n```\n\nFind the minimum differential weight over all 9-round characteristics satisfying these boundaries, and give one characteristic that attains it. Report the total probability as a power of two. Preserve enough evidence for the answer to be checked, such as a solver model, code, logs, or an independent replay of each round weight.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "31.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_optimization",
       "verification": {
-        "type": "numeric",
-        "expected": 31.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "075_CBSC-V2-HARD-SPECK32-FREEOPT-005",
       "question": "# Question 075. 9 轮 Speck32/64 差分特征优化搜索\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck32/64\n- 轮数：9\n- 任务类型：差分特征优化搜索\n- 分析模型：free input output minimum weight differential path search\n- word bits：16\n- ROR/alpha：7\n- ROL/beta：2\n- 边界条件：free nonzero input difference, free output difference\n\n任务。Solve the following differential-characteristic optimization problem for the 9-round Speck32/64 permutation.\n\nUse the standard Speck32/64 round on two 16-bit words:\n\n```\nx_{r+1} = (ROR_7(x_r) + y_r) mod 2^16\ny_{r+1} = ROL_2(y_r) XOR x_{r+1}\n```\n\nFor XOR differences, round constants and key additions do not affect the difference propagation, so only the modular addition transition contributes probability weight.\n\nAmong all nonzero input XOR differences and all output XOR differences after 9 rounds, find the globally minimum differential characteristic weight. Give one characteristic attaining that weight, report the total probability as a power of two, and preserve enough evidence for the answer to be checked, such as a solver model, code, logs, or an independent replay of each round weight.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "30.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_optimization",
       "verification": {
-        "type": "numeric",
-        "expected": 30.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "076_CBSC-V2-HARD-SPECK32-LBPROOF-006",
       "question": "# Question 076. 9 轮 Speck32/64 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck32/64\n- 轮数：9\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：16\n- ROR/alpha：7\n- ROL/beta：2\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 29\n\n任务。Consider the standard 9-round Speck32/64 permutation on two 16-bit words:\n\n```\nx_{r+1} = (ROR_7(x_r) + y_r) mod 2^16\ny_{r+1} = ROL_2(y_r) XOR x_{r+1}\n```\n\nFor XOR differential characteristics, round constants and key additions do not affect difference propagation. The modular addition transition is the only probabilistic operation.\n\nDecide whether there exists any 9-round XOR differential characteristic with nonzero input difference and total differential weight at most 29.\n\nIf such a characteristic exists, give the full trail and independently replay its round weights. If no such characteristic exists, give a machine-checkable argument, model, certificate, or solver log that rules out all characteristics of weight at most 29. The conclusion must be checkable from artifacts left in the workspace; simply failing to find a trail is not enough.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "30.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 30.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -977,141 +938,111 @@
     {
       "id": "078_CBSC-V2-HARD-SPECK48-LBPROOF-007",
       "question": "# Question 078. 11 轮 Speck48/72 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck48/72\n- 轮数：11\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：24\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 44\n\n任务。Consider the Speck48/72 permutation round on two 24-bit words:\n\n```\nx_{r+1} = ROR_8(x_r) + y_r   (mod 2^24)\ny_{r+1} = ROL_3(y_r) xor x_{r+1}\n```\n\nRound-key XORs may be ignored for XOR-difference characteristic propagation.\n\nDecide whether there exists any 11-round XOR differential characteristic with a nonzero input difference and total modular-addition differential weight at most 44. The output difference is unrestricted.\n\nIf such a characteristic exists, give the full round-by-round trail and independently replay the modular-addition weights. If no such characteristic exists, give the strongest evidence you can: preferably a machine-checkable model, certificate, solver log, or exhaustive argument ruling out all weight-44-or-less trails. Also report the tightest boundary weight you can justify.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "45.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 45.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "079_CBSC-V2-HARD-SPECK48-LBPROOF-014",
       "question": "# Question 079. 11 轮 Speck48/72 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck48/72\n- 轮数：11\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：24\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 43\n\n任务。For the Speck48/72 permutation, use the standard Speck round on two 24-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^24) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists an 11-round XOR differential characteristic with nonzero input difference and total weight at most 43. Give a yes/no answer and enough reproducible evidence for the decision. If you conclude that no such characteristic exists, the evidence should be stronger than simply failing to find one.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "45.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 45.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "080_CBSC-V2-HARD-SPECK48-LBPROOF-021",
       "question": "# Question 080. 11 轮 Speck48/72 差分特征权重下界本地证明\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck48/72\n- 轮数：11\n- 任务类型：差分特征权重下界本地证明\n- 分析模型：bounded weight nonexistence proof\n- word bits：24\n- ROR/alpha：8\n- ROL/beta：3\n- 判定问题：exists nonzero input characteristic with total weight <= 44\n\n任务。For the Speck48/72 permutation, use the standard Speck round on two 24-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^24) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists an 11-round XOR differential characteristic with nonzero input difference and total weight at most 44.\n\nIf such a characteristic exists, give the full round-by-round trail and independently replay its modular-addition weights.\n\nIf no such characteristic exists, your answer must be supported by a machine-checkable artifact generated in this run, such as a solver model/log proving UNSAT for weight at most 44, or an optimization run proving objective 45. An external citation, a timeout, or failure to find a trail is not sufficient evidence for the final conclusion.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "45.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound_strict_local_certificate",
       "verification": {
-        "type": "numeric",
-        "expected": 45.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "081_CBSC-V2-HARD-SPECK64-FIXEDIO-017",
       "question": "# Question 081. 15 轮 Speck64/96 fixed endpoint differential characteristic optimization\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck64/96\n- 轮数：15\n- 任务类型：fixed endpoint differential characteristic optimization\n- 分析模型：xor differential characteristic\n- word bits：32\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：fixed input difference and fixed output difference\n\n任务。For the Speck64/96 permutation, use the standard Speck round on two 32-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^32) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nConsider exactly 15 rounds, with fixed input difference:\n\n```\nDelta_x_0 = 0x40004092\nDelta_y_0 = 0x10420040\n```\n\nand fixed output difference after 15 rounds:\n\n```\nDelta_x_15 = 0x0a080808\nDelta_y_15 = 0x1a4a0848\n```\n\nTask: determine the minimum possible total weight of a 15-round XOR differential characteristic matching these two fixed endpoint differences. Give the minimum weight, a full round-boundary trail if one exists, and enough reproducible evidence to let another person verify the claim. If you claim optimality, the evidence should be stronger than simply failing to find a lower-weight trail.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "62.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "fixed_endpoint_differential_characteristic_optimization",
       "verification": {
-        "type": "numeric",
-        "expected": 62.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "082_CBSC-V2-HARD-SPECK64-FREEOPT-008",
       "question": "# Question 082. 13 轮 Speck64/96 差分特征搜索\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck64/96\n- 轮数：13\n- 任务类型：差分特征搜索\n- 分析模型：xor differential characteristic\n- word bits：32\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：find a characteristic with total weight <= 55\n\n任务。For the Speck64/96 permutation, use the standard Speck round on two 32-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^32) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: find a valid 13-round XOR differential characteristic with nonzero input difference and total weight at most 55. Report the full sequence of 14 round-boundary differences `(Delta_x_i, Delta_y_i)` in hexadecimal, the per-round weights, the total weight, and enough reproducible evidence to let another person verify the characteristic.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "55.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_witness_search",
       "verification": {
-        "type": "numeric",
-        "expected": 55.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "083_CBSC-V2-HARD-SPECK64-LBPROOF-011",
       "question": "# Question 083. 15 轮 Speck64/96 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck64/96\n- 轮数：15\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：32\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 61\n\n任务。For the Speck64/96 permutation, use the standard Speck round on two 32-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^32) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists a 15-round XOR differential characteristic with nonzero input difference and total weight at most 61. Give a yes/no answer and enough reproducible evidence for the decision. If you conclude that no such characteristic exists, the evidence should be stronger than simply failing to find one.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "62.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 62.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "084_CBSC-V2-HARD-SPECK64-LBPROOF-018",
       "question": "# Question 084. 15 轮 Speck64/96 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck64/96\n- 轮数：15\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：32\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 61\n\n任务。For the Speck64/96 permutation, use the standard Speck round on two 32-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^32) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists a 15-round XOR differential characteristic with nonzero input difference and total weight at most 61. Give a yes/no answer and reproducible evidence for the decision. If you conclude that no such characteristic exists, the evidence should include a machine-checkable artifact from this run that can be used to verify the nonexistence or the exact optimum; a timeout, a failed search, or a citation alone is not enough.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "62.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 62.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "085_CBSC-V2-HARD-SPECK96-FREEOPT-009",
       "question": "# Question 085. 13 轮 Speck96/144 差分特征搜索\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck96/144\n- 轮数：13\n- 任务类型：差分特征搜索\n- 分析模型：xor differential characteristic\n- word bits：48\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：find a characteristic with total weight <= 84\n\n任务。For the Speck96/144 permutation, use the standard Speck round on two 48-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^48) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: find a valid 13-round XOR differential characteristic with nonzero input difference and total weight at most 84. Report the full sequence of 14 round-boundary differences `(Delta_x_i, Delta_y_i)` in hexadecimal, the per-round weights, the total weight, and enough reproducible evidence to let another person verify the characteristic.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "84.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_witness_search",
       "verification": {
-        "type": "numeric",
-        "expected": 84.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "086_CBSC-V2-HARD-SPECK96-LBPROOF-012",
       "question": "# Question 086. 16 轮 Speck96/144 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck96/144\n- 轮数：16\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：48\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 86\n\n任务。For the Speck96/144 permutation, use the standard Speck round on two 48-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^48) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect the difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists a 16-round XOR differential characteristic with nonzero input difference and total weight at most 86. Give a yes/no answer and enough reproducible evidence for the decision. If you conclude that no such characteristic exists, the evidence should be stronger than simply failing to find one.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "87.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 87.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "087_CBSC-V2-HARD-SPECK96-LBPROOF-020",
       "question": "# Question 087. 16 轮 Speck96/144 差分特征权重下界本地证明\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck96/144\n- 轮数：16\n- 任务类型：差分特征权重下界本地证明\n- 分析模型：bounded weight nonexistence proof\n- word bits：48\n- ROR/alpha：8\n- ROL/beta：3\n- 判定问题：exists nonzero input characteristic with total weight <= 86\n\n任务。For the Speck96/144 permutation, use the standard Speck round on two 48-bit words:\n\n- `x_{i+1} = (ROR_8(x_i) + y_i mod 2^48) XOR k_i`\n- `y_{i+1} = ROL_3(y_i) XOR x_{i+1}`\n\nWork in the XOR-differential characteristic model for the round function. Round keys are independent XOR constants, so they do not affect difference propagation. The weight of one round is `-log2` of the XOR-differential probability of the modular addition transition in that round, and the total characteristic weight is the sum over rounds.\n\nTask: decide whether there exists a 16-round XOR differential characteristic with nonzero input difference and total weight at most 86.\n\nIf such a characteristic exists, give the full round-by-round trail and independently replay its modular-addition weights.\n\nIf no such characteristic exists, your answer must be supported by a machine-checkable artifact generated in this run, such as a solver model/log proving UNSAT for weight at most 86, or an optimization run proving objective 87. An external citation, a timeout, or failure to find a trail is not sufficient evidence for the final conclusion.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "87.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound_strict_local_certificate",
       "verification": {
-        "type": "numeric",
-        "expected": 87.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -1128,57 +1059,45 @@
     {
       "id": "089_CBSC-V2-STRICT-SPECK128-LB19-016",
       "question": "# Question 089. 19 轮 Speck128/128 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck128/128\n- 轮数：19\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：64\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 118\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nFor the Speck128/128 permutation, use the standard two-branch Speck round on 64-bit words:\n\n    x_(i+1) = (ROR_8(x_i) + y_i mod 2^64) xor k_i\n    y_(i+1) = ROL_3(y_i) xor x_(i+1)\n\nRound-key xor does not change xor differences. For 19 rounds, decide the following bounded xor-differential characteristic question:\n\n    exists characteristic with total weight <= 118\n\nThe input difference is free but must be nonzero, and the output difference is free. Report YES or NO. If YES, provide a replayable characteristic and per-round modular-addition differential weights. If NO, provide reproducible evidence strong enough to distinguish a true nonexistence/lower-bound result from an unsuccessful search.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "119.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 119.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "090_CBSC-V2-STRICT-SPECK48-LB11-013",
       "question": "# Question 090. 11 轮 Speck48/72 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck48/72\n- 轮数：11\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：24\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 44\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nFor the Speck48/72 permutation, use the standard two-branch Speck round on 24-bit words:\n\n    x_(i+1) = (ROR_8(x_i) + y_i mod 2^24) xor k_i\n    y_(i+1) = ROL_3(y_i) xor x_(i+1)\n\nRound-key xor does not change xor differences. For 11 rounds, decide the following bounded xor-differential characteristic question:\n\n    exists characteristic with total weight <= 44\n\nThe input difference is free but must be nonzero, and the output difference is free. Report YES or NO. If YES, provide a replayable characteristic and per-round modular-addition differential weights. If NO, provide reproducible evidence strong enough to distinguish a true nonexistence/lower-bound result from an unsuccessful search.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "45.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 45.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "091_CBSC-V2-STRICT-SPECK64-LB15-014",
       "question": "# Question 091. 15 轮 Speck64/96 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck64/96\n- 轮数：15\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：32\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 61\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nFor the Speck64/96 permutation, use the standard two-branch Speck round on 32-bit words:\n\n    x_(i+1) = (ROR_8(x_i) + y_i mod 2^32) xor k_i\n    y_(i+1) = ROL_3(y_i) xor x_(i+1)\n\nRound-key xor does not change xor differences. For 15 rounds, decide the following bounded xor-differential characteristic question:\n\n    exists characteristic with total weight <= 61\n\nThe input difference is free but must be nonzero, and the output difference is free. Report YES or NO. If YES, provide a replayable characteristic and per-round modular-addition differential weights. If NO, provide reproducible evidence strong enough to distinguish a true nonexistence/lower-bound result from an unsuccessful search.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "62.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 62.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
       "id": "092_CBSC-V2-STRICT-SPECK96-LB16-015",
       "question": "# Question 092. 16 轮 Speck96/144 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：Speck96/144\n- 轮数：16\n- 任务类型：差分特征权重下界验证\n- 分析模型：bounded weight nonexistence proof\n- word bits：48\n- ROR/alpha：8\n- ROL/beta：3\n- 边界条件：free nonzero input difference, free output difference\n- 判定问题：exists characteristic with total weight <= 86\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nFor the Speck96/144 permutation, use the standard two-branch Speck round on 48-bit words:\n\n    x_(i+1) = (ROR_8(x_i) + y_i mod 2^48) xor k_i\n    y_(i+1) = ROL_3(y_i) xor x_(i+1)\n\nRound-key xor does not change xor differences. For 16 rounds, decide the following bounded xor-differential characteristic question:\n\n    exists characteristic with total weight <= 86\n\nThe input difference is free but must be nonzero, and the output difference is free. Report YES or NO. If YES, provide a replayable characteristic and per-round modular-addition differential weights. If NO, provide reproducible evidence strong enough to distinguish a true nonexistence/lower-bound result from an unsuccessful search.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "87.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 87.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -1316,15 +1235,12 @@
     {
       "id": "105_CBSC-V3-NA-SKINNY128-DP14-003",
       "question": "# Question 105. 14 轮 SKINNY-128 差分特征权重下界验证\n\n## 问题描述\n\n背景。固定条件如下：\n- 对象：SKINNY 128\n- 轮数：14\n- 任务类型：差分特征权重下界验证\n- 分析模型：large sbox sat probability bound\n- 判定问题：exists characteristic with total weight <= 130\n\n任务。请只基于本题给出的条件和你本次运行产生的代码/计算结果作答。\n\nAnalyze differential characteristics of 14 rounds of SKINNY-128. The state is a 4 x 4 byte array. A round applies SubCells, AddConstants/AddRoundTweakey, ShiftRows, and MixColumns. Constants and tweakey additions do not affect XOR differences.\n\nUse this 8-bit S-box table, where the row is the high nibble and the column is the low nibble:\n\n```\n65 4c 6a 42 4b 63 43 6b 55 75 5a 7a 53 73 5b 7b\n35 8c 3a 81 89 33 80 3b 95 25 98 2a 90 23 99 2b\ne5 cc e8 c1 c9 e0 c0 e9 d5 f5 d8 f8 d0 f0 d9 f9\na5 1c a8 12 1b a0 13 a9 05 b5 0a b8 03 b0 0b b9\n32 88 3c 85 8d 34 84 3d 91 22 9c 2c 94 24 9d 2d\n62 4a 6c 45 4d 64 44 6d 52 72 5c 7c 54 74 5d 7d\na1 1a ac 15 1d a4 14 ad 02 b1 0c bc 04 b4 0d bd\ne1 c8 ec c5 cd e4 c4 ed d1 f1 dc fc d4 f4 dd fd\n36 8e 38 82 8b 30 83 39 96 26 9a 28 93 20 9b 29\n66 4e 68 41 49 60 40 69 56 76 58 78 50 70 59 79\na6 1e aa 11 19 a3 10 ab 06 b6 08 ba 00 b3 09 bb\ne6 ce ea c2 cb e3 c3 eb d6 f6 da fa d3 f3 db fb\n31 8a 3e 86 8f 37 87 3f 92 21 9e 2e 97 27 9f 2f\n61 48 6e 46 4f 67 47 6f 51 71 5e 7e 57 77 5f 7f\na2 18 ae 16 1f a7 17 af 01 b2 0e be 07 b7 0f bf\ne2 ca ee c6 cf e7 c7 ef d2 f2 de fe d7 f7 df ff\n```\n\nShiftRows rotates rows 0,1,2,3 right by 0,1,2,3 bytes respectively. MixColumns applies this binary matrix independently to each column over bytes:\n\n```\n1 0 1 1\n1 0 0 0\n0 1 1 0\n1 0 1 0\n```\n\nFor a characteristic, the weight of an S-box transition is `-log2(DDT_count/256)`. The total characteristic weight is the sum over all active S-box transitions.\n\nDecide the bounded optimality question:\n\n```\nDoes there exist any 14-round SKINNY-128 differential characteristic with total weight <= 130?\n```\n\nThe input difference must be nonzero and the output difference is free. Report YES or NO. If YES, provide a replayable characteristic. If NO, provide reproducible evidence strong enough to distinguish a true lower-bound/optimality result from an unsuccessful search.\n\n## 交付要求\n\n1. 返回可执行代码或可复核的形式化模型，形式可以是 Python、Sage、C/C++、MILP、SAT/SMT、Gurobi LP/MPS、验证脚本或等价程序。\n2. 给出运行命令、关键输出和最终结论；最终结论必须直接回答题目要求的数值、YES/NO 判定、trail、概率/权重、表格项或证明边界。\n3. 说明代码或模型如何对应本题固定条件，包括轮数、变体、bit/word 顺序、边界条件、目标函数或判定条件。\n4. 对 solver 结果给出可信性解释：区分 `OPTIMAL`、`FEASIBLE`、`UNSAT/INFEASIBLE`、`TIME_LIMIT`、`UNKNOWN`，不要用不充分的 solver 状态过度声明。\n5. 若未能完全求解，返回已经执行的代码、日志、当前最强边界、可行 witness 或反例，并明确说明未证明的部分。\n\n## 沙箱工具与求解器说明\n\n正式测试时，你只能看到本题公开题干和当前工作区。请不要读取 benchmark 包中的 `hidden/`、`oracle/`、`docs/` 或历史 `runs/`。\n\n你可以在当前工作区中编写和运行代码。常见可用方式包括：\n\n- Python 3 脚本、枚举程序、验证脚本或 replay/checker；\n- SAT/SMT 工具或 Python 包，例如 `z3-solver`、`python-sat`、`cvc5`、`bitwuzla`、`kissat`、`cadical` 等；若当前沙箱未预装，可以在预算允许时自行安装或改用等价方法；\n- MILP/LP/MIP 模型。若当前 run 启用了 Gurobi broker，可以通过环境变量 `CBSC_GUROBI_CLIENT` 提交 LP/MPS 模型。\n\n可以先运行工具预检脚本：\n\n```bash\npython3 \"$CBSC_SANDBOX_TOOL_CHECK\" --json --out sandbox_tools.json\n```\n\n该脚本只报告当前沙箱中可见的 Python 包、SAT/SMT CLI 和 Gurobi broker 状态，不读取任何隐藏答案。\n\nGurobi broker 用法：\n\n```bash\ncat > model.lp <<'LP'\nMaximize\n obj: x + y\nSubject To\n c0: x + 2 y <= 4\nBounds\n 0 <= x <= 10\n 0 <= y <= 10\nGenerals\n x y\nEnd\nLP\n\npython3 \"$CBSC_GUROBI_CLIENT\" model.lp \\\n  --param TimeLimit=600 \\\n  --output-json gurobi_result.json\n```\n\n`gurobi_result.json` 中会包含 `status`、`objective`、`best_bound`、`mip_gap_percent`、`solution_text` 和日志摘要。请在答案中说明 solver status 的含义：`OPTIMAL` 可以支持最优性结论，`FEASIBLE` 只说明找到可行解，`TIME_LIMIT` 或 `UNKNOWN` 不能单独证明最优性或不存在性。\n\n无论选择哪种方法，请尽量保留：\n\n1. 模型或程序文件；\n2. 运行命令；\n3. 关键日志或输出；\n4. witness、trail、counterexample、proof、replay/checker 结果；\n5. 最终结论及其适用边界。\n",
-      "expectedAnswer": "131.0",
+      "expectedAnswer": "",
       "publicFiles": [],
       "input": {},
       "category": "differential_characteristic_lower_bound",
       "verification": {
-        "type": "numeric",
-        "expected": 131.0,
-        "absoluteTolerance": 0.0,
-        "relativeTolerance": 0.0
+        "type": "dynamic"
       }
     },
     {
@@ -1343,16 +1259,14 @@
     {
       "id": "107_CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022",
       "question": "# Question 107. SKINNY-64-128 八轮相关 tweakey 联合差分概率分类\n\n附件 `attachments/skinny64_r17_lower_instance.json` 完整定义了本题采用的 SKINNY-64-128 轮函数、状态与 bit 编号、tweakey 调度、四个相关 tweakey、八轮子区间以及联合差分事件。\n\n对全部 128 位基准 tweakey `(TK1,TK2)`，精确求附件中定义的 `q(TK1,TK2)`。请报告所有不同的概率值、每个概率值对应的基准 tweakey 数量或比例，并给出这些类别关于基准 tweakey bit 的等价判定条件。结果必须覆盖零概率类别，并明确区分固定 tweakey 概率与对均匀 tweakey 取平均后的概率。\n\n请返回可执行的精确分析代码、最终分类和可复核证据。随机抽样可以用于交叉检查，但不能代替精确结论。\n",
-      "expectedAnswer": "3/2^34",
+      "expectedAnswer": "",
       "publicFiles": [
         "tasks/107_CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022/public/attachments/skinny64_r17_lower_instance.json"
       ],
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "string",
-        "expected": "3/2^34",
-        "ignoreCase": true
+        "type": "dynamic"
       }
     },
     {
@@ -1698,7 +1612,7 @@
     {
       "id": "134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030",
       "question": "# WARP 23 轮部分 boomerang 特征审计\n\n附件 `attachments/candidates.json` 给出 WARP-128 的 4 比特 S-box、分支置换以及四份 23 轮部分 boomerang 特征候选 `c0` 至 `c3`。附件 `attachments/semantics.md` 给出状态传播、自由值、局部连接表和因子分类的完整语义。每份候选的随附元数据均声称其总权重为 140，但该数值未经验证。\n\n请实现一个可直接执行的审计程序，从 S-box 真值表独立生成 DDT、FBCT、FBDT 和 FBET。对每份候选完成以下审计：\n\n1. 检查所有不含自由值的 WARP 轮传播等式，报告实际检查的等式数和全部违反项。\n2. 仅根据六个 activity/free 标志推导每个局部因子的类型，并逐项用连接表的原始计数复算其精确概率。\n3. 报告各因子类型的数量、局部权重直方图、精确总概率和总权重，并判断随附的权重 140 是否正确。\n4. 报告每份候选的上部输入差分和下部输出差分。差分按附件数组从索引 0 到 31 直接拼接为 32 个十六进制半字节，不做额外字节序反转。\n\n审计程序必须保存足以复核每个非平凡局部因子的记录，至少包含轮号、S-box 位置、因子类型、参数、原始计数和局部权重。不能把元数据中的权重当作输入，也不能用引用现成结论代替对四份候选的完整复放。返回可执行代码和审计报告。\n",
-      "expectedAnswer": "2^-141",
+      "expectedAnswer": "",
       "publicFiles": [
         "tasks/134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030/public/attachments/candidates.json",
         "tasks/134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030/public/attachments/semantics.md"
@@ -1706,9 +1620,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "string",
-        "expected": "2^-141",
-        "ignoreCase": true
+        "type": "dynamic"
       }
     },
     {
