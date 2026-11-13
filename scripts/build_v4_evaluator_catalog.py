@@ -86,10 +86,15 @@ def derive_rule(oracle):
             return boolean_rule(oa["reachable"]), str(oa["reachable"])
         return None, None
 
-    # hard_task_oracle_v1 and hard_failure_oracle_v1 answer schemas describe
-    # multi-field, replay, or semantically scored results. They do not expose a
-    # single unambiguous final value, so they stay dynamic rather than risk a
-    # wrong automatic extraction.
+    if schema == "hard_failure_oracle_v1":
+        expected = oracle.get("expected") or {}
+        if isinstance(expected, dict) and isinstance(expected.get("probability_approx"), str):
+            return string_rule(expected["probability_approx"]), expected["probability_approx"]
+        return None, None
+
+    # hard_task_oracle_v1 describes multi-field, replay, or semantically scored
+    # results and does not expose a single unambiguous final value; it stays
+    # dynamic rather than risk a wrong automatic extraction.
 
     return None, None
 
