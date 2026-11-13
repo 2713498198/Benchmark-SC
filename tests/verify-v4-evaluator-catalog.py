@@ -19,7 +19,7 @@ assert private["version"] == "4.1.0"
 assert private["evaluatorVersion"] == "cryptobench-sc-v4-evaluator-1.0.0"
 assert len(tasks) == 170 == len(public_ids)
 
-allowed = {"numeric", "string", "one-of", "boolean", "exact-json", "dynamic"}
+allowed = {"numeric", "string", "one-of", "boolean", "exact-json", "dynamic", "workspace-validator"}
 ids = set()
 deterministic = 0
 for task in tasks:
@@ -29,8 +29,8 @@ for task in tasks:
     rule = task["verification"]
     rule_type = rule.get("type")
     assert rule_type in allowed, f"{task['id']}: bad rule type {rule_type}"
-    if rule_type == "dynamic":
-        assert task["expectedAnswer"] == "", f"{task['id']}: dynamic task must not carry an answer"
+    if rule_type in ("dynamic", "workspace-validator"):
+        assert task["expectedAnswer"] == "", f"{task['id']}: {rule_type} task must not carry an answer"
         continue
     deterministic += 1
     assert task["expectedAnswer"] != "", f"{task['id']}: deterministic task missing expectedAnswer"
@@ -45,5 +45,7 @@ for task in tasks:
 assert ids == public_ids, "private catalog must cover exactly the public tasks"
 assert deterministic >= 65, f"deterministic coverage regressed: {deterministic}"
 
-print(f"PASS: V4 evaluator catalog covers {len(tasks)} tasks, {deterministic} deterministic, "
-      f"{len(tasks) - deterministic} dynamic, and exposes no dynamic-task answers.")
+from collections import Counter
+breakdown = Counter(task["verification"]["type"] for task in tasks)
+print(f"PASS: V4 evaluator catalog covers {len(tasks)} tasks, rule types {dict(breakdown)}, "
+      "and exposes no dynamic/workspace-task answers.")

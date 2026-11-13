@@ -23,9 +23,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
     private final ObjectMapper mapper;
+    private final V4ValidatorRunner validatorRunner;
 
-    public CryptobenchV4Evaluator(ObjectMapper mapper) {
+    public CryptobenchV4Evaluator(ObjectMapper mapper, V4ValidatorRunner validatorRunner) {
         this.mapper = mapper;
+        this.validatorRunner = validatorRunner;
     }
 
     @Override
@@ -59,6 +61,9 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
 
         JsonNode rule = task.verification();
         String type = rule.path("type").asText("");
+        if ("workspace-validator".equals(type)) {
+            return validatorRunner.evaluate(task.id(), actual);
+        }
         boolean passed = switch (type) {
             case "numeric" -> numericMatch(rule, actual);
             case "string" -> stringMatch(rule, actual);

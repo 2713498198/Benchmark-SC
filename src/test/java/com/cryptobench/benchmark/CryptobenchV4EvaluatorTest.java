@@ -2,6 +2,8 @@ package com.cryptobench.benchmark;
 
 import com.cryptobench.benchmark.execution.model.TaskDefinition;
 import com.cryptobench.benchmark.execution.service.CryptobenchV4Evaluator;
+import com.cryptobench.benchmark.execution.service.V4ValidatorRunner;
+import com.cryptobench.benchmark.config.V4ScoringProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
@@ -11,7 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CryptobenchV4EvaluatorTest {
     private final ObjectMapper mapper = new ObjectMapper();
-    private final CryptobenchV4Evaluator evaluator = new CryptobenchV4Evaluator(mapper);
+    private final V4ValidatorRunner validatorRunner =
+            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0), mapper);
+    private final CryptobenchV4Evaluator evaluator = new CryptobenchV4Evaluator(mapper, validatorRunner);
 
     private ObjectNode answer(Object value) {
         ObjectNode response = mapper.createObjectNode();
@@ -81,5 +85,13 @@ class CryptobenchV4EvaluatorTest {
         TaskDefinition task = task("numeric", "{\"type\":\"numeric\",\"expected\":1,\"absoluteTolerance\":0,\"relativeTolerance\":0}");
         ObjectNode result = evaluator.evaluate(task, mapper.createObjectNode().put("status", "completed"));
         assertThat(result.path("status").asText()).isEqualTo("invalid");
+    }
+
+    @Test
+    void workspaceValidatorFailsClosedWhenUnavailable() {
+        TaskDefinition task = task("workspace-validator", "{\"type\":\"workspace-validator\"}");
+        ObjectNode result = evaluator.evaluate(task, answer("anything"));
+        assertThat(result.path("passed").asBoolean()).isFalse();
+        assertThat(result.path("reason").asText()).contains("未启用");
     }
 }

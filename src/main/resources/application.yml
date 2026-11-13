@@ -44,6 +44,12 @@ benchmark:
     proxy-bind-address: ${CRYPTOBENCH_DOCKER_PROXY_BIND_ADDRESS:127.0.0.1}
     allowed-images:
       - ${CRYPTOBENCH_DOCKER_MOCK_IMAGE:cryptobench-mock-agent:local}
+  v4:
+    # 服务端私有 CryptoBench-SC V4 套件根目录（含 hidden/oracle 与逐题验证器）。
+    # 留空时 workspace-validator 评分通道关闭，相关题目按未通过处理。
+    suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:}
+    python: ${CRYPTOBENCH_V4_PYTHON:python3}
+    validator-timeout-seconds: ${CRYPTOBENCH_V4_VALIDATOR_TIMEOUT_SECONDS:120}
   gateway:
     enabled: ${CRYPTOBENCH_GATEWAY_ENABLED:false}
     image: ${CRYPTOBENCH_GATEWAY_IMAGE:cryptobench-model-gateway:local}

@@ -1330,7 +1330,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1343,7 +1343,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1357,7 +1357,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1368,7 +1368,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1381,7 +1381,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1394,7 +1394,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1408,7 +1408,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1421,7 +1421,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1435,7 +1435,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1448,7 +1448,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1459,7 +1459,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1473,7 +1473,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1487,7 +1487,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1501,7 +1501,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1514,7 +1514,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1527,7 +1527,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1540,7 +1540,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1553,7 +1553,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1566,7 +1566,7 @@
       "input": {},
       "category": "differential_linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1579,7 +1579,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1590,7 +1590,7 @@
       "input": {},
       "category": "linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1604,7 +1604,7 @@
       "input": {},
       "category": "linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1617,7 +1617,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1630,7 +1630,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1643,7 +1643,7 @@
       "input": {},
       "category": "linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1656,7 +1656,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1669,7 +1669,7 @@
       "input": {},
       "category": "differential_linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1683,7 +1683,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1697,7 +1697,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1711,7 +1711,7 @@
       "input": {},
       "category": "differential_linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1725,7 +1725,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1739,7 +1739,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1752,7 +1752,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1765,7 +1765,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1778,7 +1778,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1789,7 +1789,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1800,7 +1800,7 @@
       "input": {},
       "category": "differential_linear_boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1811,7 +1811,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1824,7 +1824,7 @@
       "input": {},
       "category": "differential_linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1837,7 +1837,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1850,7 +1850,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1863,7 +1863,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1877,7 +1877,7 @@
       "input": {},
       "category": "boomerang_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1891,7 +1891,7 @@
       "input": {},
       "category": "impossible_differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1905,7 +1905,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1919,7 +1919,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1932,7 +1932,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1945,7 +1945,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1958,7 +1958,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1972,7 +1972,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1985,7 +1985,7 @@
       "input": {},
       "category": "linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -1998,7 +1998,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2011,7 +2011,7 @@
       "input": {},
       "category": "linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2024,7 +2024,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2037,7 +2037,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2050,7 +2050,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2063,7 +2063,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2076,7 +2076,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2089,7 +2089,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2102,7 +2102,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2116,7 +2116,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2130,7 +2130,7 @@
       "input": {},
       "category": "integral_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2141,7 +2141,7 @@
       "input": {},
       "category": "linear_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2152,7 +2152,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     },
     {
@@ -2163,7 +2163,7 @@
       "input": {},
       "category": "differential_cryptanalysis",
       "verification": {
-        "type": "dynamic"
+        "type": "workspace-validator"
       }
     }
   ]

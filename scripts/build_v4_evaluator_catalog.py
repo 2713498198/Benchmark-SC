@@ -125,7 +125,11 @@ def main():
                 if path.is_file():
                     public_files.append(f"tasks/{task_id}/public/attachments/{path.name}")
         oracle = json.loads((task_dir / "hidden" / "oracle.json").read_text(encoding="utf-8"))
-        rule, expected = derive_rule(oracle)
+        has_validator = (task_dir / "oracle" / "validator.py").is_file()
+        if has_validator:
+            rule, expected = {"type": "workspace-validator"}, ""
+        else:
+            rule, expected = derive_rule(oracle)
         rule_type = rule["type"] if rule else "dynamic"
         counts[rule_type] = counts.get(rule_type, 0) + 1
         tasks.append({
