@@ -19,7 +19,8 @@ assert private["version"] == "4.1.0"
 assert private["evaluatorVersion"] == "cryptobench-sc-v4-evaluator-1.0.0"
 assert len(tasks) == 170 == len(public_ids)
 
-allowed = {"numeric", "string", "one-of", "boolean", "exact-json", "dynamic", "workspace-validator", "fields"}
+allowed = {"numeric", "string", "one-of", "boolean", "exact-json", "dynamic",
+           "workspace-validator", "fields", "piecewise"}
 ids = set()
 deterministic = 0
 for task in tasks:
@@ -43,9 +44,17 @@ for task in tasks:
         assert "expected" in rule or rule_type == "one-of"
     elif rule_type == "fields":
         assert isinstance(rule.get("fields"), dict) and rule["fields"], f"{task['id']}: fields rule empty"
+    elif rule_type == "piecewise":
+        cases = rule.get("cases")
+        assert isinstance(cases, list) and cases, f"{task['id']}: piecewise rule empty"
+        for case in cases:
+            assert all(case.get(key) for key in ("condition", "y", "advantage")), \
+                f"{task['id']}: piecewise case incomplete"
 
 assert ids == public_ids, "private catalog must cover exactly the public tasks"
 assert deterministic >= 65, f"deterministic coverage regressed: {deterministic}"
+assert all(task["verification"]["type"] != "dynamic" for task in tasks), \
+    "every V4.1 task must have a deterministic or workspace-validator rule"
 
 from collections import Counter
 breakdown = Counter(task["verification"]["type"] for task in tasks)

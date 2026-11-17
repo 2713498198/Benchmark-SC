@@ -85,20 +85,16 @@ CI 使用 `-AllowExternalOutput` 将临时产物写入 runner 临时目录；默
 
 生成的 `output/desktop` 属于本地产物，不提交到仓库。
 
-## 当前阻塞项
+## 当前待收尾项
 
-### CryptoBench-SC V4 正式执行
+### CryptoBench-SC V4.1 工作区验证器部署
 
-V4.1 已导入 170 道公开题目并保留 4.0.0 历史版本，但仍保持 `executionReady: false`。RAR 提供了隐藏 oracle 和研究用验证材料，却只有 65/170 道题带 task-local validator；项目尚未完成 170 道题的正式服务端 verifier。不能用公开题干推测答案，也不能用示例结果冒充正式成绩。
+V4.1 已导入 170 道公开题目和 75 个公开附件，`executionReady: true`，只保留 `cryptobench-sc-v4@4.1.0`。服务端私有目录当前按规则分布：
 
-需要维护者提供并确认：
+- 确定性声明式规则 105 道：`numeric` 33、`string` 31、`boolean` 1、`fields` 39、`piecewise` 1。
+- `workspace-validator` 65 道：经上游逐题 Python 验证器打分。
 
-- 每个 V4 任务的隐藏验证材料。
-- 验证器版本及评分规则。
-- Agent 任务输入和输出的正式结构。
-- 任务执行所需的能力、工具和预算约束。
-
-材料到位后，先注册私有 V4 任务目录和 evaluator，运行完整测试，再把 V4 标记为可执行。
+声明式题目可直接评分；`workspace-validator` 题目需要先把服务端私有套件部署到非静态目录并配置 `CRYPTOBENCH_V4_SUITE_ROOT`，否则相关题目按未通过处理。部署步骤见 [V4 部署说明](v4-deployment.md)，套件准备使用 `scripts/prepare-v4-private-suite.py`。
 
 ## 重启后继续清单
 
@@ -136,7 +132,7 @@ V4.1 已导入 170 道公开题目并保留 4.0.0 历史版本，但仍保持 `e
 
 6. 若 Docker E2E 失败，保留完整错误输出，优先检查 Agent/代理镜像构建、代理端口、internal network、Agent 三个接口和清理阶段。
 
-7. Docker 与回归测试通过后，再继续 Windows 包验证；V4 仍需等待隐藏验证材料。
+7. Docker 与回归测试通过后，再继续 Windows 包验证；V4.1 的 65 道 workspace-validator 题需按部署说明配置私有套件后才能完整评分。
 
 ## 当前已知验证结果
 

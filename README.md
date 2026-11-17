@@ -192,7 +192,7 @@ node tests/spring-boot-browser.mjs
 
 ## 题库与当前功能边界
 
-已导入 CryptoBench-SC V4：127 道公开分组密码分析题目、26 个公开附件。可搜索、筛选、查看题干、下载附件和公开任务 ZIP。来源：https://gitee.com/xiandianzidaxue/cryptobench-sc 。重新导入：
+已导入 CryptoBench-SC V4.1：170 道公开分组密码分析题目、75 个公开附件。可搜索、筛选、查看题干、下载附件和公开任务 ZIP。来源：https://gitee.com/xiandianzidaxue/cryptobench-sc 。重新导入：
 
 ```powershell
 python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
@@ -200,7 +200,7 @@ python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
 
 只公开题干、附件及必要元数据；隐藏答案、参考解法和评分器不进入静态目录或 ZIP。
 
-本项目已实现服务端运行调度、真实 Agent 接入、Mini-SPN 服务端验证、Docker 沙箱执行来源、可信报告和密码找回流程。运行记录支持排队、运行、完成、失败、超时、取消、日志和重试；客户端提交的成绩不会覆盖服务端验证结果。CryptoBench-SC V4 仍标记为 `executionReady: false`，因为它还没有绑定服务端任务目录和验证器，不会生成模拟成绩。正式材料交付后，可用 `node scripts/validate-evaluator-catalog.mjs <private-tasks.json> cryptobench-sc-v4 4.0.0 --public-catalog src/main/resources/static/data/cryptobench-sc-v4/catalog.json` 检查私有目录是否完整覆盖 127 道公开题目；校验器不会输出隐藏答案。
+本项目已实现服务端运行调度、真实 Agent 接入、Mini-SPN 服务端验证、Docker 沙箱执行来源、可信报告和密码找回流程。运行记录支持排队、运行、完成、失败、超时、取消、日志和重试；客户端提交的成绩不会覆盖服务端验证结果。CryptoBench-SC V4.1 已开放执行（`executionReady: true`）：105 道题使用确定性声明式规则（numeric/string/boolean/fields/piecewise）评分，65 道题经服务端工作区验证器评分。工作区验证器需要按 [V4 部署说明](docs/v4-deployment.md) 配置服务端私有套件（`CRYPTOBENCH_V4_SUITE_ROOT`）后才生效，未配置时这 65 道题按未通过处理，不会生成伪造分数。私有目录与公开目录的一致性校验见 `python scripts/validate-v4-release.py` 和 `node scripts/validate-v4-materials.mjs`，校验器不会输出隐藏答案。
 
 本地 Agent 的协议、接口和 Docker 镜像要求见 [本地 Agent 测试指南](docs/local-agent.md)。用户电脑上的 Agent 接入网站请使用 [本地 Runner 指南](docs/local-runner.md)。启动确定性 Mock Agent：
 
@@ -210,13 +210,13 @@ npm run agent:mock
 
 Codex、DeepSeek Harness 等不提供 HTTP 服务的本地 Agent 可通过 Runner 内置命令 Adapter 接入。按“本地 Runner”页面的配对流程，将 `--agent-config` 指向本机 CLI 配置即可；示例位于 `runner/examples/`。
 
-V4 隐藏材料交付后，先使用 `node scripts/validate-v4-materials.mjs <manifest.json> --public-catalog src/main/resources/static/data/cryptobench-sc-v4/catalog.json --materials-root <private-materials-dir>` 校验材料清单、文件哈希和 127 道题覆盖；清单及材料目录必须位于静态资源目录之外，校验输出不包含答案内容。
+V4 隐藏材料交付后，先使用 `node scripts/validate-v4-materials.mjs <manifest.json> --public-catalog src/main/resources/static/data/cryptobench-sc-v4/catalog.json --materials-root <private-materials-dir>` 校验材料清单、文件哈希和 170 道题覆盖；再用 `python scripts/prepare-v4-private-suite.py <release-root> <private-suite-dir>` 部署工作区验证器套件。清单及材料目录必须位于静态资源目录之外，校验输出不包含答案内容。
 
 登录平台后，在“开始测评”中使用 `http://127.0.0.1:8000`，点击“检查本地 Agent”，再创建 Mini-SPN 测评。服务端会轮询运行状态和日志，并在完成后生成带 `runId`、验证器版本和可信状态的私有报告。公开榜单接口 `GET /api/reports/public` 只返回已公开报告，不会返回其他用户的私有记录。
 
 Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal Agent network，并使用平台自有的 `cryptobench-agent-proxy:local` 代理镜像把请求限制在宿主机 `127.0.0.1`；Agent 容器本身没有发布端口或直接外网连接。启用可选模型网关后，Agent 可经受控 API 调用允许的供应商和模型。平台同时限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理本次 Agent、代理、网关容器和网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。
 
-Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验测评集与版本；题目目录声明的必需工具和能力也会在发送 `/analyze` 前检查。V4 目前仍没有服务端题目目录与验证器，因此会被明确拒绝执行，不会生成伪造分数。
+Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验测评集与版本；题目目录声明的必需工具和能力也会在发送 `/analyze` 前检查。V4.1 已绑定服务端题目目录与验证器；未配置工作区验证器套件时，相关 65 道题会按未通过处理，不会生成伪造分数。
 
 密码找回接口为 `POST /api/auth/forgot` 和 `POST /api/auth/reset`。令牌只保存哈希且一次性使用；邮件投递可通过 `PASSWORD_RESET_DELIVERY_URL` 配置内网邮件网关，本地联调可用 `PASSWORD_RESET_OUTBOX` 写入临时 outbox 文件。
 

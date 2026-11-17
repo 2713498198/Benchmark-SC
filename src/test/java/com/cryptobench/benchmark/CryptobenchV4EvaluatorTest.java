@@ -6,6 +6,7 @@ import com.cryptobench.benchmark.execution.service.V4ValidatorRunner;
 import com.cryptobench.benchmark.config.V4ScoringProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -110,6 +111,42 @@ class CryptobenchV4EvaluatorTest {
         ObjectNode wrong = answer.deepCopy();
         wrong.put("distinguisher", "D04");
         response.putObject("artifact").set("answer", wrong);
+        assertThat(evaluator.evaluate(task, response).path("passed").asBoolean()).isFalse();
+    }
+
+    @Test
+    void piecewiseRuleMatchesCasesInAnyOrderWithEquivalentNotation() {
+        String rule = "{\"type\":\"piecewise\",\"cases\":["
+                + "{\"condition\":\"nBIL >= a and 2a >= nFIL + 1\",\"y\":\"2a - nFIL - 1\",\"advantage\":\"nBIL - a + nFIL + 1\"},"
+                + "{\"condition\":\"nBIL >= a and 2a < nFIL + 1\",\"y\":\"0\",\"advantage\":\"nBIL + a\"},"
+                + "{\"condition\":\"nBIL < a and 2nBIL >= nFIL + 1\",\"y\":\"2nBIL - nFIL - 1\",\"advantage\":\"nFIL + 1\"},"
+                + "{\"condition\":\"nBIL < a and 2nBIL < nFIL + 1\",\"y\":\"0\",\"advantage\":\"2nBIL\"}]}";
+        TaskDefinition task = task("piecewise", rule);
+
+        ObjectNode answer = mapper.createObjectNode();
+        ArrayNode submitted = answer.putArray("cases");
+        ObjectNode case4 = submitted.addObject();
+        case4.put("condition", "nBIL < a 且 2nBIL < nFIL + 1");
+        case4.put("y", "0");
+        case4.put("advantage", "2 nBIL");
+        ObjectNode case3 = submitted.addObject();
+        case3.put("condition", "nBIL < a 且 2nBIL ≥ nFIL + 1");
+        case3.put("y", "2 nBIL − nFIL − 1");
+        case3.put("advantage", "nFIL + 1");
+        ObjectNode case2 = submitted.addObject();
+        case2.put("condition", "nBIL ≥ a 且 2a < nFIL + 1");
+        case2.put("y", "0");
+        case2.put("advantage", "nBIL + a");
+        ObjectNode case1 = submitted.addObject();
+        case1.put("condition", "nBIL ≥ a 且 2a ≥ nFIL + 1");
+        case1.put("y", "2a − nFIL − 1");
+        case1.put("advantage", "nBIL − a + nFIL + 1");
+
+        ObjectNode response = mapper.createObjectNode().put("status", "completed");
+        response.putObject("artifact").set("answer", answer);
+        assertThat(evaluator.evaluate(task, response).path("passed").asBoolean()).isTrue();
+
+        ((ObjectNode) submitted.get(0)).put("advantage", "nBIL + a");
         assertThat(evaluator.evaluate(task, response).path("passed").asBoolean()).isFalse();
     }
 }
