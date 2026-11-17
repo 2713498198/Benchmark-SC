@@ -2,8 +2,8 @@
 
 The generator intentionally extracts only unambiguous, deterministic final
 answers from each task's hidden oracle. Everything else is emitted as a
-``dynamic`` rule that the evaluator fails closed on; the suite must stay
-``executionReady=false`` until all 170 tasks carry a deterministic rule.
+``dynamic`` rule that the evaluator fails closed on. Tasks whose upstream
+scoring depends on a workspace replay are emitted as ``workspace-validator``.
 """
 
 import argparse
@@ -130,6 +130,29 @@ def fields_rule(oracle):
              for key, value in fields.items()})
 
 
+def piecewise_rule(expected):
+    """Build a deterministic rule for a piecewise-formula answer."""
+    cases = expected.get("cases")
+    if not isinstance(cases, list) or not cases:
+        return None, None, {}
+    normalized = []
+    for case in cases:
+        if not isinstance(case, dict):
+            return None, None, {}
+        condition = case.get("condition")
+        y = case.get("y")
+        advantage = case.get("advantage")
+        if not all(isinstance(value, str) and value for value in (condition, y, advantage)):
+            return None, None, {}
+        normalized.append({"condition": condition, "y": y, "advantage": advantage})
+    rule = {"type": "piecewise", "cases": normalized}
+    answer_format = {
+        "kind": "piecewise_formula",
+        "value": {"cases": [{"condition": "string", "y": "string", "advantage": "string"}]},
+    }
+    return rule, json.dumps(normalized, ensure_ascii=False, sort_keys=True), answer_format
+
+
 def derive_rule(oracle):
     """Return (rule, expected_string) or (None, None) when not deterministic."""
     schema = oracle.get("schema_version")
@@ -164,6 +187,9 @@ def derive_rule(oracle):
 
     if schema == "hard_failure_oracle_v1":
         expected = oracle.get("expected") or {}
+        if isinstance(expected, dict) and expected.get("answer_type") == "piecewise_formula":
+            rule, expected_string, _ = piecewise_rule(expected)
+            return rule, expected_string
         if isinstance(expected, dict) and isinstance(expected.get("probability_approx"), str):
             return string_rule(expected["probability_approx"]), expected["probability_approx"]
         return None, None
@@ -209,6 +235,8 @@ def main():
             rule, expected = derive_rule(oracle)
             if rule is None:
                 rule, expected, answer_format = fields_rule(oracle)
+            elif rule.get("type") == "piecewise":
+                _, _, answer_format = piecewise_rule(oracle.get("expected") or {})
         rule_type = rule["type"] if rule else "dynamic"
         counts[rule_type] = counts.get(rule_type, 0) + 1
         tasks.append({

@@ -15,10 +15,10 @@ import org.springframework.stereotype.Component;
  * Server-owned binding for CryptoBench-SC V4.1.
  *
  * The public site exposes questions and attachments only. This catalog keeps
- * each task's authoritative expected answer as a deterministic rule. Tasks
- * whose upstream scoring depends on workspace replay, solver runs, or LLM
- * semantic extraction are marked {@code dynamic} and fail closed; the suite
- * stays {@code executionReady=false} until every task has a deterministic rule.
+ * each task's authoritative expected answer as a deterministic declarative
+ * rule (numeric/string/boolean/fields/piecewise) or routes it through the
+ * server-private workspace validator. Tasks without a deterministic rule are
+ * marked {@code dynamic} and fail closed rather than guessing a score.
  */
 @Component
 public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
@@ -55,7 +55,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
             result.put("status", "invalid");
             result.put("passed", false);
             result.put("score", 0);
-            result.put("reason", "Agent 鏈彁渚?completed 鐘舵€佸拰 artifact.answer");
+            result.put("reason", "Agent 需返回 completed 状态和 artifact.answer");
             return result;
         }
 
@@ -72,6 +72,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
             case "exact-json" -> CustomDatasetRules.canonical(rule.get("expected"))
                     .equals(CustomDatasetRules.canonical(actual));
             case "fields" -> fieldsMatch(rule, actual);
+            case "piecewise" -> piecewiseMatch(rule, actual);
             default -> false;
         };
         result.put("status", passed ? "passed" : "failed");
@@ -131,6 +132,49 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
         return true;
     }
 
+    /**
+     * A piecewise-formula answer is a set of cases, each carrying the branch
+     * condition and the resulting y/advantage formulas. Case order is not
+     * significant because each expected case must match a distinct submitted
+     * case on all three fields.
+     */
+    private boolean piecewiseMatch(JsonNode rule, JsonNode actual) {
+        JsonNode cases = rule.get("cases");
+        if (cases == null || !cases.isArray() || cases.isEmpty()) return false;
+        JsonNode submitted = actual;
+        if (actual != null && actual.isObject() && actual.has("cases")) submitted = actual.get("cases");
+        if (submitted == null || !submitted.isArray() || submitted.size() != cases.size()) return false;
+        boolean[] used = new boolean[submitted.size()];
+        int matched = 0;
+        for (JsonNode expected : cases) {
+            boolean found = false;
+            for (int i = 0; i < submitted.size(); i++) {
+                if (used[i]) continue;
+                if (caseEquals(expected, submitted.get(i))) {
+                    used[i] = true;
+                    found = true;
+                    matched++;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+        return matched == cases.size();
+    }
+
+    private boolean caseEquals(JsonNode expected, JsonNode candidate) {
+        if (expected == null || candidate == null || !candidate.isObject()) return false;
+        return symbolEquals(expected.get("condition"), candidate.get("condition"))
+                && symbolEquals(expected.get("y"), candidate.get("y"))
+                && symbolEquals(expected.get("advantage"), candidate.get("advantage"));
+    }
+
+    private static boolean symbolEquals(JsonNode expected, JsonNode candidate) {
+        String expectedSymbol = expected == null ? "" : normalizeSymbol(expected.asText(""));
+        String candidateSymbol = candidate == null ? "" : normalizeSymbol(candidate.asText(""));
+        return !expectedSymbol.isEmpty() && expectedSymbol.equals(candidateSymbol);
+    }
+
     private static JsonNode findByKey(JsonNode object, String key) {
         String target = normalizeKey(key);
         for (var entry = object.fields(); entry.hasNext(); ) {
@@ -184,6 +228,24 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
 
     private static String normalize(String value) {
         return value == null ? "" : value.replaceAll("\\s+", "").trim();
+    }
+
+    /** Normalize a symbolic expression so equivalent notation compares equal. */
+    private static String normalizeSymbol(String value) {
+        if (value == null) return "";
+        return value.toLowerCase(Locale.ROOT)
+                .replace("\u2265", ">=")
+                .replace("\u2264", "<=")
+                .replace("\u2260", "!=")
+                .replace("\u2212", "-")
+                .replace("\u00d7", "*")
+                .replace("\uff08", "(")
+                .replace("\uff09", ")")
+                .replace("&&", "and")
+                .replace("&", "and")
+                .replace("\u4e14", "and")
+                .replace("\u6216", "or")
+                .replaceAll("\\s+", "");
     }
 
     /**
