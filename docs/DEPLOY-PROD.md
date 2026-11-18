@@ -79,6 +79,7 @@ BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
 ## 安全与限流
 
 - prod profile 默认关闭体验账号，会话与 CSRF Cookie 使用 Secure 属性。
+- 容器入口首次启动会修正 `/app/var` 归属，然后降权到非 root 的 `app` 用户运行 Java。
 - 登录按邮箱、注册按 IP 做滚动窗口限流，默认参数可用
   `CRYPTOBENCH_AUTH_LOGIN_*` / `CRYPTOBENCH_AUTH_REGISTER_*` 覆盖。
 - 数据库和 `app-var` 卷不要挂到公共可写路径；`.env.prod` 已在 `.gitignore` 中。
