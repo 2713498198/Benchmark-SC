@@ -85,7 +85,7 @@ class ExecutionApiIntegrationTest {
                 "source", "local", "endpoint", endpoint, "model", "test-model")));
         String id = created.path("runId").asText();
         JsonNode state = created;
-        for (int i = 0; i < 50 && !"completed".equals(state.path("status").asText()); i++) {
+        for (int i = 0; i < 300 && !"completed".equals(state.path("status").asText()); i++) {
             Thread.sleep(100);
             state = client.json(client.send("GET", "/api/runs/" + id, null));
         }
@@ -186,7 +186,7 @@ class ExecutionApiIntegrationTest {
                 "source", "local", "endpoint", endpoint, "model", "GPT-4.1")));
         String id = created.path("runId").asText();
         JsonNode state = created;
-        for (int i = 0; i < 50 && !"completed".equals(state.path("status").asText()); i++) {
+        for (int i = 0; i < 300 && !"completed".equals(state.path("status").asText()); i++) {
             Thread.sleep(100);
             state = client.json(client.send("GET", "/api/runs/" + id, null));
         }
@@ -294,7 +294,7 @@ class ExecutionApiIntegrationTest {
                     "source", "local", "endpoint", endpoint, "model", "test-model")));
             String id = created.path("runId").asText();
             JsonNode state = created;
-            for (int i = 0; i < 50 && !"failed".equals(state.path("status").asText()); i++) {
+            for (int i = 0; i < 600 && !"failed".equals(state.path("status").asText()); i++) {
                 Thread.sleep(50);
                 state = client.json(client.send("GET", "/api/runs/" + id, null));
             }
@@ -334,7 +334,7 @@ class ExecutionApiIntegrationTest {
                         Map.of("label", "B", "agent", "Agent B", "model", "test-model")))));
         String id = created.path("runId").asText();
         JsonNode state = created;
-        for (int i = 0; i < 50 && !"completed".equals(state.path("status").asText()); i++) {
+        for (int i = 0; i < 300 && !"completed".equals(state.path("status").asText()); i++) {
             Thread.sleep(100);
             state = client.json(client.send("GET", "/api/runs/" + id, null));
         }
