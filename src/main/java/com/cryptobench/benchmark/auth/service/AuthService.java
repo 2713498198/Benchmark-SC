@@ -4,6 +4,7 @@ import com.cryptobench.benchmark.auth.dto.LoginRequest;
 import com.cryptobench.benchmark.auth.dto.RegisterRequest;
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.AuthRateLimitService;
 import com.cryptobench.benchmark.common.ApiException;
 import com.cryptobench.benchmark.config.BenchmarkProperties;
 import java.time.Instant;
@@ -21,18 +22,23 @@ public class AuthService {
     private final UserRepository users;
     private final PasswordService passwords;
     private final BenchmarkProperties properties;
+    private final AuthRateLimitService rates;
 
-    public AuthService(UserRepository users, PasswordService passwords, BenchmarkProperties properties) {
+    public AuthService(UserRepository users, PasswordService passwords, BenchmarkProperties properties,
+                       AuthRateLimitService rates) {
         this.users = users;
         this.passwords = passwords;
         this.properties = properties;
+        this.rates = rates;
     }
 
     /**
      * 在事务中注册研究者；统一邮箱格式并拒绝重复邮箱，角色不接受客户端指定。
      */
     @Transactional
-    public BenchmarkUser register(RegisterRequest input) {
+    public BenchmarkUser register(RegisterRequest input, String remoteAddr) {
+        rates.beforeRegister(remoteAddr);
+        rates.registerAttempted(remoteAddr);
         String email = input.email().trim().toLowerCase(Locale.ROOT);
         if (users.findByEmail(email).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "该邮箱已注册");
@@ -47,11 +53,15 @@ public class AuthService {
     /**
      * 按规范化邮箱验证密码；账号不存在和密码错误使用相同提示。
      */
-    public BenchmarkUser login(LoginRequest input) {
-        BenchmarkUser user = users.findByEmail(input.email().trim().toLowerCase(Locale.ROOT)).orElse(null);
+    public BenchmarkUser login(LoginRequest input, String remoteAddr) {
+        String email = input.email().trim().toLowerCase(Locale.ROOT);
+        rates.beforeLogin(email);
+        BenchmarkUser user = users.findByEmail(email).orElse(null);
         if (user == null || !passwords.matches(input.password(), user)) {
+            rates.loginFailed(email);
             throw new ApiException(HttpStatus.UNAUTHORIZED, "邮箱或密码不正确");
         }
+        rates.loginSucceeded(email);
         if (!"active".equals(user.accountStatus())) {
             throw new ApiException(HttpStatus.FORBIDDEN, "账号已停用");
         }

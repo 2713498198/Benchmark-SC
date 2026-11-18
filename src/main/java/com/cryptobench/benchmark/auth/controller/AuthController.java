@@ -8,6 +8,7 @@ import com.cryptobench.benchmark.auth.service.AuthService;
 import com.cryptobench.benchmark.auth.service.SessionService;
 import com.cryptobench.benchmark.auth.service.PasswordResetCodeService;
 import com.cryptobench.benchmark.auth.service.PasswordResetFlowException;
+import com.cryptobench.benchmark.auth.service.AuthRateLimitException;
 import com.cryptobench.benchmark.config.BenchmarkProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,7 +76,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public Map<String, Object> register(@Valid @RequestBody RegisterRequest input,
                                       HttpServletRequest request, HttpServletResponse response) {
-        return signIn(auth.register(input), request, response);
+        return signIn(auth.register(input, request.getRemoteAddr()), request, response);
     }
 
     /**
@@ -84,7 +85,7 @@ public class AuthController {
     @PostMapping(value = "/login", consumes = "application/json")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest input,
                                    HttpServletRequest request, HttpServletResponse response) {
-        return signIn(auth.login(input), request, response);
+        return signIn(auth.login(input, request.getRemoteAddr()), request, response);
     }
 
     /**
@@ -152,6 +153,15 @@ public class AuthController {
             response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(error.retryAfterSeconds()));
         }
         return ResponseEntity.status(error.getStatus()).body(body);
+    }
+
+    @ExceptionHandler(AuthRateLimitException.class)
+    public ResponseEntity<Map<String, Object>> rateLimitError(AuthRateLimitException error,
+            HttpServletRequest request, HttpServletResponse response) {
+        noStore(response);
+        response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(error.retryAfterSeconds()));
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("error", error.getMessage(), "retryAfterSeconds", error.retryAfterSeconds()));
     }
 
     private String resetToken(HttpServletRequest request) {

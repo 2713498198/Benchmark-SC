@@ -9,5 +9,11 @@ benchmark:
   # 允许测试构造体验账号；MockMvc 无 HTTPS，因此关闭 Secure Cookie。
   demo-enabled: true
   secure-cookie: false
+  # 集成测试从同一地址创建多个账号，放宽限流避免干扰功能断言。
+  auth-rate-limit:
+    login-max-attempts: 100000
+    login-window-seconds: 3600
+    register-max-attempts: 100000
+    register-window-seconds: 3600
   # 默认启动不导入旧数据；迁移测试单独构造并调用导入器。
   legacy-import-enabled: false

@@ -618,6 +618,8 @@ public class RunService {
                 else if (error instanceof java.io.IOException) {
                     boolean authentication = safeMessage(error).contains("HTTP 401") || safeMessage(error).contains("HTTP 403");
                     if (authentication) credentials.remove(id);
+                    log(id, "WARN", "Agent 启动或连接失败：" + redactText(safeMessage(error),
+                            credentials.getOrDefault(id, Map.of()).values()));
                     boolean started = runs.find(id, false).orElseThrow().config().path("hasStarted").asBoolean();
                     if (authentication || started) runs.pause(id, generation, authentication ? "credentials_required" : "worker_restarted",
                             authentication ? "Agent 凭证已失效，请补录后继续" : "Agent 连接中断，请确认后继续或重新测评");

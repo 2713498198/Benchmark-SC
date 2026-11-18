@@ -19,7 +19,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /workspace/target/cryptobench-1.0.0-SNAPSHOT.jar /app/cryptobench.jar
+COPY docker/entrypoint.sh /usr/local/bin/cryptobench-entrypoint
+RUN groupadd -r app && useradd -r -g app app \
+    && mkdir -p /app/var && chown -R app:app /app \
+    && chmod 0755 /usr/local/bin/cryptobench-entrypoint
 ENV SERVER_ADDRESS=0.0.0.0
 ENV PORT=4173
 EXPOSE 4173
-ENTRYPOINT ["java", "-jar", "/app/cryptobench.jar"]
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=12 \
+    CMD wget --spider --quiet http://127.0.0.1:4173/actuator/health || exit 1
+ENTRYPOINT ["/usr/local/bin/cryptobench-entrypoint", "java", "-jar", "/app/cryptobench.jar"]

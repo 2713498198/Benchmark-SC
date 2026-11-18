@@ -67,6 +67,13 @@ benchmark:
       email: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL:}
       name: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME:}
       password: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD:}
+  auth-rate-limit:
+    # Rolling-window abuse limits. Values can be overridden by environment,
+    # but recorded attempts are never cleared by a config change.
+    login-max-attempts: ${CRYPTOBENCH_AUTH_LOGIN_MAX:5}
+    login-window-seconds: ${CRYPTOBENCH_AUTH_LOGIN_WINDOW_SECONDS:900}
+    register-max-attempts: ${CRYPTOBENCH_AUTH_REGISTER_MAX:5}
+    register-window-seconds: ${CRYPTOBENCH_AUTH_REGISTER_WINDOW_SECONDS:3600}
   password-reset:
     # 配置邮件网关 URL 后由后端投递 JSON；本地也可写入 outbox 文件联调。
     delivery-url: ${PASSWORD_RESET_DELIVERY_URL:}

@@ -61,7 +61,7 @@ class LegacyDataImportIntegrationTest {
                 mapper, users, connections, reports, datasets);
         importer.run(new DefaultApplicationArguments());
 
-        assertThat(auth.login(new LoginRequest("legacy@example.com", "legacy-test-password")).id()).isEqualTo("legacy-user");
+        assertThat(auth.login(new LoginRequest("legacy@example.com", "legacy-test-password"), "127.0.0.1").id()).isEqualTo("legacy-user");
         assertThat(connections.findByOwner("legacy-user")).hasSize(1);
         assertThat(reports.findPublished()).hasSize(1);
         assertThat(reports.findPublished().getFirst().toResponse().has("ownerId")).isFalse();

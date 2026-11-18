@@ -9,6 +9,9 @@ spring:
       # 控制连接池规模，避免单个实例无限占用数据库连接。
       maximum-pool-size: 10
       minimum-idle: 2
+server:
+  # 反向代理在 TLS 终结后设置 X-Forwarded-*，应用据此识别原始协议与客户端地址。
+  forward-headers-strategy: framework
 benchmark:
   # 生产环境关闭无密码体验登录，管理员需通过受控方式初始化。
   demo-enabled: false

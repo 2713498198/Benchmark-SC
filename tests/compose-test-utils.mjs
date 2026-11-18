@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {mkdir, mkdtemp, writeFile} from 'node:fs/promises';
+import {chmod, mkdir, mkdtemp, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {availablePort} from './portable-test-utils.mjs';
 
@@ -12,6 +12,9 @@ export async function composeTest(sandbox = false) {
   const project = `cryptobench-${sandbox ? 'sandbox' : 'compose'}-${randomUUID().slice(0, 8)}`;
   await mkdir('tmp', {recursive: true});
   const dataDir = resolve(await mkdtemp('tmp/compose-data-'));
+  // The container may chown this bind mount to its app user. Keep the host
+  // test process able to inspect the persisted database after that change.
+  await chmod(dataDir, 0o777);
   const envFile = resolve(dataDir, 'empty.env');
   await writeFile(envFile, ''); // Never load the developer's .env credentials or opt-in settings.
   const port = await availablePort();

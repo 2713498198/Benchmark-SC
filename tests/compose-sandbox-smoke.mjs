@@ -100,6 +100,13 @@ try {
   await assertPersisted(user, second);
   assert.equal((await client.api('/api/agent/runtime')).dockerEnabled, false);
   console.log('PASS sandbox evaluation, restart/recreation persistence, second evaluation and basic Compose compatibility');
+} catch (error) {
+  try {
+    const logs = await test.compose(['logs', '--no-color', 'cryptobench'], {allowFailure: true});
+    console.error(logs.stdout);
+    console.error(logs.stderr);
+  } catch { }
+  throw error;
 } finally {
   // Stop the test server first so a still-running worker cannot create more resources.
   try {
