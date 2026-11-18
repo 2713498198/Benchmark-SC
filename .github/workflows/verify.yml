@@ -20,6 +20,19 @@ jobs:
       DOCKER_PROXY_NETWORK_MODE: compatibility
       CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE: compatibility
     timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: cryptobench_test_ci
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -57,6 +70,13 @@ jobs:
 
       - name: Run backend tests and package
         run: bash start.sh --batch-mode verify
+
+      - name: Verify MySQL migration path
+        env:
+          CRYPTOBENCH_TEST_MYSQL_URL: jdbc:mysql://127.0.0.1:3306/cryptobench_test_ci
+          CRYPTOBENCH_TEST_MYSQL_USER: root
+          CRYPTOBENCH_TEST_MYSQL_PASSWORD: root
+        run: bash start.sh --batch-mode -Dtest=MysqlMigrationIntegrationTest test
 
       - name: Install browser for isolated report workflow
         run: npx playwright install --with-deps chromium

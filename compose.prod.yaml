@@ -1,0 +1,70 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: cryptobench
+      MYSQL_USER: "${DB_USERNAME:-cryptobench}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?set DB_PASSWORD in .env.prod}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env.prod}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_ADDRESS: 0.0.0.0
+      PORT: 4173
+      DB_URL: "jdbc:mysql://mysql:3306/cryptobench?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC"
+      DB_USERNAME: "${DB_USERNAME:-cryptobench}"
+      DB_PASSWORD: "${DB_PASSWORD:?set DB_PASSWORD in .env.prod}"
+      CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL: "${CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL:-}"
+      CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME: "${CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME:-}"
+      CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD: "${CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD:-}"
+      PASSWORD_RESET_BASE_URL: "${PASSWORD_RESET_BASE_URL:-https://${DOMAIN}}"
+      CRYPTOBENCH_MAIL_MODE: "${CRYPTOBENCH_MAIL_MODE:-auto}"
+      CRYPTOBENCH_MAIL_KEY_FILE: /app/var/secrets/mail.key
+      CRYPTOBENCH_SMTP_HOST: "${CRYPTOBENCH_SMTP_HOST:-}"
+      CRYPTOBENCH_SMTP_PORT: "${CRYPTOBENCH_SMTP_PORT:-587}"
+      CRYPTOBENCH_SMTP_USERNAME: "${CRYPTOBENCH_SMTP_USERNAME:-}"
+      CRYPTOBENCH_SMTP_PASSWORD: "${CRYPTOBENCH_SMTP_PASSWORD:-}"
+      CRYPTOBENCH_MAIL_FROM: "${CRYPTOBENCH_MAIL_FROM:-}"
+      CRYPTOBENCH_SMTP_STARTTLS: "${CRYPTOBENCH_SMTP_STARTTLS:-true}"
+      CRYPTOBENCH_SMTP_SSL: "${CRYPTOBENCH_SMTP_SSL:-false}"
+      CRYPTOBENCH_DOCKER_ENABLED: "false"
+    volumes:
+      - app-var:/app/var
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN:?set DOMAIN in .env.prod}"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  mysql-data:
+  app-var:
+  caddy-data:
+  caddy-config:

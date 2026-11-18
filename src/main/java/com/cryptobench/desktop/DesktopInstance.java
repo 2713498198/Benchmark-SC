@@ -78,10 +78,14 @@ final class DesktopInstance implements AutoCloseable {
                 var input = new DataInputStream(socket.getInputStream());
                 var output = new DataOutputStream(socket.getOutputStream());
                 String supplied = input.readUTF();
+                // Always consume the trailing command before responding. The
+                // request protocol writes both fields together; closing with
+                // the command still in the receive buffer can produce a reset
+                // on Windows loopback before the client reads the response.
+                String command = input.readUTF();
                 if (!MessageDigest.isEqual(token.getBytes(StandardCharsets.US_ASCII), supplied.getBytes(StandardCharsets.UTF_8))) {
                     output.writeUTF("DENIED");
                 } else {
-                    String command = input.readUTF();
                     output.writeUTF(Set.of("open", "status", "stop").contains(command) ? handler.apply(command) : "INVALID");
                 }
                 output.flush();
