@@ -11,6 +11,19 @@ if [ "$(id -u)" = "0" ]; then
         touch /app/var/.cryptobench-owner-v1
         chown app:app /app/var/.cryptobench-owner-v1
     fi
+    if [ -S /var/run/docker.sock ]; then
+        socket_gid="$(stat -c '%g' /var/run/docker.sock)"
+        socket_group="$(awk -F: -v gid="$socket_gid" '$3 == gid { print $1; exit }' /etc/group)"
+        if [ -z "$socket_group" ]; then
+            socket_group=dockerhost
+            groupadd -g "$socket_gid" "$socket_group"
+        fi
+        usermod -aG "$socket_group" app
+    fi
+    export HOME=/app
+    export DOCKER_CONFIG=/tmp/.docker
+    mkdir -p "$DOCKER_CONFIG"
+    chown app:app "$DOCKER_CONFIG"
     exec setpriv --reuid="$(id -u app)" --regid="$(id -g app)" --init-groups "$@"
 fi
 
