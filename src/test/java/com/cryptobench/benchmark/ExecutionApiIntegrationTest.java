@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,6 +40,7 @@ class ExecutionApiIntegrationTest {
     @Autowired ObjectMapper mapper;
     @Autowired ServerCostCalculator serverCosts;
     @Autowired RunRepository runRepository;
+    @Autowired JdbcTemplate jdbc;
     private static HttpServer agent;
 
     @BeforeAll
@@ -171,6 +173,10 @@ class ExecutionApiIntegrationTest {
 
     @Test
     void calculatesCostFromServerPricingAndIgnoresAgentCost() throws Exception {
+        // Pricing tests share the in-memory database; start from the configured
+        // fallback table so this assertion does not depend on test order.
+        jdbc.update("UPDATE benchmark_pricing_state SET active_version=NULL WHERE singleton_id=1");
+        jdbc.update("UPDATE benchmark_price_tables SET status='archived' WHERE status='active'");
         assertThat(serverCosts.calculate("GPT-4.1", mapper.readTree(
                 "{\"usage\":{\"inputTokens\":10,\"outputTokens\":10}}"))).isEqualTo(0.0001d);
         Client client = registeredClient();
