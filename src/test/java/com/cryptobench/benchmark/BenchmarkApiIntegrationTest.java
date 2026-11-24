@@ -111,11 +111,16 @@ class BenchmarkApiIntegrationTest {
                 .getResponse().getStatus()).isEqualTo(404);
         String id = "report-" + UUID.randomUUID();
         JsonNode report = a.json(a.send("POST", "/api/reports", Map.of("id", id, "scope", "full", "kind", "evaluation",
-                "demo", true, "synced", true, "published", true, "ownerId", "fake")));
+                "demo", true, "synced", true, "published", true, "ownerId", "fake",
+                "rankingEligible", true, "executionClaimsVerified", true,
+                "trust", Map.of("rankingEligible", true, "modelIdentityVerified", true))));
         // 客户端伪造的归属、同步和公开字段均不应成为服务端认可的状态。
         assertThat(report.path("synced").asBoolean()).isFalse();
         assertThat(report.path("published").asBoolean()).isFalse();
         assertThat(report.has("ownerId")).isFalse();
+        assertThat(report.has("trust")).isFalse();
+        assertThat(report.has("rankingEligible")).isFalse();
+        assertThat(report.has("executionClaimsVerified")).isFalse();
         assertThat(b.json(b.send("GET", "/api/bootstrap", null)).path("reports").size()).isZero();
         assertThat(b.send("GET", "/api/reports/" + id, null).getResponse().getStatus()).isEqualTo(404);
         assertThat(b.send("POST", "/api/reports", Map.of("id", id)).getResponse().getStatus()).isEqualTo(409);

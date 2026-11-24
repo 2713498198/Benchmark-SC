@@ -30,8 +30,8 @@ class LocalExecutionMigrationTest {
 
         var latest = Flyway.configure().dataSource(url, "sa", "").load();
         // V12 删除旧设备表，V13 创建本地 Runner 表，V14 删除旧密码重置令牌表，
-        // V16 新增登录/注册限流计数表（V15 已被历史实验占用，不再复用）。
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(4);
+        // V16 新增登录/注册限流计数表，V17 新增跨实例运行配额锁（V15 已被历史实验占用）。
+        assertThat(latest.migrate().migrationsExecuted).isEqualTo(5);
         latest.validate();
         assertThat(latest.info().pending()).isEmpty();
         try (var connection = DriverManager.getConnection(url, "sa", "")) {

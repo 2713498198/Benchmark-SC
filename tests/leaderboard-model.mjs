@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {leaderboardModel,leaderboardCsvRows,displayScore} from '../src/main/resources/static/js/leaderboard-model.js';
+import {leaderboardModel,leaderboardCsvRows,displayScore,rankingEligible,trustLabel} from '../src/main/resources/static/js/leaderboard-model.js';
 import {chartModel,chartAxes} from '../src/main/resources/static/js/leaderboard-chart.js';
 import {executionSourceOptions,executionSourceLabel} from '../src/main/resources/static/js/execution-sources.js';
 const rankings=[{source:'local'},{source:'local'},{source:'local'},{source:'local'},{source:'local'}];
@@ -7,8 +7,9 @@ const rankings=[{source:'local'},{source:'local'},{source:'local'},{source:'loca
 const filters={dataset:'set',version:'1',budget:'standard',source:'all',type:'demo',sort:'score'};
 const row={datasetId:'set',version:'1',budget:'standard',scope:'full',source:'local',total:100,agent:'Agent',model:'Model'};
 const sample=(id,score,extra={})=>({...row,id,score,demo:true,...extra});
+const verifiedTrust={rankingEligible:true,modelIdentityVerified:true,usageVerified:true,costVerified:true};
 const builtins=[sample('a',90.04,{cost:8,time:10,averageTimeSeconds:10}),sample('b',90.01,{cost:1,time:30,averageTimeSeconds:30}),sample('c',80,{cost:null,time:null})];
-const publicRows=[sample('demo',70,{published:true,cost:0,time:40,averageTimeSeconds:40}),sample('public',99,{demo:false,cost:2}),sample('unknown',85,{demo:undefined}),sample('partial',100,{scope:'sample'}),sample('pk',100,{kind:'pk'}),sample('other-version',100,{version:'2'}),sample('other-budget',100,{budget:'extended'})];
+const publicRows=[sample('demo',70,{published:true,cost:0,time:40,averageTimeSeconds:40}),sample('public',99,{demo:false,cost:2,trust:verifiedTrust}),sample('unknown',85,{demo:undefined}),sample('partial',100,{scope:'sample'}),sample('pk',100,{kind:'pk'}),sample('other-version',100,{version:'2'}),sample('other-budget',100,{budget:'extended'})];
 const own=[sample('private',100,{published:false}),{...publicRows[0],published:true}];
 const snapshot=JSON.stringify([builtins,publicRows,own]);
 const data=leaderboardModel(builtins,publicRows,own,filters);
@@ -29,7 +30,11 @@ const searched=leaderboardModel(builtins.map(r=>({...r,agent:r.id})),publicRows,
 assert.equal(searched.visible[0].place,3,'Search does not rerank');
 assert.equal(searched.cohort.length,4);
 const actual=leaderboardModel(builtins,publicRows,own,{...filters,type:'public'});
-assert.deepEqual(actual.cohort.map(e=>[e.record.id,e.place]),[['public',1],['unknown',2]]);
+assert.deepEqual(actual.cohort.map(e=>[e.record.id,e.place]),[['public',1]]);
+assert.equal(rankingEligible(publicRows[1]),true);
+assert.equal(rankingEligible(publicRows[2]),false);
+assert.equal(trustLabel(publicRows[1]),'平台核验');
+assert.equal(trustLabel(publicRows[2]),'公开报告 · 未入榜');
 assert.deepEqual(chartModel(actual.visible.map(e=>e.record)).frontier.map(p=>p.rows[0].id),['public']);
 assert.deepEqual(leaderboardModel(builtins,publicRows,own,{...filters,source:'cloud'}).cohort,[]);
 assert.ok(rankings.every(r=>r.source==='local'),'Built-in demos use the implemented local execution path');
@@ -42,9 +47,9 @@ for(const [key,id] of [['local','local-source'],['cloud','cloud-source'],['unrep
  assert.deepEqual(leaderboardModel([],declared,[],{...filters,source:key}).cohort.map(e=>e.record.id),[id]);
 }
 assert.equal(declared[2].source,null,'Missing execution sources are never rewritten as local');
-assert.deepEqual(leaderboardCsvRows(actual.visible).map(r=>r[0]),['demo',false,'']);
+assert.deepEqual(leaderboardCsvRows(actual.visible).map(r=>r[0]),['demo',false]);
 assert.deepEqual(leaderboardCsvRows(data.visible).slice(1).map(r=>r[0]),[true,true,true,true]);
-assert.equal(leaderboardCsvRows(data.visible)[0].length,14);
+assert.equal(leaderboardCsvRows(data.visible)[0].length,18);
 assert.equal(JSON.stringify([builtins,publicRows,own]),snapshot,'Source records remain untouched');
 const points=chartModel(data.visible.map(e=>e.record)).points;
 assert.equal(chartAxes(points).yMin,0);assert.equal(chartAxes(points).yMax,100);

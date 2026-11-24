@@ -15,5 +15,9 @@ benchmark:
     login-window-seconds: 3600
     register-max-attempts: 100000
     register-window-seconds: 3600
+  run-quota:
+    max-active-per-user: 1000
+    max-created-per-day-per-user: 1000
+    max-active-global: 1000
   # 默认启动不导入旧数据；迁移测试单独构造并调用导入器。
   legacy-import-enabled: false

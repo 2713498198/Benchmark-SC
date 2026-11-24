@@ -94,6 +94,13 @@ class ExecutionApiIntegrationTest {
         JsonNode report = client.json(client.send("GET", "/api/reports/" + state.path("reportId").asText(), null));
         assertThat(report.path("verified").asBoolean()).isTrue();
         assertThat(report.path("verificationStatus").asText()).isEqualTo("verified");
+        assertThat(report.path("rankingEligible").asBoolean()).isFalse();
+        assertThat(report.path("executionClaimsVerified").asBoolean()).isFalse();
+        assertThat(report.path("trust").path("answerVerified").asBoolean()).isTrue();
+        assertThat(report.path("trust").path("agentIdentityVerified").asBoolean()).isFalse();
+        assertThat(report.path("trust").path("modelIdentityVerified").asBoolean()).isFalse();
+        assertThat(report.path("trust").path("usageVerified").asBoolean()).isFalse();
+        assertThat(report.path("trust").path("costVerified").asBoolean()).isFalse();
         assertReportMetrics(report, report.path("results"), "main");
         assertThat(report.path("score").asDouble()).isEqualTo(100);
         assertThat(report.path("cost").isNull()).isTrue();

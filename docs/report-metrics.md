@@ -10,7 +10,9 @@
 
 历史分类优先展示报告已有汇总；只有全部逐题结果都有分类和判定时才推导分类，否则保留“全部任务”。不使用当前题库反推旧题分类，不改写历史原始 JSON，不增加数据库迁移。
 
-榜单 CSV 保留旧 `time_s` 列，末尾追加 `total_time_s` 和 `average_time_s`。逐题 CSV 追加 `category` 和 `participant_key`，JSON 导出保留原始字段。
+榜单 CSV 保留旧 `time_s` 列，追加 `total_time_s`、`average_time_s` 以及
+`model_verified`、`usage_verified`、`cost_verified`、`ranking_eligible`
+四个可信字段。逐题 CSV 追加 `category` 和 `participant_key`，JSON 导出保留原始字段。
 
 ## 验证
 

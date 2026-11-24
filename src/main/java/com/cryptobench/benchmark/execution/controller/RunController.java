@@ -31,8 +31,8 @@ public class RunController {
     }
 
     @GetMapping("/agent/runtime")
-    public ObjectNode runtime() {
-        return runs.runtimeStatus();
+    public ObjectNode runtime(@AuthenticationPrincipal BenchmarkUser user) {
+        return runs.runtimeStatus(user);
     }
 
     @PostMapping(value = "/runs", consumes = "application/json")

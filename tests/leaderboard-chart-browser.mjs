@@ -16,6 +16,15 @@ const checks=[],errors=[];
 const check=(name,result)=>{assert.ok(result,name);checks.push(name);};
 page.on('pageerror',error=>errors.push(error.message));
 let publicReports=[];
+const demoCommon={datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',total:100,published:true,demo:true};
+const demoReports=[
+ {...demoCommon,id:'rank-cipher-pilot',agent:'CipherPilot',model:'Model A',passed:92,score:91.7,cost:2.84,time:38.6,averageTimeSeconds:38.6,totalTimeSeconds:4632},
+ {...demoCommon,id:'rank-sbox-sage',agent:'S-box Sage',model:'Model B',passed:88,score:88.3,cost:3.16,time:42.1,averageTimeSeconds:42.1,totalTimeSeconds:5052},
+ {...demoCommon,id:'rank-diff-hunter',agent:'DiffHunter',model:'DeepSeek V3',passed:86,score:85.8,cost:0.76,time:35.4,averageTimeSeconds:35.4,totalTimeSeconds:4248},
+ {...demoCommon,id:'rank-round-key',agent:'RoundKey',model:'Model C',passed:82,score:81.7,cost:0.62,time:31.8,averageTimeSeconds:31.8,totalTimeSeconds:3816},
+ {...demoCommon,id:'rank-linear-lab',agent:'LinearLab',model:'Model D',passed:78,score:77.5,cost:null,time:46.2,averageTimeSeconds:46.2,totalTimeSeconds:5544}
+];
+publicReports=demoReports;
 await page.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports}}));
 await page.addInitScript(()=>{
  const Native=window.ResizeObserver;window.activeChartObservers=0;
@@ -94,7 +103,7 @@ try{
  await page.locator('.rank-chart-foot summary').click();check('Reading guidance opens',await page.locator('#rank-chart-help').isVisible());
  await page.locator('a[href="#/datasets"]').first().click();await page.waitForFunction(()=>document.querySelector('#main').dataset.route==='/datasets');check('Route change disposes chart observer',await page.evaluate(()=>window.activeChartObservers===0));
 
- const dataset=datasets.find(d=>d.id!=='mini-spn'&&d.id!=='cryptobench-sc-v4');
+ const dataset=datasets.find(d=>d.id==='cryptobench-sc-v4');
  const row={datasetId:dataset.id,version:dataset.version,budget:'standard',scope:'full',source:'local',agent:'A & B',model:'Model <Alpha>',total:10,passed:8,score:80,time:32,averageTimeSeconds:32,totalTimeSeconds:320,cost:null,demo:true};
  publicReports=[{...row,id:'chart-missing'}];await go('/leaderboard?dataset='+dataset.id+'&version='+dataset.version);
  check('Missing fee record stays in rankings',await page.locator('[data-compare]').count()===1);await view('analysis');check('All-missing cost state is honest',/暂无可绘制的费用数据/.test(await page.locator('.rank-chart-empty').innerText()));await shot('missing-cost-1440');
@@ -105,14 +114,14 @@ try{
  await page.locator('[data-chart-point]').first().click();
  check('Grouped tooltip includes every identity and real zero fee',/Same result/.test(await page.locator('.rank-chart-tooltip').innerText())&&/\$0/.test(await page.locator('.rank-chart-tooltip').innerText()));
  check('Model and agent text remain escaped',await page.locator('alpha').count()===0&&/Model <Alpha>/.test(await page.locator('.rank-chart-tooltip').innerText()));await shot('coincident-zero-cost-1440',page.locator('.rank-chart'));
- publicReports=[];await go();
+ publicReports=demoReports;await go();
  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:360,height:800});
  await page.locator('.rank-filter-disclosure summary').click();await page.locator('[data-rank="version"]').focus();await page.keyboard.press('Tab');
  check('Mobile filter keyboard order follows visual order',await page.locator('[data-rank="source"]').evaluate(el=>el===document.activeElement));
  await view('analysis');await page.locator('[data-chart-metric="time"]').click();await settle();
  check('Reduced motion retains fully rendered chart',await page.locator('[data-chart-point]').count()===5&&await page.locator('canvas').evaluate(c=>c.width>0));
  const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
- const mobile=await touch.newPage();await mobile.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports:[]}}));
+ const mobile=await touch.newPage();await mobile.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports:demoReports}}));
  await mobile.goto(base+'/#/leaderboard');await mobile.waitForLoadState('networkidle');await mobile.locator('[data-rank-view="analysis"]').click();await mobile.locator('[data-chart-point]').first().tap();
  check('Touch tap opens chart details',await mobile.locator('.rank-chart-tooltip').isVisible());await mobile.locator('.rank-chart').screenshot({path:resolve(out,'touch-tooltip-390.png')});await touch.close();
  check('No browser errors',errors.length===0);

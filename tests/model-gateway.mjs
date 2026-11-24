@@ -35,7 +35,7 @@ try{
  assert.equal((await fetch(agent+'/control/begin',{method:'POST',headers:{authorization:'Bearer '+task.token}})).status,404);
  let response=await chat(task.token);assert.equal(response.status,200);await response.json();
  response=await chat(task.token,'stream',{stream:true});assert.equal(response.status,200);assert.match(await response.text(),/\[DONE\]/);
- const usage=await finish('standard');assert.equal(usage.inputTokens,13);assert.equal(usage.outputTokens,12);assert.equal(usage.calls,2);assert.equal(usage.usageComplete,true);
+ const usage=await finish('standard');assert.equal(usage.inputTokens,13);assert.equal(usage.outputTokens,12);assert.equal(usage.calls,2);assert.equal(usage.usageComplete,true);assert.equal(usage.providerReported,true);assert.equal(usage.provider,'fake');assert.equal(usage.model,'allowed-model');assert.equal(usage.priceModelId,'priced-model');
  assert.equal(received[0].authorization,'Bearer fake-user-key');assert.equal(received[0].path,'/v1/chat/completions');assert.equal(received[1].payload.stream_options.include_usage,true);
  assert.equal((await chat(task.token)).status,401,'finished tokens are revoked');
  task=await begin('budget');const start=received.length;

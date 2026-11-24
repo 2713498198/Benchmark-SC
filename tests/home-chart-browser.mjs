@@ -14,9 +14,10 @@ const check=(name,result)=>{assert.ok(result,name);checks.push(name);};
 let reports=[],failure=false,requests=0,bootstraps=0;
 const own={id:'own-private',agent:'Private Agent',model:'Private Model',published:false,score:90,cost:1};
 const custom={id:'mini-spn',name:'Mini-SPN 差分分析',version:'2.0.0',published:true,tasks:120};
+const customLegacy={...custom,version:'1.0.0'};
 async function prepare(page){
  page.on('pageerror',error=>errors.push(error.message));
- await page.route('**/api/bootstrap',route=>{bootstraps++;return route.fulfill({json:{user:{id:'owner',name:'研究者',role:'researcher'},reports:[own],connections:[{id:'connection-original',name:'Agent',model:'private'}],customDatasets:[custom],publicReports:reports}});});
+ await page.route('**/api/bootstrap',route=>{bootstraps++;return route.fulfill({json:{user:{id:'owner',name:'研究者',role:'researcher'},reports:[own],connections:[{id:'connection-original',name:'Agent',model:'private'}],customDatasets:[customLegacy,custom],publicReports:reports}});});
  await page.route('**/api/reports/public',route=>{requests++;return route.fulfill(failure?{status:503,json:{error:'unavailable'}}:{json:reports});});
  await page.addInitScript(()=>{
   history.scrollRestoration='manual';
@@ -31,7 +32,16 @@ async function go(page){if(page.url()===base+'/#/')await page.reload();else awai
 async function geometry(page){return page.evaluate(()=>Object.fromEntries(['.home-hero','.hero-title-shell','.hero-subtitle','.hero-actions'].map(selector=>{const b=document.querySelector(selector).getBoundingClientRect();return [selector,{x:b.x,y:b.y,width:b.width,height:b.height}];})));}
 const pointCount=page=>page.locator('[data-chart-point]').count();
 const text=page=>page.locator('[data-home-cost-chart]').innerText();
-const row=(id,extra={})=>({id,agent:'Agent '+id,model:'Model '+id,datasetId:'mini-spn',version:'1.0.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',demo:false,published:true,total:120,passed:96,score:80,cost:1,time:30,...extra});
+const trust={rankingEligible:true,answerVerified:true,modelIdentityVerified:true,usageVerified:true,costVerified:true};
+const row=(id,extra={})=>({id,agent:'Agent '+id,model:'Model '+id,datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',demo:false,published:true,total:120,passed:96,score:80,cost:1,time:30,trust,...extra});
+const officialReports=[
+ row('official-round',{agent:'RoundKey',model:'Model C',cost:0.5,score:80}),
+ row('official-fast',{agent:'DiffHunter',model:'DeepSeek V3',cost:1,score:88}),
+ row('official-best',{agent:'CipherPilot',model:'Model A',cost:2,score:96}),
+ row('official-slow',{agent:'LinearLab',model:'Model D',cost:3,score:84})
+];
+const demoReports=officialReports.map(report=>({...report,id:'demo-'+report.id,demo:true,trust:undefined}));
+reports=officialReports;
 
 try{
  const visual=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});await prepare(visual);
@@ -65,16 +75,17 @@ try{
   await visual.locator('[data-chart-zoom]').uncheck();
   await visual.locator('[data-home-cost-chart]').screenshot({path:resolve(out,`chart-${width}.png`),animations:'disabled',style:'.topbar{visibility:hidden}'});
  }
- check('No public records use clearly labelled demo fallback',(await text(visual)).includes('当前条件暂无公开记录')&&(await visual.locator('.home-cost-trust .badge').innerText())==='示例数据');
+ check('Official records are labelled as platform verified',(await text(visual)).includes('正式榜单 · 平台核验')&&(await visual.locator('.home-cost-trust .badge').innerText())==='正式榜单 · 平台核验');
  await visual.locator('.home-data-note summary').click();
- check('Demo explanation remains available on demand',await visual.locator('.home-data-note p').isVisible()&&(await text(visual)).includes('示例数据不代表真实'));
+ check('Verification explanation remains available on demand',await visual.locator('.home-data-note p').isVisible()&&(await text(visual)).includes('正式榜单只展示平台网关核验模型'));
  await visual.locator('.home-data-note summary').click();
- check('Demo frontier lists all three preferred combinations',await visual.locator('.home-frontier li').count()===3);
+ check('Official frontier lists all three preferred combinations',await visual.locator('.home-frontier li').count()===3);
  check('Homepage locks horizontal axis to cost',await visual.locator('[data-chart-metric]').count()===0);
  check('Homepage title and description use the requested wording',await visual.locator('#home-cost-title').innerText()==='测评榜单'&&(await text(visual)).includes('快速找到更适合你的模型与智能体组合。'));
- check('Local demos do not advertise cloud execution',await visual.locator('[data-home-filter="source"] option').allTextContents().then(labels=>JSON.stringify(labels)===JSON.stringify(['全部来源','本地执行'])));
- await visual.locator('[data-home-filter="type"]').selectOption('public');check('Manual public mode stays empty',await visual.locator('.rank-chart-empty').isVisible());
- await visual.locator('[data-home-filter="type"]').selectOption('demo');check('Manual demo mode restores examples',await pointCount(visual)===4);
+ check('Official local records do not advertise cloud execution',await visual.locator('[data-home-filter="source"] option').allTextContents().then(labels=>JSON.stringify(labels)===JSON.stringify(['全部来源','本地执行'])));
+ await visual.locator('[data-home-filter="type"]').selectOption('public');check('Manual public mode retains verified records',await pointCount(visual)===4);
+ await visual.locator('[data-home-filter="type"]').selectOption('demo');check('Manual demo mode stays empty without fixture data',await visual.locator('.rank-chart-empty').isVisible());
+ await visual.locator('[data-home-filter="type"]').selectOption('public');
  await visual.locator('[data-chart-zoom]').check();check('Zoom updates axes',Number(await visual.locator('.rank-chart-stage').getAttribute('data-y-min'))>0);
  await visual.locator('[data-chart-point]').first().focus();check('Keyboard opens point details',await visual.locator('.rank-chart-tooltip').isVisible());
  await visual.keyboard.press('Escape');check('Escape closes point details',await visual.locator('.rank-chart-tooltip').isHidden());
@@ -86,9 +97,9 @@ try{
  const saved=await page.evaluate(()=>localStorage.getItem('cryptobench.v1'));
  async function tick(){const response=page.waitForResponse(r=>r.url().endsWith('/api/reports/public'));await page.clock.runFor(30001);await response;await page.locator('.home-cost-update').filter({hasText:failure?'更新失败':'最近更新'}).waitFor();}
  check('Initial load refreshes public feed exactly once',requests===1&&bootstraps===1);
- reports=[row('free',{cost:0,agent:'A & B',model:'Model <Alpha>'}),row('tie',{cost:0}),row('best',{cost:2,score:95}),row('missing',{cost:null}),row('negative',{cost:-1}),row('string',{cost:'1'}),row('invalid-score',{score:101}),row('other-budget',{budget:'extended'}),row('other-version',{version:'2.0.0'}),row('other-dataset',{datasetId:'key-recovery'}),row('partial',{scope:'sample'}),row('pk',{kind:'pk'}),row('free',{cost:4})];
+ reports=[row('free',{cost:0,agent:'A & B',model:'Model <Alpha>'}),row('tie',{cost:0}),row('best',{cost:2,score:95}),row('missing',{cost:null}),row('negative',{cost:-1}),row('string',{cost:'1'}),row('invalid-score',{score:101}),row('other-budget',{budget:'extended'}),row('other-version',{datasetId:'mini-spn',version:'1.0.0',cost:3,score:83}),row('other-dataset',{datasetId:'mini-spn',version:'2.0.0',cost:2.5,score:84}),row('partial',{scope:'sample'}),row('pk',{kind:'pk'}),row('free',{cost:4}),...demoReports];
  await tick();
- check('30-second refresh switches automatically to public records',(await text(page)).includes('公开记录 · 未核验')&&await pointCount(page)===2);
+ check('30-second refresh switches automatically to verified official records',(await text(page)).includes('正式榜单 · 平台核验')&&await pointCount(page)===2);
  check('Missing/invalid costs and scores excluded, never zero-filled',/3 \/ 7 项成绩绘入图表/.test(await text(page))&&/4 项缺少有效费用/.test(await text(page)));
  check('Coincident points retain separate preferred combinations',await page.locator('.home-frontier li').count()===3);
  await page.locator('[data-chart-point]').first().click();
@@ -104,13 +115,13 @@ try{
  await page.locator('[data-home-filter="source"]').selectOption('all');
  await page.locator('[data-home-filter="budget"]').selectOption('extended');check('Budget filter isolates matching records',await pointCount(page)===1&&(await text(page)).includes('Agent other-budget'));
  await page.locator('[data-home-filter="budget"]').selectOption('standard');
- await page.locator('[data-home-filter="version"]').selectOption('2.0.0');check('Version filter isolates matching records',await pointCount(page)===1&&(await text(page)).includes('Agent other-version'));
- await page.locator('[data-home-filter="dataset"]').selectOption('key-recovery');check('Dataset change resets to available version',await page.locator('[data-home-filter="version"]').inputValue()==='1.0.0'&&await pointCount(page)===1);
- await page.locator('[data-home-filter="dataset"]').selectOption('mini-spn');await page.locator('[data-home-filter="version"]').selectOption('1.0.0');
  await page.locator('[data-home-filter="type"]').selectOption('demo');check('Explicit demo selection overrides public preference',await pointCount(page)===4);
  await tick();check('Refresh preserves explicit source selection',await page.locator('[data-home-filter="type"]').inputValue()==='demo');
  await page.locator('[data-home-filter="type"]').selectOption('auto');
- reports=[row('missing-only',{cost:null})];await tick();check('Public records with missing fees show honest empty state',await page.locator('.rank-chart-empty').isVisible()&&(await text(page)).includes('公开记录 · 未核验'));
+ await page.locator('[data-home-filter="dataset"]').selectOption('mini-spn');check('Dataset change resets to latest available version',await page.locator('[data-home-filter="version"]').inputValue()==='2.0.0'&&await pointCount(page)===1&&(await text(page)).includes('Agent other-dataset'));
+ await page.locator('[data-home-filter="version"]').selectOption('1.0.0');check('Version filter isolates matching records',await pointCount(page)===1&&(await text(page)).includes('Agent other-version'));
+ await page.locator('[data-home-filter="dataset"]').selectOption('cryptobench-sc-v4');
+ reports=[row('missing-only',{cost:null})];await tick();check('Verified records with missing fee data show honest empty state',await page.locator('.rank-chart-empty').isVisible()&&(await text(page)).includes('正式榜单 · 平台核验'));
  const previousStatus=await page.locator('.home-cost-update').innerText();failure=true;await tick();
  check('Failure retains data and last successful update',(await text(page)).includes('更新失败')&&(await text(page)).includes('暂无可绘制的费用数据')&&(await page.locator('.home-cost-update').innerText()).includes(previousStatus.split(' · ')[0]));
  failure=false;reports=[row('recovered',{score:99})];await tick();check('Following refresh recovers automatically',await pointCount(page)===1&&!(await text(page)).includes('更新失败'));
@@ -124,7 +135,7 @@ try{
  const homeBudgets=await page.locator('[data-home-filter="budget"] option').evaluateAll(options=>options.map(o=>[o.value,o.textContent]));
  await page.locator('[data-home-filter="source"]').selectOption('local');
  await page.locator('.home-cost-heading .text-link').click();await page.locator('.leaderboard-page').waitFor();
- check('Full ranking link preserves selected public context',await page.locator('[data-rank="type"]').inputValue()==='public'&&await page.locator('[data-rank="version"]').inputValue()==='1.0.0');
+ check('Full ranking link preserves selected public context',await page.locator('[data-rank="type"]').inputValue()==='public'&&await page.locator('[data-rank="version"]').inputValue()==='4.1.0');
  check('Homepage and ranking budget options match exactly',JSON.stringify(homeBudgets)===JSON.stringify(await page.locator('[data-rank="budget"] option').evaluateAll(options=>options.map(o=>[o.value,o.textContent]))));
  check('Full ranking link preserves execution source filter',await page.locator('[data-rank="source"]').inputValue()==='local');
  const leftRequests=requests;await page.clock.runFor(90001);check('Leaving homepage stops polling and releases observer',requests===leftRequests&&await page.evaluate(()=>window.activeChartObservers===0));
@@ -132,7 +143,7 @@ try{
  check('Returning home fetches immediately',requests===leftRequests+1);
  await page.close();
 
- reports=[];
+ reports=officialReports;
  const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const mobile=await touch.newPage();await prepare(mobile);await go(mobile);
  await mobile.locator('[data-chart-point]').first().tap();check('Touch tap opens details',await mobile.locator('.rank-chart-tooltip').isVisible());
  await mobile.locator('[data-home-cost-chart]').screenshot({path:resolve(out,'touch-details-390.png'),animations:'disabled'});await touch.close();

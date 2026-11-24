@@ -141,7 +141,7 @@ export default {components:{SvgIcon,RunProgress},setup(){
  function reportCsv(){const r=report.value;if(r)downloadFile(r.id+'.csv',csv(reportCsvRows(r)),'text/csv');}
  function reportAction(action){
   const r=report.value,user=state.user?.id;if(!r?.permissions?.[action==='sync'?'canSync':'canPublish'])return;
-  app.confirm(action==='sync'?'主动同步报告':'公开并提交验证榜单',action==='sync'?'同步后报告仍保持私有，服务端会记录这次操作。':'公开后，这份完整测评的配置与成绩将显示在公共榜单。',action,async()=>{
+  app.confirm(action==='sync'?'主动同步报告':'公开报告',action==='sync'?'同步后报告仍保持私有，服务端会记录这次操作。':'公开后可通过报告链接查看；只有模型调用、供应商用量和费用均由平台网关核验的记录才进入正式榜单。',action,async()=>{
    if(!alive||state.user?.id!==user||report.value?.id!==r.id)return;reportBusy.value=true;
    try{await app.api('/api/reports/'+encodeURIComponent(r.id)+'/'+action,{method:'POST'});if(alive&&state.user?.id===user&&reportId.value===r.id){await loadReport();app.toast(action==='sync'?'已同步，报告仍为私有':'报告已公开');}}
    catch(err){if(alive&&state.user?.id===user)app.toast(err.message);}finally{reportBusy.value=false;}

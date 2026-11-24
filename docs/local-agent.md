@@ -96,7 +96,7 @@ POST /api/runs/{runId}/retry
 
 Mini-SPN 的隐藏验证材料位于服务端 classpath 的 `evaluation/mini-spn/1.0.0`，不在静态目录中。Agent 只能看到公开题目和输入，最终通过率由服务端 evaluator 计算。客户端提交的 `score`、`passed` 和 `cost` 不会覆盖服务端结果。
 
-耗时由服务端围绕 `/analyze` 请求测量。费用由服务端价格表根据 Agent 返回的输入、输出 token 数计算；未知模型或缺少合法用量时显示为空，不会按零费用计入榜单。Agent 返回的费用字段只作为原始证据保存。
+耗时由服务端围绕 `/analyze` 请求测量。费用由服务端价格表根据 Agent 返回的输入、输出 token 数计算；未知模型或缺少合法用量时显示为空，不会按零费用计入。直连 Agent 的模型身份和用量仍属于用户声明，报告可以公开查看，但只有经平台模型网关核验模型、用量和费用的完整测评才进入正式榜单。Agent 返回的费用字段只作为原始证据保存。
 
 可信报告会同时保存 `usage` 汇总：`inputTokens`、`outputTokens`、`totalTokens`、`knownTasks` 和 `taskCount`；每个完整用量的任务结果也会保存同名的用量明细。只有所有任务都提供合法的输入和输出 token 时才生成总 Token 数，部分缺失时保留覆盖数量并将总量置空。
 
