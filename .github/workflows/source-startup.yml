@@ -1,4 +1,4 @@
-name: Portable startup
+name: Cross-platform web startup
 
 on:
   push:

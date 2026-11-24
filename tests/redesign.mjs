@@ -131,7 +131,8 @@ try{
  check('reproduction config starts collapsed',await config.getAttribute('open')===null);
  await config.locator('summary').click();
  check('complete reproduction config is available',await config.innerText().then(x=>x.includes('research-model')&&x.includes('1.0.0')));
- await go(guest,'/download');await guest.locator('[data-download-tab="deploy"]').click();
+ await go(guest,'/download');
+ check('desktop delivery tab removed',await guest.locator('[data-download-tab]').count()===0);
  check('deployment commands retained',await guest.locator('.copy-line').innerText().then(x=>x.includes('docker compose up -d')));
  check('no browser errors',errors.length===0);
  await writeFile(resolve(out,'results.json'),JSON.stringify({passed:checks.length,checks,layouts,contrasts,errors,homeCharacters:homeText.replace(/\s/g,'').length},null,2));

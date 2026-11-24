@@ -31,6 +31,8 @@ try{
  browser=await chromium.launch({headless:true,...((process.env.CHROME_PATH||existsSync(installed))?{executablePath:process.env.CHROME_PATH||installed}:{})});
  context=await browser.newContext({viewport:{width:1440,height:1000}});page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
  await navigate('/login');await page.locator('#auth-form [name="email"]').fill(process.env.TEST_ADMIN_EMAIL);await page.locator('#auth-form [name="password"]').fill(process.env.TEST_ADMIN_PASSWORD);await page.locator('#auth-form [type="submit"]').click();await page.waitForURL(/#\/admin$/);
+ await navigate('/download');await page.locator('#main h1').waitFor();const downloadText=await page.locator('#main').innerText();assert.equal(await page.locator('[data-download-tab]').count(),0,'desktop delivery tabs are removed');assert.match(downloadText,/本地网页版部署/);assert.doesNotMatch(downloadText,/Windows 桌面包|EXE|便携版/);
+ await navigate('/admin');await page.locator('#dataset-json').waitFor();
  await page.locator('#dataset-json').fill(JSON.stringify(dataset));await page.locator('[data-validate]').click();await page.locator('[data-publish-dataset]').waitFor();
  const publishing=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/datasets/custom'&&r.request().method()==='POST');await page.locator('[data-publish-dataset]').click();assert.equal((await publishing).status(),201);
  await page.getByRole('button',{name:'模型价格',exact:true}).click();await page.getByRole('button',{name:'复制当前完整价格表',exact:true}).click();await page.getByRole('button',{name:'添加模型',exact:true}).click();
