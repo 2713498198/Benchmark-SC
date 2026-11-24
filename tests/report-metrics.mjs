@@ -34,7 +34,7 @@ const mismatch={...oldPk,competitors:[{categories:[{name:'A',passed:1,total:1}]}
 assert.equal(alignedCategories(mismatch)[0].b,undefined,'Different category names never borrow another side’s total');
 
 const filters={dataset:'set',version:'1',budget:'standard',source:'all',type:'public',sort:'time'};
-const common={scope:'full',datasetId:'set',version:'1',budget:'standard',source:'local',score:50};
+const common={scope:'full',datasetId:'set',version:'1',budget:'standard',source:'local',score:50,trust:{rankingEligible:true,modelIdentityVerified:true,usageVerified:true,costVerified:true}};
 const rows=[{...common,id:'large',time:100,averageTimeSeconds:1,totalTimeSeconds:100},
  {...common,id:'small',time:4,...legacy},
  {...common,id:'unknown',time:0,total:1}];
@@ -43,9 +43,9 @@ assert.deepEqual(sorted.map(e=>e.record.id),['large','small','unknown'],'Sort by
 assert.deepEqual(chartModel(rows,'time').points.map(p=>p.x),[1,2]);
 assert.equal(chartModel(rows,'time').excluded,1);
 const csv=leaderboardCsvRows(sorted);
-assert.deepEqual(csv[0].slice(-2),['total_time_s','average_time_s']);
+assert.deepEqual(csv[0].slice(-6),['total_time_s','average_time_s','model_verified','usage_verified','cost_verified','ranking_eligible']);
 assert.equal(csv[1][9],100,'Keep the original time_s column');
-assert.deepEqual(csv[1].slice(-2),[100,1]);
+assert.deepEqual(csv[1].slice(-6),[100,1,true,true,true,true]);
 assert.deepEqual(reportCsvRows(legacy)[0].slice(-2),['category','participant_key']);
 assert.deepEqual(reportCsvRows(legacy)[1].slice(-2),[' A ','main']);
 console.log('PASS report metrics: cumulative/average timing, strict legacy fallback, null/zero, PK isolation, named categories, sorting/chart/CSV, raw immutability');

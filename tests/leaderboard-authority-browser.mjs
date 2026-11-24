@@ -11,6 +11,15 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
 const page=await context.newPage(),checks=[],errors=[],layouts=[];
 let publicReports=[];
+const demoCommon={datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',total:100,published:true,demo:true};
+const demoReports=[
+ {...demoCommon,id:'rank-cipher-pilot',agent:'CipherPilot',model:'Model A',passed:92,score:91.7,cost:2.84,time:38.6,averageTimeSeconds:38.6,totalTimeSeconds:4632},
+ {...demoCommon,id:'rank-sbox-sage',agent:'S-box Sage',model:'Model B',passed:88,score:88.3,cost:3.16,time:42.1,averageTimeSeconds:42.1,totalTimeSeconds:5052},
+ {...demoCommon,id:'rank-diff-hunter',agent:'DiffHunter',model:'DeepSeek V3',passed:86,score:85.8,cost:0.76,time:35.4,averageTimeSeconds:35.4,totalTimeSeconds:4248},
+ {...demoCommon,id:'rank-round-key',agent:'RoundKey',model:'Model C',passed:82,score:81.7,cost:0.62,time:31.8,averageTimeSeconds:31.8,totalTimeSeconds:3816},
+ {...demoCommon,id:'rank-linear-lab',agent:'LinearLab',model:'Model D',passed:78,score:77.5,cost:null,time:46.2,averageTimeSeconds:46.2,totalTimeSeconds:5544}
+];
+publicReports=demoReports;
 await page.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports}}));
 page.on('pageerror',error=>errors.push(error.message));
 const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
@@ -34,8 +43,8 @@ try{
   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
   const layout=await rows().evaluateAll(elements=>({width:innerWidth,height:innerHeight,visible:elements.filter(el=>el.getBoundingClientRect().bottom<=innerHeight).length,firstTop:elements[0].getBoundingClientRect().top}));
   layouts.push(layout);check(`${width}px no page overflow`,await noOverflow());
-  if(width===1440||width<=390)check(`${width}px first screen minimum records`,layout.visible>=(width===1440?5:2));
   await shot('final-ranking-'+width);await shot('viewport-ranking-'+width,false);
+  if(width===1440||width<=390)check(`${width}px first screen minimum records`,layout.visible>=(width===1440?5:2));
   await page.locator('.rank-name').first().click();
   check(`${width}px expanded evidence no overflow`,await noOverflow());
   if(width<=390)check(`${width}px expansion preserves identity column width`,await page.locator('.rank-identity').first().evaluate(el=>el.clientWidth>120));
@@ -58,7 +67,7 @@ try{
  await page.locator('[data-clear-rank-search]').click();await filter('sort','score');
  await page.locator('.rank-name').first().click();
  const sampleEvidence=await page.locator('.rank-evidence').innerText();
- check('Sample evidence labels missing data',sampleEvidence.includes('内置样例')&&sampleEvidence.includes('未提供')&&!sampleEvidence.includes('demo-v1')&&!/随机种子\s*42/.test(sampleEvidence));
+ check('Sample evidence labels user demo and missing data',sampleEvidence.includes('用户公开的模拟测评记录')&&sampleEvidence.includes('未提供')&&!sampleEvidence.includes('demo-v1')&&!/随机种子\s*42/.test(sampleEvidence));
  const sampleJson=JSON.parse(await download(page.locator('[data-download-rank]').first()));
  check('Sample JSON is marked demo without invented configuration',sampleJson.demo===true&&sampleJson.id==='rank-cipher-pilot'&&!('evaluatorVersion' in sampleJson));
  await page.locator('.rank-name').first().click();
@@ -81,33 +90,34 @@ try{
  await view('analysis');await page.locator('[data-show-demo]').click();check('Analysis empty action returns examples',await page.locator('[data-chart-point]').count()===4);
  await view('ranking');await filter('budget','extended');await page.locator('[data-reset-rank]').click();check('Ranking reset restores conditions',await rows().count()===5);
 
- const common={datasetId:'key-recovery',version:'1.0.0',budget:'standard',scope:'full',source:'local',total:100,passed:90,score:90,model:'Research Model',published:true};
- const raw={...common,id:'public-a',agent:'配置 A',score:90.04,cost:2,time:30,demo:false,agentVersion:'a2.1',evaluatorVersion:'v3.4',config:{seed:0,temperature:0.2},createdAt:'2026-10-18T01:00:00Z',results:[{taskId:'t1',passed:true}]};
- publicReports=[raw,{...common,id:'public-b',agent:'配置 B',score:90.01,cost:1,time:20},{...common,id:'public-c',agent:'超长研究配置名称'.repeat(10),score:70,cost:null,time:null}, {...common,id:'public-demo',agent:'公开模拟示例',demo:true,score:100,cost:0,time:1}];
- await go('/leaderboard?dataset=key-recovery&version=1.0.0');
+ const common={datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',source:'docker',total:100,passed:90,score:90,model:'Research Model',published:true};
+ const trust={rankingEligible:true,answerVerified:true,modelIdentityVerified:true,usageVerified:true,costVerified:true};
+ const raw={...common,id:'public-a',agent:'配置 A',score:90.04,cost:2,time:30,demo:false,trust,agentVersion:'a2.1',evaluatorVersion:'v3.4',config:{seed:0,temperature:0.2},createdAt:'2026-10-18T01:00:00Z',results:[{taskId:'t1',passed:true}]};
+ publicReports=[raw,{...common,id:'public-b',agent:'配置 B',score:90.01,cost:1,time:20,trust},{...common,id:'public-c',agent:'超长研究配置名称'.repeat(10),score:70,cost:null,time:null}, {...common,id:'public-demo',agent:'公开模拟示例',demo:true,score:100,cost:0,time:1}];
+ await go('/leaderboard?dataset=cryptobench-sc-v4&version=4.1.0');
  check('Published demo report joins example cohort',await rows().count()===1&&/公开模拟示例/.test(await rows().innerText()));
  await filter('type','public');
- check('Unverified cohort excludes demo and uses competition ranks',await rows().count()===3&&JSON.stringify(await rows().locator('.rank-number').allTextContents())===JSON.stringify(['01','01','03']));
- check('Overview labels ties and missing fee coverage',/2 项并列最高/.test(await page.locator('.rank-summary').innerText())&&/67%/.test(await page.locator('.rank-summary').innerText()));
- await filter('sort','time');check('Time order keeps tie ranks',JSON.stringify(await rows().locator('.rank-number').allTextContents())===JSON.stringify(['01','01','03']));
+ check('Verified cohort excludes demo and uninspected cost records',await rows().count()===2&&JSON.stringify(await rows().locator('.rank-number').allTextContents())===JSON.stringify(['01','01']));
+ check('Overview labels ties and complete fee coverage',/2 项并列最高/.test(await page.locator('.rank-summary').innerText())&&/100%/.test(await page.locator('.rank-summary').innerText()));
+ await filter('sort','time');check('Time order keeps tie ranks',JSON.stringify(await rows().locator('.rank-number').allTextContents())===JSON.stringify(['01','01']));
  await page.locator('[data-rank-record="public-a"] .rank-name').click();
  const actualEvidence=await page.locator('.rank-evidence').innerText();
  check('Evidence uses actual versions, zero seed and submission time',/a2.1/.test(actualEvidence)&&/v3.4/.test(actualEvidence)&&/随机种子\s*0/.test(actualEvidence)&&/2026-10-18T01:00:00Z/.test(actualEvidence));
- check('Public visibility never claims verification',/未核验/.test(actualEvidence)&&!/已核验|已认证/.test(actualEvidence));
+ check('Official cohort shows platform verification fields',/平台核验/.test(actualEvidence)&&/模型核验/.test(actualEvidence)&&/用量核验/.test(actualEvidence)&&/费用核验/.test(actualEvidence));
  await page.locator('.rank-evidence-data summary').click();check('Existing configuration and results are preserved',/temperature/.test(await page.locator('.rank-evidence-data pre').innerText())&&/t1/.test(await page.locator('.rank-evidence-data pre').innerText()));
  assert.deepEqual(JSON.parse(await download(page.locator('[data-download-rank]'))),raw);checks.push('Published JSON is byte-shape equivalent to supplied record');
  const publicCsv=await download(page.locator('[data-export-rank]'));
  check('CSV flags match public records instead of hardcoded demo',publicCsv.includes('"false",')&&!publicCsv.includes('公开模拟示例'));
- await shot('public-evidence-1440');await page.locator('[data-rank-record="public-a"] .rank-name').click();await page.locator('[data-rank-record="public-c"] .rank-name').click();
- check('Missing evidence is not fabricated',/未提供/.test(await page.locator('.rank-evidence').innerText())&&!/demo-v1/.test(await page.locator('.rank-evidence').innerText()));
+ await shot('public-evidence-1440');await page.locator('[data-rank-record="public-a"] .rank-name').click();
+ check('Unverified record is excluded from official ranking',await page.locator('[data-rank-record="public-c"]').count()===0);
  for(const width of [1440,1024,768,390,360]){
   await page.setViewportSize({width,height:width<=390?844:1000});check(`${width}px long names and missing evidence no overflow`,await noOverflow());
   if(width<=390)check(`${width}px long record keeps usable row height`,await rows().last().evaluate(el=>el.getBoundingClientRect().height<120));
   await shot('long-record-'+width);
  }
- await page.setViewportSize({width:1440,height:1000});await view('analysis');check('Public chart excludes demo and missing fee record',await page.locator('[data-chart-point]').count()===2&&!/公开模拟示例/.test(await page.locator('.rank-chart').innerText()));
+ await page.setViewportSize({width:1440,height:1000});await view('analysis');check('Official chart excludes demo and unverified records',await page.locator('[data-chart-point]').count()===2&&!/公开模拟示例/.test(await page.locator('.rank-chart').innerText()));
  await page.locator('[data-chart-zoom]').uncheck();await page.setViewportSize({width:360,height:800});await shot('public-analysis-360');
- publicReports=[];await go();
+ publicReports=demoReports;await go();
  await page.locator('#rank-search').focus();
  await page.locator('#rank-search').evaluate(el=>{el.value='Deep';el.dispatchEvent(new InputEvent('input',{bubbles:true,isComposing:true}));});
  check('Composition keeps input and results stable until committed',await rows().count()===5&&await page.locator('#rank-search').inputValue()==='Deep');
@@ -117,7 +127,7 @@ try{
  check('Arrow key selects and focuses analysis tab',await page.locator('#rank-tab-analysis').evaluate(el=>el===document.activeElement&&el.getAttribute('aria-selected')==='true'));
  await page.keyboard.press('Home');check('Home key returns to ranking',await rows().count()===5);
  const touch=await browser.newContext({viewport:{width:360,height:800},isMobile:true,hasTouch:true});
- const mobile=await touch.newPage();await mobile.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports:[]}}));
+ const mobile=await touch.newPage();await mobile.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports:demoReports}}));
  await mobile.goto(base+'/#/leaderboard');await mobile.waitForLoadState('networkidle');
  await mobile.locator('.rank-compare-check').first().tap();check('Mobile comparison label is tappable',await mobile.locator('[data-compare]').first().isChecked());
  await mobile.locator('[data-rank-view="analysis"]').tap();

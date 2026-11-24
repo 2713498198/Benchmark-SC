@@ -32,6 +32,9 @@
 - 管理员价格后台已接入版本草稿、启用、三位 ISO 货币校验和公开 `GET /api/pricing/active` 快照；启用后服务端费用计算器即时重新加载，API 权限和版本生命周期由 `PricingApiIntegrationTest` 覆盖。
 - 应用启动会回收遗留 Docker 资源，并恢复未取消的 `queued/running` 运行；运行配置和任务状态会重新排队，取消的运行保持终态。凭证仍只保存在当前 worker 内存中，重启后需重新输入受保护 Agent 的凭证。
 - 管理员邀请邮件现在明确返回 `gateway`、`outbox` 或 `unconfigured` 投递状态；邀请令牌仍只保存哈希，明文只进入已配置的网关或本地 outbox，不出现在 API 响应、日志和审计记录。
+- 生产部署统一使用 `docker compose --env-file .env.prod -f compose.prod.yaml`，备份、升级和健康检查使用同一入口。
+- 正式榜单增加 `cryptobench-trust-v1`：只有平台模型网关确认供应商、模型和完整用量，且价格快照可计算全部费用的完整测评才进入正式排名；其他公开报告保留查看但 `rankingEligible=false`。
+- V17 新增跨实例运行配额锁。运行创建按用户限制活跃数量和每日创建数，并限制全平台活跃运行数，超限返回 HTTP 429。
 - 新增私有 evaluator catalog 校验器：检查版本、任务 ID、题干、公开文件路径和静态目录泄漏；只输出摘要与 SHA-256，不打印隐藏答案：`npm run validate:evaluator`。
 - evaluator catalog 增加公开题库覆盖闸门：材料交付后可使用 `--public-catalog` 验证私有目录与公开题库 ID 完整一致，拒绝缺题或多余题；`npm run test:evaluator` 覆盖通过与缺题失败场景。
 - 增加 V4 隐藏材料清单校验器：校验私有目录不在 `resources/static`、每道公开题都有 verifier 引用和 hidden/oracle/answer/reference 材料、文件真实 SHA-256、路径不越界以及公开目录哈希；材料未交付前只运行 `npm run test:v4-materials` 的夹具测试，不会将示例材料当作正式材料。

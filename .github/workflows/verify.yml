@@ -53,6 +53,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Verify production Compose environment loading
+        run: npm run test:compose:prod
+
       - name: Check frontend JavaScript and Vue templates
         run: npm run check
 

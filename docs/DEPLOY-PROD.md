@@ -16,7 +16,12 @@
    cp .env.prod.example .env.prod
    ```
 
-   至少填写 `DOMAIN`、`MYSQL_ROOT_PASSWORD`、`DB_PASSWORD`。
+   至少填写 `DOMAIN`、`MYSQL_ROOT_PASSWORD`、`DB_PASSWORD`。所有生产命令统一从
+   项目根目录显式加载 `.env.prod`：
+
+   ```bash
+   docker compose --env-file .env.prod -f compose.prod.yaml <命令>
+   ```
 
 2. 初始化首个管理员：在 `.env.prod` 中同时设置
    `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、
@@ -25,18 +30,30 @@
 3. 启动：
 
    ```bash
-   docker compose -f compose.prod.yaml up -d --build
-   docker compose -f compose.prod.yaml ps
+   docker compose --env-file .env.prod -f compose.prod.yaml up -d --build
+   docker compose --env-file .env.prod -f compose.prod.yaml ps
    ```
 
 4. 首个管理员创建成功后，删除 `.env.prod` 中三个 `CRYPTOBENCH_BOOTSTRAP_ADMIN_*`
    变量，然后重建应用容器使其不保留引导密码：
 
    ```bash
-   docker compose -f compose.prod.yaml up -d --force-recreate app
+   docker compose --env-file .env.prod -f compose.prod.yaml up -d --force-recreate app
    ```
 
 5. 访问 `https://<DOMAIN>`。Caddy 会申请并自动续期证书。
+
+## 正式榜单
+
+正式公开榜单只纳入满足以下条件的完整测评：
+
+- 答案由服务端评测器验证；
+- 模型调用经过平台模型网关，且网关确认实际供应商与模型；
+- 供应商返回完整 Token 用量；
+- 价格快照存在，全部费用可计算。
+
+本地直连 Agent 和 Runner 报告仍可公开查看，但 `trust.rankingEligible=false`，
+不会进入正式榜单。Agent 名称与版本始终标记为用户声明，不作为平台认证身份。
 
 ## 邮件
 
@@ -66,14 +83,21 @@ BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
 
    ```bash
    git pull
-   docker compose -f compose.prod.yaml build app
-   docker compose -f compose.prod.yaml up -d app
+   docker compose --env-file .env.prod -f compose.prod.yaml build app
+   docker compose --env-file .env.prod -f compose.prod.yaml up -d app
    ```
 
 3. 应用启动时执行 Flyway 版本化迁移，确认健康检查通过：
 
    ```bash
-   curl -fsS http://127.0.0.1:4173/actuator/health
+   curl -fsS https://<DOMAIN>/actuator/health
+   ```
+
+   若域名或证书尚未就绪，也可从应用容器内部检查：
+
+   ```bash
+   docker compose --env-file .env.prod -f compose.prod.yaml exec -T app \
+     wget -qO- http://127.0.0.1:4173/actuator/health
    ```
 
 ## 安全与限流
@@ -82,4 +106,9 @@ BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
 - 容器入口首次启动会修正 `/app/var` 归属，然后降权到非 root 的 `app` 用户运行 Java。
 - 登录按邮箱、注册按 IP 做滚动窗口限流，默认参数可用
   `CRYPTOBENCH_AUTH_LOGIN_*` / `CRYPTOBENCH_AUTH_REGISTER_*` 覆盖。
+- 运行创建按用户限制活跃数量、每日创建数量，并限制平台全局活跃运行数。
+  默认值为每用户 2 个活跃运行、每日 10 次创建、全平台 100 个活跃运行。
+  可通过 `CRYPTOBENCH_RUN_MAX_ACTIVE_PER_USER`、
+  `CRYPTOBENCH_RUN_MAX_CREATED_PER_DAY_PER_USER` 和
+  `CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL` 调整。
 - 数据库和 `app-var` 卷不要挂到公共可写路径；`.env.prod` 已在 `.gitignore` 中。

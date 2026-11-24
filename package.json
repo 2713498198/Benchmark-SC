@@ -1,6 +1,6 @@
 {
   "name": "cryptobench-frontend-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -23,6 +23,7 @@
     "test:docker:e2e": "node tests/docker-platform-e2e.mjs",
     "test:compose": "node tests/compose-smoke.mjs",
     "test:compose:config": "node tests/compose-config.mjs",
+    "test:compose:prod": "node tests/prod-compose-config.mjs",
     "test:compose:sandbox": "node tests/compose-sandbox-smoke.mjs",
     "test:docker-ui": "node tests/docker-ui-browser.mjs",
     "test:report-metrics": "node tests/report-metrics.mjs && node tests/leaderboard-model.mjs && node tests/leaderboard-chart-model.mjs",

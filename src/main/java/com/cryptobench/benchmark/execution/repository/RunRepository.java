@@ -132,6 +132,33 @@ public class RunRepository {
                 runMapper, Math.min(100, Math.max(1, limit)));
     }
 
+    /** One row lock serializes quota checks across application instances. */
+    public boolean lockQuota() {
+        Integer id = database.queryForObject("SELECT singleton_id FROM benchmark_run_quota_lock WHERE singleton_id=1 FOR UPDATE",
+                Integer.class);
+        return id != null && id == 1;
+    }
+
+    public int countActiveByOwner(String ownerId) {
+        Integer count = database.queryForObject("""
+                SELECT COUNT(*) FROM benchmark_runs
+                WHERE owner_id=? AND status IN ('queued','running','paused')
+                """, Integer.class, ownerId);
+        return count == null ? 0 : count;
+    }
+
+    public int countCreatedByOwnerSince(String ownerId, String since) {
+        Integer count = database.queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE owner_id=? AND created_at>=?",
+                Integer.class, ownerId, since);
+        return count == null ? 0 : count;
+    }
+
+    public int countActiveGlobal() {
+        Integer count = database.queryForObject("SELECT COUNT(*) FROM benchmark_runs WHERE status IN ('queued','running','paused')",
+                Integer.class);
+        return count == null ? 0 : count;
+    }
+
     /** Other live workers may share this database; cleanup must preserve their leases. */
     public java.util.Set<String> activeClaimIds() {
         return new java.util.HashSet<>(database.query("SELECT run_id FROM benchmark_runs WHERE status='running' AND lease_until>? AND cancel_requested=FALSE",

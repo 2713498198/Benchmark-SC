@@ -2,6 +2,7 @@ package com.cryptobench.benchmark.execution.service;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
 import com.cryptobench.benchmark.common.ApiException;
+import com.cryptobench.benchmark.config.RunQuotaProperties;
 import com.cryptobench.benchmark.execution.model.Run;
 import com.cryptobench.benchmark.execution.model.RunLog;
 import com.cryptobench.benchmark.execution.model.RunTask;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -54,6 +56,7 @@ public class RunService {
     private final ModelGatewayService gateways;
     private final GatewayProperties gatewayProperties;
     private final RunnerService runnerService;
+    private final RunQuotaProperties runQuotas;
     private final com.fasterxml.jackson.databind.ObjectMapper mapper;
     private final TransactionTemplate transactions;
     private final String workerId = UUID.randomUUID().toString();
@@ -75,7 +78,7 @@ public class RunService {
                       com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker,
                       PlatformTransactionManager transactionManager,
                       ModelGatewayService gateways, GatewayProperties gatewayProperties,
-                      RunnerService runnerService) {
+                      RunnerService runnerService, RunQuotaProperties runQuotas) {
         this.runs = runs;
         this.catalog = catalog;
         this.agent = agent;
@@ -87,6 +90,7 @@ public class RunService {
         this.gateways = gateways;
         this.gatewayProperties = gatewayProperties;
         this.runnerService = runnerService;
+        this.runQuotas = runQuotas;
     }
 
     @PostConstruct
@@ -197,7 +201,7 @@ public class RunService {
         }
     }
 
-    public ObjectNode runtimeStatus() {
+    public ObjectNode runtimeStatus(BenchmarkUser user) {
         DockerRuntimeStatus status = docker.status();
         ObjectNode result = mapper.createObjectNode();
         result.put("dockerEnabled", status.enabled());
@@ -214,6 +218,15 @@ public class RunService {
         limits.put("memory", "512m");
         limits.put("pids", 128);
         limits.put("timeoutSeconds", 300);
+        ObjectNode quota = limits.putObject("runQuota");
+        quota.put("maxActivePerUser", runQuotas.maxActivePerUser());
+        quota.put("maxCreatedPerDayPerUser", runQuotas.maxCreatedPerDayPerUser());
+        quota.put("maxActiveGlobal", runQuotas.maxActiveGlobal());
+        if (user != null) {
+            quota.put("activeRuns", runs.countActiveByOwner(user.id()));
+            quota.put("createdToday", runs.countCreatedByOwnerSince(user.id(), startOfUtcDay()));
+            quota.put("activeRunsGlobal", runs.countActiveGlobal());
+        }
         return result;
     }
 
@@ -299,6 +312,7 @@ public class RunService {
                 null, null, null, retryOf, false, Instant.now().toString(), null, null);
         try {
             transactions.executeWithoutResult(transaction -> {
+                enforceRunQuota(user.id());
                 runs.insert(run);
                 int ordinal = 1;
                 for (Participant participant : participants) for (TaskDefinition task : selected) {
@@ -308,6 +322,26 @@ public class RunService {
             });
         } catch (RuntimeException error) { credentials.remove(id); throw error; }
         return view(runs.find(id, false).orElseThrow());
+    }
+
+    private void enforceRunQuota(String ownerId) {
+        if (!runs.lockQuota()) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "运行配额服务暂不可用");
+        if (runs.countActiveByOwner(ownerId) >= runQuotas.maxActivePerUser()) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
+                    "同时保留的运行已达上限（" + runQuotas.maxActivePerUser() + "），请完成或取消已有运行");
+        }
+        if (runs.countCreatedByOwnerSince(ownerId, startOfUtcDay()) >= runQuotas.maxCreatedPerDayPerUser()) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
+                    "今日创建运行已达上限（" + runQuotas.maxCreatedPerDayPerUser() + "）");
+        }
+        if (runs.countActiveGlobal() >= runQuotas.maxActiveGlobal()) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
+                    "平台活跃运行已达上限（" + runQuotas.maxActiveGlobal() + "），请稍后重试");
+        }
+    }
+
+    private static String startOfUtcDay() {
+        return Instant.now().truncatedTo(ChronoUnit.DAYS).toString();
     }
 
     public ObjectNode get(BenchmarkUser user, String id) {
@@ -823,7 +857,6 @@ public class RunService {
         List<String> usageSources = stored.stream().map(t -> t.agentResponse() == null ? "unknown"
                 : t.agentResponse().path("usageSource").asText("agent_reported")).distinct().toList();
         result.put("usageSource", usageSources.size() == 1 ? usageSources.getFirst() : "mixed");
-        result.put("executionClaimsVerified", false);
         result.put("demo", false);
         result.put("createdAt", Instant.now().toString());
         result.put("date", Instant.now().toString());
@@ -867,7 +900,54 @@ public class RunService {
         }
         result.set("costStatuses", mapper.valueToTree(costStatuses));
         result.put("costStatus", price == null ? "missing_snapshot" : costStatuses.size() == 1 ? costStatuses.iterator().next() : "partial");
+        boolean modelVerified = gatewayVerified(plan, participants, stored);
+        boolean usageVerified = modelVerified && usageSources.size() == 1 && "provider_gateway".equals(usageSources.getFirst());
+        boolean costVerified = usageVerified && price != null && !stored.isEmpty()
+                && costStatuses.size() == 1 && costStatuses.contains("calculated")
+                && stored.stream().allMatch(task -> task.costUsd() != null);
+        boolean allTasksFinal = !stored.isEmpty()
+                && stored.stream().allMatch(task -> List.of("passed", "failed").contains(task.status()));
+        boolean rankingEligible = !"pk".equals(kind) && "full".equals(scope)
+                && allTasksFinal && modelVerified && usageVerified && costVerified;
+        ObjectNode trust = result.putObject("trust");
+        trust.put("schema", "cryptobench-trust-v1");
+        trust.put("answerVerified", true);
+        trust.put("agentIdentityVerified", false);
+        trust.put("agentIdentitySource", "user_declared");
+        trust.put("modelIdentityVerified", modelVerified);
+        trust.put("modelIdentitySource", modelVerified ? "platform_model_gateway" : "user_declared");
+        trust.put("usageVerified", usageVerified);
+        trust.put("usageSource", usageVerified ? "provider_gateway" : "unverified");
+        trust.put("costVerified", costVerified);
+        trust.put("rankingEligible", rankingEligible);
+        result.put("rankingEligible", rankingEligible);
+        result.put("executionClaimsVerified", rankingEligible);
         return result;
+    }
+
+    private boolean gatewayVerified(ObjectNode plan, List<ParticipantRuntime> participants, List<RunTask> stored) {
+        String providerId = plan.path("gateway").path("providerId").asText("");
+        if (providerId.isBlank() || stored.isEmpty()) return false;
+        Map<String, String> models = new LinkedHashMap<>();
+        participants.forEach(participant ->
+                models.put(participant.participant().key(), participant.participant().model()));
+        for (RunTask task : stored) {
+            ObjectNode response = task.agentResponse();
+            if (response == null || !"provider_gateway".equals(response.path("usageSource").asText())) return false;
+            JsonNode accounting = response.path("gatewayAccounting");
+            if (!accounting.isObject()
+                    || !accounting.path("providerReported").asBoolean(false)
+                    || !accounting.path("usageComplete").asBoolean(false)
+                    || accounting.path("calls").asInt(0) < 1
+                    || !providerId.equals(accounting.path("provider").asText(""))) return false;
+            String participantKey = task.taskId().split("::", 2)[0];
+            String expectedModel = models.get(participantKey);
+            String expectedPricingModel = plan.path("gateway").path("priceModels").path(participantKey).asText("");
+            if (expectedModel == null || expectedPricingModel.isBlank()
+                    || !expectedModel.equals(accounting.path("model").asText(""))
+                    || !expectedPricingModel.equals(accounting.path("priceModelId").asText(""))) return false;
+        }
+        return true;
     }
 
     private void addPkSummary(ObjectNode result, List<ParticipantRuntime> participants,

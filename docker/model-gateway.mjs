@@ -18,7 +18,7 @@ export function createGateway(config){
  if(base.protocol==='http:'&&!['127.0.0.1','localhost','[::1]'].includes(base.hostname)&&!config.allowInsecureTestProvider)throw Error('provider_requires_https');
  const endpoint=provider.baseUrl.replace(/\/$/,'')+'/chat/completions',tasks=new Map();let closed=false;
  const auth=req=>String(req.headers.authorization||'').replace(/^Bearer /,'');
- const summarize=task=>{const records=[...task.calls.values()],complete=records.every(r=>r.finished&&r.usage);const result={calls:records.length,usageComplete:complete,providerReported:complete&&records.length>0,failedCalls:records.filter(r=>r.failed).length};if(complete){result.inputTokens=records.reduce((n,r)=>n+r.usage.inputTokens,0);result.outputTokens=records.reduce((n,r)=>n+r.usage.outputTokens,0);}return result;};
+ const summarize=task=>{const records=[...task.calls.values()],complete=records.every(r=>r.finished&&r.usage);const result={calls:records.length,usageComplete:complete,providerReported:complete&&records.length>0,failedCalls:records.filter(r=>r.failed).length,provider:provider.id,model:task.model,priceModelId:provider.priceModelIds?.[task.model]||task.model};if(complete){result.inputTokens=records.reduce((n,r)=>n+r.usage.inputTokens,0);result.outputTokens=records.reduce((n,r)=>n+r.usage.outputTokens,0);}return result;};
  const stop=task=>{task.closed=true;task.token='';for(const call of task.calls.values())call.abort?.abort();};
  const control=http.createServer(async(req,res)=>{
   if(!equals(auth(req),controlToken))return fail(res,401,'unauthorized');

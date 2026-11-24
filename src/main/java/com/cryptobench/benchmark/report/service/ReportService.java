@@ -85,6 +85,9 @@ public class ReportService {
         // 忽略客户端归属和状态声明；归属来自当前用户，同步状态只能继承已有记录。
         payload.remove("ownerId");
         payload.remove("permissions");
+        payload.remove("trust");
+        payload.remove("rankingEligible");
+        payload.remove("executionClaimsVerified");
         payload.put("synced", existing != null && existing.payload().path("synced").asBoolean());
         payload.put("published", false);
         payload.put("verified", false);

@@ -11,6 +11,8 @@ RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/workspace/.mv
 
 FROM eclipse-temurin:21.0.13_9-jre-jammy
 WORKDIR /app
+LABEL org.opencontainers.image.title="CryptoBench" \
+      org.opencontainers.image.version="1.1.0"
 
 # The Compose healthcheck uses wget. Install only this small runtime utility
 # and remove the package index so the application image stays self-contained.
@@ -18,7 +20,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends wget \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /workspace/target/cryptobench-1.0.0-SNAPSHOT.jar /app/cryptobench.jar
+COPY --from=build /workspace/target/cryptobench-1.1.0.jar /app/cryptobench.jar
 COPY docker/entrypoint.sh /usr/local/bin/cryptobench-entrypoint
 RUN groupadd -r app && useradd -r -g app app \
     && mkdir -p /app/var && chown -R app:app /app \

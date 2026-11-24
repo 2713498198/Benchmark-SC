@@ -79,6 +79,12 @@ class GatewayRunIntegrationTest {
             assertThat(report.path("usage").path("outputTokens").asLong()).isEqualTo(7);
             assertThat(report.path("usage").path("totalTokens").asLong()).isEqualTo(18);
             assertThat(report.path("cost").asDouble()).isEqualTo(0.000078d);
+            assertThat(report.path("rankingEligible").asBoolean()).isTrue();
+            assertThat(report.path("executionClaimsVerified").asBoolean()).isTrue();
+            assertThat(report.path("trust").path("modelIdentityVerified").asBoolean()).isTrue();
+            assertThat(report.path("trust").path("usageVerified").asBoolean()).isTrue();
+            assertThat(report.path("trust").path("costVerified").asBoolean()).isTrue();
+            assertThat(report.path("trust").path("agentIdentityVerified").asBoolean()).isFalse();
             assertThat(report.path("results").get(0).path("pricingModel").asText()).isEqualTo("priced-model");
             assertThat(report.path("results").get(0).path("costStatus").asText()).isEqualTo("calculated");
             assertThat(repository.findTasks(fixture.id).getFirst().costUsd()).isEqualTo(0.000078d);
@@ -108,10 +114,26 @@ class GatewayRunIntegrationTest {
             assertThat(report.path("score").asDouble()).isEqualTo(100);
             assertThat(report.path("cost").isNull()).isTrue();
             assertThat(report.path("costStatus").asText()).isEqualTo("missing_usage");
+            assertThat(report.path("rankingEligible").asBoolean()).isFalse();
+            assertThat(report.path("trust").path("usageVerified").asBoolean()).isFalse();
+            assertThat(report.path("trust").path("costVerified").asBoolean()).isFalse();
             assertThat(report.path("usage").path("knownTasks").asInt()).isZero();
             assertThat(report.path("usage").path("totalTokens").isNull()).isTrue();
             assertThat(repository.findTasks(fixture.id).getFirst().costUsd()).isNull();
             assertThat(repository.findTasks(fixture.id).getFirst().agentResponse().path("usage")).isEmpty();
+            fixture.assertSecretsAbsent(report);
+        }
+    }
+
+    @Test
+    void mismatchedGatewayPriceModelCannotEnterTheOfficialLeaderboard() throws Exception {
+        try (Fixture fixture = new Fixture(true, false, "standard", "provider-model")) {
+            fixture.create();
+            ObjectNode report = fixture.completedReport();
+            assertThat(report.path("rankingEligible").asBoolean()).isFalse();
+            assertThat(report.path("trust").path("modelIdentityVerified").asBoolean()).isFalse();
+            assertThat(report.path("trust").path("usageVerified").asBoolean()).isFalse();
+            assertThat(report.path("trust").path("costVerified").asBoolean()).isFalse();
             fixture.assertSecretsAbsent(report);
         }
     }
@@ -156,6 +178,10 @@ class GatewayRunIntegrationTest {
         String id;
 
         Fixture(boolean completeUsage, boolean block, String budget) throws Exception {
+            this(completeUsage, block, budget, "priced-model");
+        }
+
+        Fixture(boolean completeUsage, boolean block, String budget, String accountingPriceModel) throws Exception {
             String key = UUID.randomUUID().toString();
             owner = new BenchmarkUser("gateway-" + key, key + "@example.test", "Gateway fixture", "admin", "test-hash", null, Instant.now().toString());
             users.insert(owner);
@@ -178,7 +204,9 @@ class GatewayRunIntegrationTest {
                         .put("provider", "fixture").put("model", "provider-model").put("priceModelId", "priced-model")
                         .put("maxAgentCalls", calls).put("deadline", deadline.toString());
             });
-            ObjectNode accounting = mapper.createObjectNode().put("usageComplete", completeUsage).put("calls", 1).put("providerReported", true);
+            ObjectNode accounting = mapper.createObjectNode().put("usageComplete", completeUsage).put("calls", 1)
+                    .put("providerReported", true).put("provider", "fixture").put("model", "provider-model")
+                    .put("priceModelId", accountingPriceModel);
             if (completeUsage) accounting.put("inputTokens", 11).put("outputTokens", 7);
             else accounting.put("inputTokens", 11); // Partial counters must not fall back to Agent claims.
             when(session.finishTask(anyString())).thenAnswer(invocation -> accounting.deepCopy());

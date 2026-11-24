@@ -74,6 +74,12 @@ benchmark:
     login-window-seconds: ${CRYPTOBENCH_AUTH_LOGIN_WINDOW_SECONDS:900}
     register-max-attempts: ${CRYPTOBENCH_AUTH_REGISTER_MAX:5}
     register-window-seconds: ${CRYPTOBENCH_AUTH_REGISTER_WINDOW_SECONDS:3600}
+  run-quota:
+    # The database lock row serializes quota checks so concurrent requests
+    # cannot bypass per-user or global limits.
+    max-active-per-user: ${CRYPTOBENCH_RUN_MAX_ACTIVE_PER_USER:2}
+    max-created-per-day-per-user: ${CRYPTOBENCH_RUN_MAX_CREATED_PER_DAY_PER_USER:10}
+    max-active-global: ${CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL:100}
   password-reset:
     # 配置邮件网关 URL 后由后端投递 JSON；本地也可写入 outbox 文件联调。
     delivery-url: ${PASSWORD_RESET_DELIVERY_URL:}

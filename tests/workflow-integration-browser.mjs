@@ -68,9 +68,9 @@ try{
  const publicExport=publicPage.waitForEvent('download');await publicPage.locator('[data-report-json]').click();const publicReport=JSON.parse(await readFile(await(await publicExport).path(),'utf8'));assert.equal(publicReport.id,reportId);for(const field of ['ownerId','permissions','token','credentials'])assert.equal(field in publicReport,false);
  await publicPage.goto(base+'/#/datasets/'+id+'?version=1.0.0');await publicPage.locator('[data-custom-suite]').waitFor();const catalogDownload=publicPage.waitForEvent('download');await publicPage.getByRole('button',{name:'下载公开目录',exact:true}).click();const publicCatalog=JSON.parse(await readFile(await(await catalogDownload).path(),'utf8'));assert.equal(publicCatalog.dataset.id,id);assert.equal(publicCatalog.tasks[0].input.value,7);for(const field of ['verification','expected','hidden','oracle','reference'])assert.equal(field in publicCatalog.tasks[0],false);
  await anonymous.close();
- await navigate('/leaderboard?dataset='+id+'&version=1.0.0&type=public');await page.reload();await page.locator('[data-rank="dataset"]').selectOption(id);const rankRow=page.locator('[data-rank-record="'+reportId+'"]');await rankRow.waitFor();
- assert.equal(await rankRow.locator('td').nth(5).innerText(),secondsText(report.averageTimeSeconds));
- await page.locator('[data-rank-view="analysis"]').click();await page.locator('[data-chart-metric="time"]').click();await page.locator('[data-chart-point]').click();assert.ok((await page.locator('.rank-chart-tooltip').innerText()).includes(secondsText(report.averageTimeSeconds)));
+ await navigate('/leaderboard?dataset='+id+'&version=1.0.0&type=public');await page.reload();await page.locator('[data-rank="dataset"]').selectOption(id);
+ assert.equal(await page.locator('[data-rank-record="'+reportId+'"]').count(),0,'unverified local usage does not enter the official leaderboard');
+ assert.match(await page.locator('.rank-trust-note').innerText(),/平台网关核验/);
  const csrf=await(await context.request.get(base+'/api/auth/csrf')).json();
  const pkResponse=await context.request.post(base+'/api/runs',{headers:{[csrf.headerName]:csrf.token},data:{kind:'pk',source:'local',datasetId:id,version:'1.0.0',scope:'full',budget:'standard',seed:987,endpoint,players:[{label:'A',agent:'Fixture A',model:'mock-model'},{label:'B',agent:'Fixture B',model:'mock-model-b'}]}});
  assert.equal(pkResponse.status(),202);let pkRun=await pkResponse.json();
@@ -88,8 +88,8 @@ try{
   const response=await context.request.post(base+'/api/reports/'+retryId+'/'+action,{headers:{[currentCsrf.headerName]:currentCsrf.token}});
   assert.equal(response.status(),200,action+': '+await response.text());
  }
- await navigate('/leaderboard?dataset='+id+'&version=1.0.0&type=public');await page.reload();await page.locator('[data-rank="dataset"]').selectOption(id);await page.locator('[data-rank-record="'+retryId+'"]').waitFor();
- await page.locator('[data-compare="'+reportId+'"]').check();await page.locator('[data-compare="'+retryId+'"]').check();await page.locator('[data-open-compare]').click();assert.ok((await page.locator('#modal').innerText()).includes(secondsText(report.averageTimeSeconds)));await page.locator('#modal [data-close-modal]').click();
+ await navigate('/leaderboard?dataset='+id+'&version=1.0.0&type=public');await page.reload();await page.locator('[data-rank="dataset"]').selectOption(id);
+ assert.equal(await page.locator('[data-rank-record]').count(),0,'retried local report also remains outside the official leaderboard');
  await navigate('/admin');await page.getByRole('button',{name:'管理员邀请',exact:true}).click();const readiness=await(await context.request.get(base+'/api/admin/mail/status')).json();assert.equal(readiness.mode,'outbox','Use an isolated outbox, never real delivery for this browser test');assert.equal(readiness.ready,true);
  const invitedEmail='invite-'+randomUUID()+'@example.com';await page.locator('#invitation-email').fill(invitedEmail);await page.locator('#invitation-name').fill('Browser invite');await page.getByRole('button',{name:'发送邀请',exact:true}).click();const invitation=page.getByRole('row').filter({hasText:invitedEmail});await invitation.getByRole('button',{name:'重发',exact:true}).click();await confirm();await invitation.getByRole('button',{name:'撤销',exact:true}).click();await confirm();assert.match(await invitation.innerText(),/已撤销/);
  await mkdir('tmp/verification/workflow-live',{recursive:true});await page.screenshot({path:'tmp/verification/workflow-live/invitations.png',fullPage:true});
