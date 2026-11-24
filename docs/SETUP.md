@@ -4,11 +4,10 @@
 
 | 需求 | 入口 | 必需环境 |
 | --- | --- | --- |
-| Windows 上直接使用 | GitHub Releases 的 EXE 或便携 ZIP | 不需要另装 Java、Maven、Node.js |
 | 拉取源码运行网站 | `docker compose up -d --build` | Docker Engine + Compose v2；Windows/macOS 可用 Docker Desktop |
 | 修改代码或 IDE 调试 | Windows `start.cmd`；macOS/Linux `bash start.sh` | Windows PowerShell 5.1；或 Bash、curl、tar、unzip 及 SHA-256 工具 |
 
-Windows 桌面安装说明见 [INSTALL-WINDOWS.md](INSTALL-WINDOWS.md)。安装包包含 Java；源码启动器会在需要时准备 JDK。桌面包需要按目标操作系统分别构建，目前发布流程提供 Windows 包。
+本项目只提供本地部署网页版。Windows 用户仍需通过 `start.cmd`、`start.sh` 或 Docker 启动网站，然后使用浏览器访问；不提供桌面安装包或便携客户端。
 
 ## 源码一键启动
 
@@ -30,7 +29,7 @@ bash start.sh
 
 Maven Wrapper 固定使用 Maven 3.9.11，并校验 ZIP 的 SHA-256。启动器把 Maven 发行包缓存到 `.tools/maven-user-home`，依赖缓存位于 `.mvn/repository`。直接运行 Wrapper 默认使用用户的 Maven 缓存，需要自行设置正确的 `JAVA_HOME`。这些缓存和 JDK 均不提交 Git。脚本仅修改启动进程的环境，不更改系统环境变量。
 
-Windows 的 JDK 21 原生启动器在英文系统上可能无法从中文目录加载 `java.dll`。因此，项目路径含非 ASCII 字符时，Windows 源码启动器会把 JDK 和 Maven 发行包缓存到 `%LOCALAPPDATA%\CryptoBench\tools`；项目代码和账号数据库仍在原目录。如果用户目录也含非 ASCII 字符，可设置 `$env:CRYPTOBENCH_TOOLS_DIR = 'D:\CryptoBenchTools'`，指定有写入权限的纯 ASCII 工具缓存路径。此变量也适用于 Windows 打包脚本；下载仍校验 SHA-256，后续启动复用缓存。
+Windows 的 JDK 21 原生启动器在英文系统上可能无法从中文目录加载 `java.dll`。因此，项目路径含非 ASCII 字符时，Windows 源码启动器会把 JDK 和 Maven 发行包缓存到 `%LOCALAPPDATA%\CryptoBench\tools`；项目代码和账号数据库仍在原目录。如果用户目录也含非 ASCII 字符，可设置 `$env:CRYPTOBENCH_TOOLS_DIR = 'D:\CryptoBenchTools'`，指定有写入权限的纯 ASCII 工具缓存路径。此变量也适用于 Windows 启动与测试脚本；下载仍校验 SHA-256，后续启动复用缓存。
 
 首次运行需要联网访问 GitHub 和 Maven Central；后续复用缓存。新分支引入的依赖仍可能需要下载。前端已随项目打包，启动网站不需要 Node.js。
 

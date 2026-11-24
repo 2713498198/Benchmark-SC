@@ -27,7 +27,7 @@ try{
   await page.screenshot({path:output+'/home-desktop.png',fullPage:true});
   for(const route of ['/datasets','/tools','/leaderboard','/arena','/evaluate','/download','/docs'])await go(route);
   await go('/download');
-  await page.locator('[data-download-tab="deploy"]').click();
+  assert.equal(await page.locator('[data-download-tab]').count(),0);
   assert.match(await page.locator('#main').innerText(),/Spring Boot/);
   const downloadEvent=page.waitForEvent('download');
   await page.locator('[data-download="compose"]').click();

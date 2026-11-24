@@ -10,9 +10,10 @@
 
 根据使用方式选择入口，无需修改个人电脑路径：
 
+本项目只提供本地部署网页版，通过浏览器访问，不发布桌面安装包或便携客户端。
+
 | 使用方式 | 启动入口 | 需要准备 |
 | --- | --- | --- |
-| Windows 直接使用 | 下载本仓库 GitHub Releases 的 EXE 或便携 ZIP | 安装包内置 Java，无需 Maven、Node.js；见 [安装说明](docs/INSTALL-WINDOWS.md) |
 | 拉取源码运行网站 | `docker compose up -d --build` | Docker + Compose v2，无需本机 Java 或预先构建 JAR |
 | 修改源码或 IDE 调试 | Windows `start.cmd`；macOS/Linux `bash start.sh` | 脚本检查 JDK 21，缺少时自动下载并校验；Maven Wrapper 固定 Maven 3.9.11 |
 
@@ -230,7 +231,7 @@ Windows 配置 QQ 发信可运行 `configure-mail.cmd`，在本机窗口输入�
 
 管理员可上传 `cryptobench-custom-dataset-v1` JSON，预览后发布不可覆盖的版本；题目与输入公开，评分规则私有。支持精确 JSON 匹配和十进制数值容差，旧格式仅保留浏览能力。格式及示例见 [自定义题库](docs/custom-datasets.md)。本轮实际测试与待验收环境见 [六项功能实施记录](docs/implementation-2026-11-01.md)。
 
-模型价格由管理员在“管理后台 → 模型价格”维护，也可通过 `GET /api/pricing/active` 读取当前公开价格。价格版本保存后不可修改；可复制完整价格表、编辑多模型价格并保存新版本，启用前查看差异。每次运行创建时固定价格快照和哈希，恢复与重试使用原快照；启用新价不回算旧报告。未知模型或缺失用量保留为空费用，历史非 USD 价格不冒充 USD。详见 [价格版本与快照](docs/pricing.md)。Windows 桌面包由 `.github/workflows/release.yml` 在推送 `v*.*.*` 标签后构建并发布到 GitHub Release，同时提供 EXE 安装器、便携版 ZIP 和 SHA-256 校验文件；页面“下载公开安装包”会打开最新 Release。
+模型价格由管理员在“管理后台 → 模型价格”维护，也可通过 `GET /api/pricing/active` 读取当前公开价格。价格版本保存后不可修改；可复制完整价格表、编辑多模型价格并保存新版本，启用前查看差异。每次运行创建时固定价格快照和哈希，恢复与重试使用原快照；启用新价不回算旧报告。未知模型或缺失用量保留为空费用，历史非 USD 价格不冒充 USD。详见 [价格版本与快照](docs/pricing.md)。
 
 ## 本机 Agent 与模型网关
 
