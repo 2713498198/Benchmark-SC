@@ -16,8 +16,12 @@
    cp .env.prod.example .env.prod
    ```
 
-   至少填写 `DOMAIN`、`MYSQL_ROOT_PASSWORD`、`DB_PASSWORD`。生产命令统一使用
-   `scripts/prod-compose.sh`，该脚本会显式加载 `.env.prod`。
+   至少填写 `DOMAIN`、`MYSQL_ROOT_PASSWORD`、`DB_PASSWORD`。所有生产命令统一从
+   项目根目录显式加载 `.env.prod`：
+
+   ```bash
+   docker compose --env-file .env.prod -f compose.prod.yaml <命令>
+   ```
 
 2. 初始化首个管理员：在 `.env.prod` 中同时设置
    `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、
@@ -26,15 +30,15 @@
 3. 启动：
 
    ```bash
-   bash ./scripts/prod-compose.sh up -d --build
-   bash ./scripts/prod-compose.sh ps
+   docker compose --env-file .env.prod -f compose.prod.yaml up -d --build
+   docker compose --env-file .env.prod -f compose.prod.yaml ps
    ```
 
 4. 首个管理员创建成功后，删除 `.env.prod` 中三个 `CRYPTOBENCH_BOOTSTRAP_ADMIN_*`
    变量，然后重建应用容器使其不保留引导密码：
 
    ```bash
-   bash ./scripts/prod-compose.sh up -d --force-recreate app
+   docker compose --env-file .env.prod -f compose.prod.yaml up -d --force-recreate app
    ```
 
 5. 访问 `https://<DOMAIN>`。Caddy 会申请并自动续期证书。
@@ -79,8 +83,8 @@ BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
 
    ```bash
    git pull
-   bash ./scripts/prod-compose.sh build app
-   bash ./scripts/prod-compose.sh up -d app
+   docker compose --env-file .env.prod -f compose.prod.yaml build app
+   docker compose --env-file .env.prod -f compose.prod.yaml up -d app
    ```
 
 3. 应用启动时执行 Flyway 版本化迁移，确认健康检查通过：
@@ -92,7 +96,7 @@ BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
    若域名或证书尚未就绪，也可从应用容器内部检查：
 
    ```bash
-   bash ./scripts/prod-compose.sh exec -T app \
+   docker compose --env-file .env.prod -f compose.prod.yaml exec -T app \
      wget -qO- http://127.0.0.1:4173/actuator/health
    ```
 

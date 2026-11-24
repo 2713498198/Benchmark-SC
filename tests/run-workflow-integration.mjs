@@ -6,7 +6,7 @@ import path from 'node:path';
 import {availablePort} from './portable-test-utils.mjs';
 
 // The application process is always started with a fresh database and a local test outbox.
-const jar=path.resolve('target/cryptobench-1.0.0-SNAPSHOT.jar');assert.ok(existsSync(jar),'Build the application JAR first');
+const jar=path.resolve('target/cryptobench-1.1.0.jar');assert.ok(existsSync(jar),'Build the application JAR first');
 await mkdir('target',{recursive:true});const temporary=await mkdtemp(path.resolve('target/workflow-integration-'));
 const port=await availablePort(),base='http://127.0.0.1:'+port,outbox=path.join(temporary,'outbox.jsonl');
 const java=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin',process.platform==='win32'?'java.exe':'java'):'java';

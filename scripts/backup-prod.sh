@@ -6,7 +6,8 @@ set -euo pipefail
 #   BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROD_COMPOSE="$ROOT/scripts/prod-compose.sh"
+cd "$ROOT"
+
 BACKUP_DIR="${BACKUP_DIR:-$ROOT/var/backups}"
 KEEP="${KEEP:-14}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -14,13 +15,13 @@ DEST="$BACKUP_DIR/$STAMP"
 
 mkdir -p "$DEST"
 
-bash "$PROD_COMPOSE" exec -T mysql \
+docker compose --env-file .env.prod -f compose.prod.yaml exec -T mysql \
   sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines --triggers cryptobench' \
   > "$DEST/cryptobench.sql"
 
 # Preserve the mail encryption key; without it, queued reset/invite mail cannot
 # be delivered after a restore.
-bash "$PROD_COMPOSE" cp app:/app/var/secrets "$DEST/secrets" 2>/dev/null || true
+docker compose --env-file .env.prod -f compose.prod.yaml cp app:/app/var/secrets "$DEST/secrets" 2>/dev/null || true
 
 tar -czf "$DEST.tar.gz" -C "$BACKUP_DIR" "$STAMP"
 rm -rf "$DEST"

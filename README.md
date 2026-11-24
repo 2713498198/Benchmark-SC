@@ -56,7 +56,7 @@ macOS/Linux 在项目根目录执行 `bash start.sh`。首次源码启动需要�
 .\start.cmd clean verify
 ```
 
-生成的 `target/cryptobench-1.0.0-SNAPSHOT.jar` 包含前端、公开题库和后端。推荐通过上述 Docker 入口部署；如果直接执行 `java -jar target/cryptobench-1.0.0-SNAPSHOT.jar`，运行该命令的终端必须已配置 Java 21，构建脚本不会修改父终端环境。启动工作目录决定本地数据库相对路径，请固定工作目录；关闭程序后再备份 H2 数据文件。健康检查地址为 `/actuator/health`。
+生成的 `target/cryptobench-1.1.0.jar` 包含前端、公开题库和后端。推荐通过上述 Docker 入口部署；如果直接执行 `java -jar target/cryptobench-1.1.0.jar`，运行该命令的终端必须已配置 Java 21，构建脚本不会修改父终端环境。启动工作目录决定本地数据库相对路径，请固定工作目录；关闭程序后再备份 H2 数据文件。健康检查地址为 `/actuator/health`。
 
 ## MySQL 配置
 
@@ -73,7 +73,7 @@ $env:SPRING_PROFILES_ACTIVE = 'prod'
 $env:DB_URL = 'jdbc:mysql://127.0.0.1:3306/cryptobench?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC'
 $env:DB_USERNAME = 'cryptobench'
 $env:DB_PASSWORD = '<应用数据库账号密码>'
-java -jar target/cryptobench-1.0.0-SNAPSHOT.jar
+java -jar target/cryptobench-1.1.0.jar
 ```
 
 Flyway 在启动时执行 `src/main/resources/db/migration/` 中的版本化迁移。后续变更应新增 `V2__...sql` 等迁移文件，不修改已经执行的迁移。

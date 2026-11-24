@@ -6,7 +6,7 @@ import path from 'node:path';
 import {availablePort} from './portable-test-utils.mjs';
 
 // Always create a new local application, file database and test-only outbox.
-const jar=path.resolve('target/cryptobench-1.0.0-SNAPSHOT.jar');
+const jar=path.resolve('target/cryptobench-1.1.0.jar');
 assert.ok(existsSync(jar),'Build the current application JAR before running this test');
 await mkdir('target',{recursive:true});const temporary=await mkdtemp(path.resolve('target/password-recovery-integration-'));
 const port=await availablePort(),base='http://127.0.0.1:'+port,outbox=path.join(temporary,'outbox.jsonl');
