@@ -20,6 +20,9 @@ for (const sandbox of [false, true]) {
   const data = service.volumes.find(volume => volume.target === '/app/var');
   assert.equal(data?.type, 'bind');
   assert.equal(resolve(data.source), test.dataDir);
+  const runnerPackage = service.volumes.find(volume => volume.target === '/app/runner-package');
+  assert.equal(runnerPackage?.type, 'bind');
+  assert.equal(resolve(runnerPackage.source), resolve('target/runner-package'));
   assert.equal(service.volumes.some(volume => volume.target === '/var/run/docker.sock'), sandbox);
   assert.equal(service.environment.CRYPTOBENCH_DOCKER_ENABLED, String(sandbox));
   if (sandbox) assert.equal(service.environment.CRYPTOBENCH_DOCKER_PROXY_NETWORK_MODE, '');
@@ -34,4 +37,8 @@ test.env.CRYPTOBENCH_DATA_DIR = '';
 const defaults = JSON.parse((await test.compose(['config', '--format', 'json'])).stdout).services.cryptobench;
 assert.equal(Number(defaults.ports[0].published), 4173);
 assert.equal(resolve(defaults.volumes.find(v => v.target === '/app/var').source), resolve('var'));
+assert.equal(
+  resolve(defaults.volumes.find(v => v.target === '/app/runner-package').source),
+  resolve('target/runner-package'),
+);
 console.log('PASS Compose default port and data directory');

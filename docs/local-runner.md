@@ -49,7 +49,7 @@ node runner/src/cli.mjs run
 npm run build:runner-package
 ```
 
-产物位于 `target/runner-package/`。源码启动默认使用该目录；Docker 镜像在构建阶段自动生成并打包。
+产物位于 `target/runner-package/`。源码启动默认使用该目录；Docker 镜像在构建阶段自动生成，并在容器启动时同步回宿主机 `target/runner-package/`。可通过 `CRYPTOBENCH_RUNNER_PACKAGE_HOST_DIR` 修改宿主目录。
 
 ## 协议
 

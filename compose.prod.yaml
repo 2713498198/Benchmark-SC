@@ -49,6 +49,7 @@ services:
       CRYPTOBENCH_DOCKER_ENABLED: "false"
     volumes:
       - app-var:/app/var
+      - "${CRYPTOBENCH_RUNNER_PACKAGE_HOST_DIR:-./target/runner-package}:/app/runner-package"
       - "${CRYPTOBENCH_V4_SUITE_HOST_DIR:-./private/v4-suite}:/app/private/v4-suite:ro"
     depends_on:
       mysql:

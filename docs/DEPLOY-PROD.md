@@ -32,6 +32,17 @@
 
 3. 访问 `https://<DOMAIN>`，在页面使用邮箱和密码注册账号。Caddy 会申请并自动续期证书。
 
+## Runner 安装包
+
+Runner ZIP 在镜像构建阶段生成，并在应用容器启动时同步到宿主机：
+
+```text
+./target/runner-package/CryptoBench-Runner-windows-x64-1.1.0.zip
+./target/runner-package/runner-package-manifest.json
+```
+
+默认路径可通过 `.env.prod` 中的 `CRYPTOBENCH_RUNNER_PACKAGE_HOST_DIR` 修改。容器重建后会重新同步当前镜像中的版本，不需要在服务器上单独安装 Node.js，也不应把 ZIP 提交到 Git。
+
 ## 正式榜单
 
 正式公开榜单只纳入满足以下条件的完整测评：
