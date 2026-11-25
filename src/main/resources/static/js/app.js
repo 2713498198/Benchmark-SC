@@ -5,6 +5,7 @@ import HomePage from './vue/HomePage.js';
 import ResourcesPage from './vue/ResourcesPage.js';
 import ArenaPage from './vue/ArenaPage.js';
 import RunnerPage from './vue/RunnerPage.js';
+import ReadmePage from './vue/ReadmePage.js';
 import CommunityPage from './vue/CommunityPage.js';
 import LeaderboardPage from './vue/LeaderboardPage.js';
 import {createRunState} from './run-state.js';
@@ -32,9 +33,9 @@ function applyBootstrap(boot){bootstrapEpoch++;if(state.user?.id!==boot.user?.id
 async function hydrate(){const epoch=++bootstrapEpoch;try{const boot=await api('/api/bootstrap');if(epoch!==bootstrapEpoch)return false;applyBootstrap(boot);return true;}catch(error){if(epoch===bootstrapEpoch){state.bootstrapError=error.message;state.authReady=true;}return false;}}
 function navigate(path){location.hash=path;}
 
-const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,RunnerPage,CommunityPage,LeaderboardPage},setup(){
+const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,RunnerPage,ReadmePage,CommunityPage,LeaderboardPage},setup(){
  const route=ref(parseRoute()),toastMessage=ref(''),menuOpen=ref(false),dialog=ref(null),modal=reactive({kind:'',title:'',message:'',action:null,entries:[]}),connection=reactive({id:'',name:'',url:'',model:''});let toastTimer;
- const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(r==='/runner')return RunnerPage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
+ const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(r==='/runner')return RunnerPage;if(r==='/readme')return ReadmePage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
  const authPending=computed(()=>!state.authReady&&isProtectedRoute(route.value));
  const active=computed(()=>route.value.split('?')[0]);
  function toast(message){toastMessage.value=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastMessage.value='',3700);}

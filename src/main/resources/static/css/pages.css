@@ -247,3 +247,12 @@ p.eyebrow{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
 .story-trace-list b{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive;font-size:20px;font-weight:600;line-height:1.2;letter-spacing:.01em;color:#243b5a}
 .story-trace-list small{font-size:13px;line-height:1.65;color:#66788f;margin-top:5px}
 @media(max-width:640px){.story-trace-visual{padding:26px 22px}.story-trace-list{gap:20px}.story-trace-list b{font-size:18px}.story-trace-list small{font-size:12.5px;line-height:1.6}}
+
+/* Local Runner README link below the evaluation action. */
+.runner-header-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.runner-readme-link{display:inline-flex;align-items:center;gap:6px;color:var(--blue);font-size:13px;text-decoration:none}
+.runner-readme-link:hover{text-decoration:underline}
+@media(max-width:640px){.runner-header-actions{align-items:flex-start}}
+
+/* README.md viewer page. */
+.readme-viewer{background:#fff;overflow:auto}.readme-viewer pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:12.5px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;color:#243b5a}.readme-page .page-header{margin-bottom:20px}

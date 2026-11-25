@@ -86,7 +86,10 @@ export default {components:{SvgIcon},setup(){
 <div class="container page">
  <div class="page-header">
   <div><h1>本地 Runner</h1><p>让网站通过主动轮询调度你电脑上的 Agent 和 Docker。</p></div>
-  <a class="btn secondary" href="#/evaluate">开始测评</a>
+  <div class="runner-header-actions">
+   <a class="btn secondary" href="#/evaluate">开始测评</a>
+   <a class="runner-readme-link" href="#/readme" target="_blank" rel="noopener">README.md <SvgIcon name="arrow" :size="14"/></a>
+  </div>
  </div>
  <section class="card card-pad stack">
   <div><h2>1. 下载并解压 Runner</h2><p class="inline-note">Windows x64 便携包已经包含 Node.js，不需要下载项目源码或安装 Node.js。</p></div>
