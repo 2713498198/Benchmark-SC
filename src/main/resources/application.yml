@@ -50,6 +50,7 @@ benchmark:
     suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:}
     python: ${CRYPTOBENCH_V4_PYTHON:python3}
     validator-timeout-seconds: ${CRYPTOBENCH_V4_VALIDATOR_TIMEOUT_SECONDS:120}
+    budget-profiles: ${CRYPTOBENCH_V4_BUDGET_PROFILES:private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json}
   gateway:
     enabled: ${CRYPTOBENCH_GATEWAY_ENABLED:false}
     image: ${CRYPTOBENCH_GATEWAY_IMAGE:cryptobench-model-gateway:local}

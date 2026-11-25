@@ -8,6 +8,11 @@ spring:
 benchmark:
   # 研究者和管理员体验入口仅供本地使用。
   demo-enabled: true
+  v4:
+    # 本地完整题库已放在 gitignored 的 private 目录；生产部署应显式覆盖。
+    suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:./private/cryptobench-sc-v4/170-20261112}
+    python: ${CRYPTOBENCH_V4_PYTHON:python}
+    budget-profiles: ${CRYPTOBENCH_V4_BUDGET_PROFILES:./private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json}
   password-reset:
     # 本地没有邮件服务时，将重置邮件写入项目数据目录，便于联调。
     # 需要真实邮件投递时可通过 PASSWORD_RESET_OUTBOX 覆盖，或配置 PASSWORD_RESET_DELIVERY_URL。

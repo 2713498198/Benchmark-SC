@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Server-private controls for the optional V4 workspace-validator scorer. */
 @ConfigurationProperties(prefix = "benchmark.v4")
-public record V4ScoringProperties(String suiteRoot, String python, long validatorTimeoutSeconds) {
+public record V4ScoringProperties(String suiteRoot, String python, long validatorTimeoutSeconds, String budgetProfiles) {
     public String pythonOrDefault() {
         return python == null || python.isBlank() ? "python3" : python.trim();
     }

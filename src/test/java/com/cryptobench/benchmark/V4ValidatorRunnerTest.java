@@ -15,7 +15,7 @@ class V4ValidatorRunnerTest {
 
     @Test
     void reportsUnavailableWhenDisabled() {
-        V4ValidatorRunner runner = new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0), mapper);
+        V4ValidatorRunner runner = new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0, ""), mapper);
         assertThat(runner.available()).isFalse();
         ObjectNode result = runner.evaluate("001", mapper.createObjectNode());
         assertThat(result.path("passed").asBoolean()).isFalse();
@@ -41,7 +41,7 @@ class V4ValidatorRunnerTest {
                     + "open(out, 'w', encoding='utf-8').write(json.dumps(report))\n");
 
             V4ValidatorRunner runner = new V4ValidatorRunner(
-                    new V4ScoringProperties(suite.toString(), python, 60), mapper);
+                    new V4ScoringProperties(suite.toString(), python, 60, ""), mapper);
             ObjectNode artifact = mapper.createObjectNode();
             artifact.put("answer", "final answer");
             ObjectNode result = runner.evaluate("001_TEST", artifact);

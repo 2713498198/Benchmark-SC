@@ -108,3 +108,17 @@ node runner/src/cli.mjs run
 没有配置 `cwd` 时，Runner 会为每个任务创建独立临时目录，并在完成后清理，避免 Agent 修改 Runner 或网站源码。需要访问固定本地项目或工具配置时，应显式填写经过确认的工作目录。
 
 Windows 上可直接配置 `.exe`，也可通过 `node` 启动 JavaScript 入口。`.cmd` 和 `.bat` 包装器通过系统 `ComSpec` 运行；参数只能来自本机可信的 Agent 配置文件。
+
+## V4 动态预算
+
+CryptoBench-SC V4 不再统一使用固定的 300 秒或 600 秒。服务端根据题目公开元数据中的 `budget_class` 读取套件预算配置，并把基础执行时间和允许的续期时间相加，同时设置服务端等待、Runner 请求超时、命令进程超时和工作区验证器超时。
+
+如果个别任务仍超时，系统会记录该任务失败并继续执行下一题，不会因为第一题超时而终止整个 170 题实验。
+
+默认预算文件位于：
+
+```text
+private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json
+```
+
+可以通过 `CRYPTOBENCH_V4_BUDGET_PROFILES` 指定其他路径。Mini-SPN 和自定义题库继续使用原来的 300/600 秒联调预算。

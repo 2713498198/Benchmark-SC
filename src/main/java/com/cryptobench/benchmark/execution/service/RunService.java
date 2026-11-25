@@ -57,6 +57,7 @@ public class RunService {
     private final GatewayProperties gatewayProperties;
     private final RunnerService runnerService;
     private final RunQuotaProperties runQuotas;
+    private final TaskBudgetService taskBudgets;
     private final com.fasterxml.jackson.databind.ObjectMapper mapper;
     private final TransactionTemplate transactions;
     private final String workerId = UUID.randomUUID().toString();
@@ -78,7 +79,8 @@ public class RunService {
                       com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker,
                       PlatformTransactionManager transactionManager,
                       ModelGatewayService gateways, GatewayProperties gatewayProperties,
-                      RunnerService runnerService, RunQuotaProperties runQuotas) {
+                      RunnerService runnerService, RunQuotaProperties runQuotas,
+                      TaskBudgetService taskBudgets) {
         this.runs = runs;
         this.catalog = catalog;
         this.agent = agent;
@@ -91,6 +93,7 @@ public class RunService {
         this.gatewayProperties = gatewayProperties;
         this.runnerService = runnerService;
         this.runQuotas = runQuotas;
+        this.taskBudgets = taskBudgets;
     }
 
     @PostConstruct
@@ -598,11 +601,18 @@ public class RunService {
                         ObjectNode publicTask = request.putObject("task");
                         publicTask.put("question", task.question()); publicTask.set("input", task.input());
                         publicTask.put("category", task.category()); publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
-                        int timeout = "extended".equals(run.budget()) ? 600 : 300;
+                        TaskBudgetService.TaskBudget taskBudget = taskBudgets.resolve(
+                                run.datasetId(), run.version(), task.id(), run.budget());
+                        int timeout = (int) taskBudget.timeoutSeconds();
                         request.put("deadline", Instant.now().plusSeconds(timeout).toString());
                         ObjectNode limits = request.putObject("budget");
-                        limits.put("timeoutSeconds", timeout); limits.put("maxAgentCalls", "extended".equals(run.budget()) ? 40 : 20);
-                        ObjectNode gatewayTask = gateway == null ? null : gateway.beginTask(key, participant.model(), "extended".equals(run.budget()) ? 40 : 20, Instant.now().plusSeconds(timeout));
+                        limits.put("timeoutSeconds", timeout);
+                        limits.put("maxAgentCalls", taskBudget.maxAgentCalls());
+                        limits.put("profile", taskBudget.profile());
+                        limits.put("budgetClass", taskBudget.budgetClass());
+                        limits.put("validationTimeoutSeconds", taskBudget.validationTimeoutSeconds());
+                        ObjectNode gatewayTask = gateway == null ? null : gateway.beginTask(
+                                key, participant.model(), taskBudget.maxAgentCalls(), Instant.now().plusSeconds(timeout));
                         if (gatewayTask != null) request.set("modelGateway", gatewayTask);
                         ObjectNode response = "docker".equals(source) ? agent.analyzeSandbox(target, request, Duration.ofSeconds(timeout))
                                 : agent.analyze(target, participant.token(), request, Duration.ofSeconds(timeout));
@@ -679,7 +689,6 @@ public class RunService {
         runnerService.requireOwnedActive(run.ownerId(), runnerId);
         List<Participant> participants = recoveredParticipants(run.config(), Map.of());
         List<ParticipantRuntime> runtime = new ArrayList<>();
-        int timeout = "extended".equals(run.budget()) ? 600 : 300;
         for (Participant participant : participants) {
             runtime.add(new ParticipantRuntime(participant, participant.agentVersion()));
             for (TaskDefinition task : tasks) {
@@ -690,15 +699,19 @@ public class RunService {
                 int attempt = runs.beginTask(id, key, generation);
                 if (attempt < 0) return;
                 long nano = System.nanoTime();
-                ObjectNode request = runnerRequest(id, run, participant, task, key, attempt, timeout);
+                TaskBudgetService.TaskBudget taskBudget = taskBudgets.resolve(
+                        run.datasetId(), run.version(), task.id(), run.budget());
+                int timeout = (int) taskBudget.timeoutSeconds();
+                ObjectNode request = runnerRequest(id, run, participant, task, key, attempt, taskBudget);
                 String jobId = runnerService.enqueue(run.ownerId(), runnerId, id, generation, key, attempt, request);
-                log(id, "INFO", "Runner task dispatched: " + task.id());
+                log(id, "INFO", "Runner task dispatched: " + task.id()
+                        + " (budget " + taskBudget.budgetClass() + " / " + timeout + "s)");
                 RunnerJob job = runnerService.await(jobId, (timeout + 30L) * 1000L);
                 if (job == null || List.of("queued", "leased").contains(job.status())) {
                     runs.finishTask(id, key, generation, attempt, "timeout", null,
                             errorResult("timeout", "Runner did not return before the task budget"), false, 0d, null, elapsedMillis(nano));
-                    runs.finish(id, generation, "timeout", "runner_timeout", "Runner did not complete within the task budget", null);
-                    return;
+                    log(id, "WARN", "Runner task timed out; continuing with the next task: " + task.id());
+                    continue;
                 }
                 ObjectNode response = job.result() == null || !job.result().path("response").isObject()
                         ? null : (ObjectNode) job.result().path("response");
@@ -706,8 +719,9 @@ public class RunService {
                     ObjectNode error = errorResult(job.status(), job.errorMessage() == null ? "Runner returned no valid result" : job.errorMessage());
                     String failureStatus = "timeout".equals(job.status()) ? "timeout" : "failed";
                     runs.finishTask(id, key, generation, attempt, failureStatus, null, error, false, 0d, null, elapsedMillis(nano));
-                    runs.finish(id, generation, failureStatus, "timeout".equals(failureStatus) ? "runner_timeout" : "runner_execution_failed", error.path("reason").asText(), null);
-                    return;
+                    log(id, "WARN", "Runner task failed; continuing with the next task: " + task.id()
+                            + " / " + error.path("reason").asText());
+                    continue;
                 }
                 ObjectNode verification = catalog.evaluate(run.datasetId(), run.version(), task, response);
                 String status = verification.path("status").asText("invalid");
@@ -719,8 +733,7 @@ public class RunService {
                         elapsedMillis(nano))) return;
                 log(id, "INFO", participant.label() + " / " + task.id() + " complete: " + status);
                 if ("invalid".equals(status)) {
-                    runs.finish(id, generation, "failed", "agent_execution_failed", "Runner result failed validation", null);
-                    return;
+                    log(id, "WARN", "Runner task returned invalid output; continuing with the next task: " + task.id());
                 }
             }
         }
@@ -729,7 +742,7 @@ public class RunService {
 
     /** Build a public task envelope; evaluator answers never enter this payload. */
     private ObjectNode runnerRequest(String id, Run run, Participant participant, TaskDefinition task,
-                                     String key, int attempt, int timeout) {
+                                     String key, int attempt, TaskBudgetService.TaskBudget taskBudget) {
         ObjectNode request = mapper.createObjectNode();
         request.put("runId", id); request.put("taskId", task.id()); request.put("participant", participant.key());
         request.put("attempt", attempt); request.put("idempotencyKey", id + ":" + key);
@@ -738,9 +751,13 @@ public class RunService {
         ObjectNode publicTask = request.putObject("task"); publicTask.put("question", task.question());
         publicTask.set("input", task.input()); publicTask.put("category", task.category());
         publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
-        request.put("deadline", Instant.now().plusSeconds(timeout).toString());
-        ObjectNode budget = request.putObject("budget"); budget.put("timeoutSeconds", timeout);
-        budget.put("maxAgentCalls", "extended".equals(run.budget()) ? 40 : 20);
+        request.put("deadline", Instant.now().plusSeconds(taskBudget.timeoutSeconds()).toString());
+        ObjectNode budget = request.putObject("budget");
+        budget.put("timeoutSeconds", taskBudget.timeoutSeconds());
+        budget.put("maxAgentCalls", taskBudget.maxAgentCalls());
+        budget.put("profile", taskBudget.profile());
+        budget.put("budgetClass", taskBudget.budgetClass());
+        budget.put("validationTimeoutSeconds", taskBudget.validationTimeoutSeconds());
         return request;
     }
 
