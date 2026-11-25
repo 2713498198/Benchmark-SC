@@ -184,3 +184,18 @@ p.eyebrow{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
 @media(max-width:640px){.home-story-visual.story-score-visual{min-height:0}.story-score-card.story-paper{--paper-rule:26px;left:0;width:min(100%,300px)}.story-paper-half{padding:18px 22px}.story-paper-heading strong{font-size:34px}.story-paper-heading b{font-size:14px}.story-paper-half p{margin-top:6px;font-size:14px}}
 @media(max-width:900px){.home-story-scene{padding-left:48px}}
 @media(max-width:640px){.home-story-scene,.home-story[data-story-motion=reduced] .home-story-scene{padding-left:20px}}
+
+/* Simplified evidence flow markers: visual nodes without sequence numbers. */
+.story-trace-list li{gap:20px}
+.trace-node{width:14px;height:14px;border:0;display:block;background:var(--blue);box-shadow:0 0 0 5px #eef5ff;color:transparent;font-size:0}
+.story-trace-line{left:46px}
+@media(max-width:640px){.story-trace-line{left:24px}.story-trace-list li{gap:16px}.trace-node{width:12px;height:12px}}
+
+/* Handwritten evidence flow without markers or decorative connector. */
+.story-trace-visual{padding:38px 44px}
+.story-trace-list{gap:26px}
+.story-trace-list li{display:block;min-height:0;padding:4px 0}
+.story-trace-line{display:none}
+.story-trace-list b{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive;font-size:20px;font-weight:600;line-height:1.2;letter-spacing:.01em;color:#243b5a}
+.story-trace-list small{font-size:13px;line-height:1.65;color:#66788f;margin-top:5px}
+@media(max-width:640px){.story-trace-visual{padding:26px 22px}.story-trace-list{gap:20px}.story-trace-list b{font-size:18px}.story-trace-list small{font-size:12.5px;line-height:1.6}}
