@@ -20,7 +20,7 @@ try{
   const request=route.request(),p=new URL(request.url()).pathname,method=request.method(),body=request.postDataJSON();requests.push({p,method,body,headers:request.headers()});
   const json=(value,status=200)=>route.fulfill({status,json:value});
   if(p==='/api/auth/csrf')return json({headerName:'X-CSRF-TOKEN',token:'recovery-fixture'});
-  if(p==='/api/bootstrap')return json({user,reports:[],connections:[],customDatasets:[],publicReports:[],demoEnabled:false});
+  if(p==='/api/bootstrap')return json({user,reports:[],connections:[],customDatasets:[],publicReports:[]});
   if(p==='/api/auth/reset/status')return json(grant||{canReset:false,challengeId:null,maskedEmail:null,expiresAt:null});
   if(p==='/api/auth/forgot'){
    if(rateLimited)return json({error:'请求太频繁',code:'reset_rate_limited',retryAfterSeconds:37},429);
@@ -74,8 +74,8 @@ try{
  await verify();assert.equal(grant.challengeId,challengeId,'changed email keeps its own challenge');
  await page.locator('#recovery-password').fill('leave-route-secret');await page.locator('a[href="#/login"]').last().click();await page.waitForURL(/#\/login$/);
  await page.locator('a[href="#/forgot-password"]').click();await page.locator('#recovery-password').waitFor();assert.equal(await page.locator('#recovery-password').inputValue(),'');
- grant=null;await go('/reset-password?token='+'a'.repeat(64));assert.equal(await page.locator('[name="token"]').inputValue(),'a'.repeat(64));
- await page.locator('[name="password"]').fill('legacy-secret-123');await page.locator('#auth-form [type="submit"]').click();await page.waitForURL(/#\/login$/);assert.ok(requests.some(r=>r.p==='/api/auth/reset'&&r.body.token==='a'.repeat(64)));
+ grant=null;await page.goto(base+'/#/reset-password?token='+'a'.repeat(64));await page.locator('#main h1').waitFor();assert.equal(await page.locator('#main h1').innerText(),'页面未找到');
+ assert.equal(await page.locator('[name="token"]').count(),0,'legacy token reset page is removed');
  await go('/register');await page.locator('[name="email"]').fill('person@proton.me');assert.equal(await page.locator('[name="email"]').evaluate(el=>el.checkValidity()),true);
  user={id:'signed-in-fixture',name:'Signed in fixture',email:'researcher@example.org',role:'researcher'};grant=grantFor('signed-in-reset');
  await go('/forgot-password');await page.locator('#recovery-password').waitFor();assert.equal(await page.locator('.nav-end a').innerText(),'工作台');

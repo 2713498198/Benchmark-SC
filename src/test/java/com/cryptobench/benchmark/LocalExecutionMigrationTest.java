@@ -1,16 +1,21 @@
 package com.cryptobench.benchmark;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import static org.assertj.core.api.Assertions.*;
 
 /** 停用旧设备执行方式时，不应删除账号和已完成的测评结果。 */
 class LocalExecutionMigrationTest {
-    @TempDir Path temporary;
+    Path temporary;
+
+    @BeforeEach void prepare() throws Exception {
+        temporary = Files.createTempDirectory(Path.of("target"), "local-execution-");
+    }
 
     @Test void v12RemovesOnlyDeviceTablesAndPreservesExistingRecordsAcrossRestart() throws Exception {
         String url = url("existing");
@@ -31,11 +36,12 @@ class LocalExecutionMigrationTest {
         var latest = Flyway.configure().dataSource(url, "sa", "").load();
         // V12 删除旧设备表，V13 创建本地 Runner 表，V14 删除旧密码重置令牌表，
         // V16 新增登录/注册限流计数表，V17 新增跨实例运行配额锁（V15 已被历史实验占用）。
-        assertThat(latest.migrate().migrationsExecuted).isEqualTo(5);
+        assertThat(latest.migrate().migrationsExecuted).isEqualTo(7);
         latest.validate();
         assertThat(latest.info().pending()).isEmpty();
         try (var connection = DriverManager.getConnection(url, "sa", "")) {
             assertDeviceTablesAbsent(connection);
+            assertRemovedAccountManagementAbsent(connection);
             assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('benchmark_runners','benchmark_runner_pairings','benchmark_runner_jobs')")).isEqualTo("3");
             assertThat(value(connection, "SELECT password_hash FROM benchmark_users WHERE id='preserved-owner'")).isEqualTo("preserved-hash");
             assertThat(value(connection, "SELECT COUNT(*) FROM benchmark_sessions WHERE user_id='preserved-owner'")).isEqualTo("1");
@@ -50,6 +56,7 @@ class LocalExecutionMigrationTest {
         assertThat(Flyway.configure().dataSource(url, "sa", "").load().migrate().migrationsExecuted).isZero();
         try (var connection = DriverManager.getConnection(url, "sa", "")) {
             assertDeviceTablesAbsent(connection);
+            assertRemovedAccountManagementAbsent(connection);
             assertThat(value(connection, "SELECT payload FROM benchmark_reports WHERE id='preserved-report'")).isEqualTo(report);
         }
     }
@@ -73,6 +80,11 @@ class LocalExecutionMigrationTest {
 
     private void assertDeviceTablesAbsent(Connection connection) throws Exception {
         assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('benchmark_bridge_pairings','benchmark_bridge_devices','benchmark_bridge_jobs')")).isEqualTo("0");
+    }
+
+    private void assertRemovedAccountManagementAbsent(Connection connection) throws Exception {
+        assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('benchmark_admin_invitations','benchmark_admin_audits')")).isEqualTo("0");
+        assertThat(value(connection, "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='benchmark_users' AND column_name IN ('account_status','disabled_at','disabled_by')")).isEqualTo("0");
     }
 
     private String value(Connection connection, String sql) throws Exception {

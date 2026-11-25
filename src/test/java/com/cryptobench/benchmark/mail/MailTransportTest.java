@@ -12,7 +12,6 @@ import org.eclipse.angus.mail.smtp.SMTPAddressFailedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mail.MailSendException;
 import org.springframework.mock.env.MockEnvironment;
 import static org.assertj.core.api.Assertions.*;
@@ -45,8 +44,8 @@ class MailTransportTest {
             MailProperties properties = new MailProperties(); properties.setMode("smtp");
             properties.setSmtpHost("127.0.0.1"); properties.setSmtpPort(server.getLocalPort()); properties.setSmtpStarttls(false); properties.setFrom("sender@example.test");
             ObjectMapper mapper = new ObjectMapper(); var payload = mapper.createObjectNode();
-            payload.put("email", "recipient@example.test"); payload.put("type", "admin_invite");
-            payload.put("inviteUrl", "http://127.0.0.1/#/admin-invite?token=fixture-private-token");
+            payload.put("email", "recipient@example.test"); payload.put("type", "password_reset_code");
+            payload.put("code", "003917"); payload.put("expiresAt", "2027-01-01T00:00:00Z");
             var transport = new MailTransport(properties, new MailSettings(properties, new MockEnvironment()), mapper);
             assertThatThrownBy(() -> transport.send("smtp", "mail_fixture_rejected", payload))
                     .isInstanceOfSatisfying(MailTransport.DeliveryException.class, failure -> {
@@ -69,9 +68,8 @@ class MailTransportTest {
         assertThat(failure.getMessage()).isEqualTo("smtp_550");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"admin_invite", "password_reset_code"})
-    void sendsOnlyToALoopbackSmtpFixtureAndDoesNotClaimInboxDelivery(String type) throws Exception {
+    @Test
+    void sendsOnlyToALoopbackSmtpFixtureAndDoesNotClaimInboxDelivery() throws Exception {
         try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")); ExecutorService executor = Executors.newSingleThreadExecutor()) {
             server.setSoTimeout(10_000);
             Future<String> received = executor.submit(() -> {
@@ -95,9 +93,8 @@ class MailTransportTest {
             MailProperties properties = new MailProperties(); properties.setMode("smtp");
             properties.setSmtpHost("127.0.0.1"); properties.setSmtpPort(server.getLocalPort()); properties.setSmtpStarttls(false); properties.setFrom("sender@example.com");
             ObjectMapper mapper = new ObjectMapper(); var payload = mapper.createObjectNode();
-            payload.put("email", "recipient@example.com"); payload.put("type", type);
-            if (type.equals("password_reset_code")) payload.put("code", "003917");
-            else payload.put("inviteUrl", "http://127.0.0.1/#/admin-invite?token=fixture");
+            payload.put("email", "recipient@example.com"); payload.put("type", "password_reset_code");
+            payload.put("code", "003917");
             payload.put("expiresAt", "2027-01-01T00:00:00Z");
             var transport = new MailTransport(properties, new MailSettings(properties, new MockEnvironment()), mapper);
             assertThat(transport.send("smtp", "mail_fixture", payload)).isEqualTo("provider_accepted");
@@ -105,10 +102,8 @@ class MailTransportTest {
             assertThat(mail).contains("Message-ID: <mail_fixture@cryptobench.local>").contains("recipient@example.com");
             var parsed = new jakarta.mail.internet.MimeMessage(jakarta.mail.Session.getInstance(new java.util.Properties()),
                     new ByteArrayInputStream(mail.getBytes(StandardCharsets.US_ASCII)));
-            if (type.equals("password_reset_code")) {
-                assertThat(parsed.getSubject()).contains("验证码");
-                assertThat((String) parsed.getContent()).contains("003917", "2027-01-01T00:00:00Z").doesNotContain("reset-password", "token=");
-            } else assertThat((String) parsed.getContent()).contains("admin-invite?token=fixture");
+            assertThat(parsed.getSubject()).contains("验证码");
+            assertThat((String) parsed.getContent()).contains("003917", "2027-01-01T00:00:00Z").doesNotContain("reset-password", "token=");
         }
     }
 }

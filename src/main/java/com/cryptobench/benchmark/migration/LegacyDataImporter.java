@@ -1,7 +1,7 @@
 package com.cryptobench.benchmark.migration;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.UserAccountService;
 import com.cryptobench.benchmark.config.BenchmarkProperties;
 import com.cryptobench.benchmark.connection.model.AgentConnection;
 import com.cryptobench.benchmark.connection.repository.ConnectionRepository;
@@ -29,12 +29,12 @@ public class LegacyDataImporter implements ApplicationRunner {
     private static final Logger LOG = LoggerFactory.getLogger(LegacyDataImporter.class);
     private final BenchmarkProperties properties;
     private final ObjectMapper mapper;
-    private final UserRepository users;
+    private final UserAccountService users;
     private final ConnectionRepository connections;
     private final ReportRepository reports;
     private final DatasetRepository datasets;
 
-    public LegacyDataImporter(BenchmarkProperties properties, ObjectMapper mapper, UserRepository users,
+    public LegacyDataImporter(BenchmarkProperties properties, ObjectMapper mapper, UserAccountService users,
                               ConnectionRepository connections, ReportRepository reports, DatasetRepository datasets) {
         this.properties = properties;
         this.mapper = mapper;

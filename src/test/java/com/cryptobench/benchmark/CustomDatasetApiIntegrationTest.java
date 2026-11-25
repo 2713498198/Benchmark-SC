@@ -143,7 +143,12 @@ class CustomDatasetApiIntegrationTest {
 
     private Client admin() throws Exception {
         Client client = new Client();
-        assertThat(client.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.send("POST", "/api/auth/register", Map.of(
+                "name", "Dataset Admin", "email", client.email, "password", "test-password"))
+                .getResponse().getStatus()).isEqualTo(201);
+        jdbc.update("UPDATE benchmark_users SET user_role='admin' WHERE email=?", client.email);
+        assertThat(client.json(client.send("GET", "/api/auth/me", null)).path("user").path("role").asText())
+                .isEqualTo("admin");
         return client;
     }
 
@@ -179,6 +184,7 @@ class CustomDatasetApiIntegrationTest {
     }
     private class Client {
         private final Map<String, Cookie> cookies = new HashMap<>();
+        private final String email = UUID.randomUUID() + "@example.com";
         MvcResult send(String method, String path, Object body) throws Exception { return sendRaw(method, path, body == null ? null : mapper.writeValueAsString(body)); }
         MvcResult sendRaw(String method, String path, String body) throws Exception {
             var request = MockMvcRequestBuilders.request(HttpMethod.valueOf(method), path);

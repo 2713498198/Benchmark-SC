@@ -14,11 +14,11 @@ const java=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin',process.p
 const logPath=path.join(temporary,'server.log'),log=createWriteStream(logPath);
 const flags=['-jar',jar,'--server.address=127.0.0.1','--server.port='+port,'--spring.profiles.active=local',
  '--spring.datasource.url=jdbc:h2:file:'+path.join(temporary,'db').replaceAll('\\','/')+';MODE=MySQL;DATABASE_TO_LOWER=TRUE',
- '--spring.datasource.username=sa','--spring.datasource.password=','--benchmark.legacy-import-enabled=false','--benchmark.demo-enabled=false','--benchmark.secure-cookie=false',
+ '--spring.datasource.username=sa','--spring.datasource.password=','--benchmark.legacy-import-enabled=false','--benchmark.secure-cookie=false',
  '--benchmark.docker.enabled=false','--benchmark.gateway.enabled=false','--benchmark.gateway.providers-json=[]',
- '--benchmark.mail.mode=outbox','--benchmark.mail.outbox='+outbox,'--benchmark.mail.base-url='+base,
+ '--benchmark.mail.mode=outbox','--benchmark.mail.outbox='+outbox,
  '--benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=','--benchmark.mail.worker-enabled=true','--benchmark.mail.poll-ms=100',
- '--benchmark.admin.bootstrap.email=','--benchmark.admin.bootstrap.name=','--benchmark.admin.bootstrap.password='];
+];
 const backend=spawn(java,flags,{windowsHide:true,stdio:['ignore','pipe','pipe']});
 backend.stdout.pipe(log);backend.stderr.pipe(log);let backendError,testProcess;backend.once('error',error=>backendError=error);
 try{

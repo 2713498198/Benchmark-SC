@@ -23,25 +23,14 @@
    docker compose --env-file .env.prod -f compose.prod.yaml <命令>
    ```
 
-2. 初始化首个管理员：在 `.env.prod` 中同时设置
-   `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、
-   `CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD`（密码 8～24 位）。
-
-3. 启动：
+2. 启动：
 
    ```bash
    docker compose --env-file .env.prod -f compose.prod.yaml up -d --build
    docker compose --env-file .env.prod -f compose.prod.yaml ps
    ```
 
-4. 首个管理员创建成功后，删除 `.env.prod` 中三个 `CRYPTOBENCH_BOOTSTRAP_ADMIN_*`
-   变量，然后重建应用容器使其不保留引导密码：
-
-   ```bash
-   docker compose --env-file .env.prod -f compose.prod.yaml up -d --force-recreate app
-   ```
-
-5. 访问 `https://<DOMAIN>`。Caddy 会申请并自动续期证书。
+3. 访问 `https://<DOMAIN>`，在页面使用邮箱和密码注册账号。Caddy 会申请并自动续期证书。
 
 ## 正式榜单
 
@@ -102,7 +91,7 @@ BACKUP_DIR=/var/backups/cryptobench ./scripts/backup-prod.sh
 
 ## 安全与限流
 
-- prod profile 默认关闭体验账号，会话与 CSRF Cookie 使用 Secure 属性。
+- prod profile 的会话与 CSRF Cookie 使用 Secure 属性。
 - 容器入口首次启动会修正 `/app/var` 归属，然后降权到非 root 的 `app` 用户运行 Java。
 - 登录按邮箱、注册按 IP 做滚动窗口限流，默认参数可用
   `CRYPTOBENCH_AUTH_LOGIN_*` / `CRYPTOBENCH_AUTH_REGISTER_*` 覆盖。

@@ -13,7 +13,5 @@ server:
   # 反向代理在 TLS 终结后设置 X-Forwarded-*，应用据此识别原始协议与客户端地址。
   forward-headers-strategy: framework
 benchmark:
-  # 生产环境关闭无密码体验登录，管理员需通过受控方式初始化。
-  demo-enabled: false
   # 默认要求 HTTPS；仅本机 HTTP 联调时按需覆盖环境变量。
   secure-cookie: ${SECURE_COOKIE:true}

@@ -4,11 +4,19 @@
         {
             "type": "java",
             "request": "launch",
-            "name": "CryptoBench (Spring Boot)",
+            "name": "CryptoBench (MySQL)",
             "mainClass": "com.cryptobench.benchmark.CryptoBenchApplication",
             "projectName": "cryptobench",
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/local.env",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "local",
+                "DB_URL": "jdbc:mysql://127.0.0.1:3306/cryptobench?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC",
+                "DB_USERNAME": "root",
+                "SECURE_COOKIE": "false",
+                "CRYPTOBENCH_MAIL_MODE": "smtp"
+            }
         }
     ]
 }

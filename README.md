@@ -27,9 +27,9 @@
 
 macOS/Linux 在项目根目录执行 `bash start.sh`。首次源码启动需要联网下载缺少的 JDK、Maven 和依赖；Linux/macOS 需要 Bash、curl、tar、unzip 和 SHA-256 工具。工具缓存位于 `.tools/`，依赖缓存在 `.mvn/repository/`，不会更改系统 Java。完整环境、代理、离线准备与排错说明见 [跨机器启动指南](docs/SETUP.md)。
 
-浏览器访问 http://127.0.0.1:4173 。本地默认使用 H2 文件数据库，启动时自动创建表，无需额外安装数据库；数据保存在 `var/data/cryptobench.mv.db`，重启后保留。普通 Compose 仅启动网站，需要 Docker Agent 测评时使用 [sandbox 配置](docker/README.md)。
+浏览器访问 http://127.0.0.1:4173 。源码启动默认连接本机 MySQL：`127.0.0.1:3306/cryptobench`，默认用户 `root`，密码由本地 `.vscode/local.env` 中的 `DB_PASSWORD` 提供。可通过 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD` 覆盖。数据库不存在时应用无法启动；空库建表可使用 [mysql-init.sql](database/mysql-init.sql)。普通 Compose 仅启动网站，需要 Docker Agent 测评时使用 [sandbox 配置](docker/README.md)。
 
-两种 Compose 均仅向本机发布端口，默认关闭免密码体验登录，sandbox 同样持久化账号、运行和报告。普通用户可注册；真实管理员初始化、临时开启体验和升级备份步骤见 [Docker 部署说明](docker/README.md)。`start.cmd` 的本地体验默认不变；不要让源码服务和 Compose 同时占用同一 H2 数据目录。
+两种 Compose 均仅向本机发布端口，sandbox 同样持久化账号、运行和报告。普通用户可直接使用邮箱和密码注册、登录；部署与备份步骤见 [Docker 部署说明](docker/README.md)。
 
 前端 Vue 运行时已随项目放在 `src/main/resources/static/vendor/vue/`，启动网站不需要 Node.js 或 npm。
 
@@ -44,7 +44,7 @@ macOS/Linux 在项目根目录执行 `bash start.sh`。首次源码启动需要�
 
 ## 在 VS Code 中运行
 
-安装 `Language Support for Java(TM) by Red Hat`（`redhat.java`）和 `Debugger for Java`（`vscjava.vscode-java-debug`），避免同时启用多个 Java 语言服务。打开项目根目录，在“运行和调试”中选择共享配置 `CryptoBench (Spring Boot)`，按 F5 调试或 Ctrl+F5 运行。
+安装 `Language Support for Java(TM) by Red Hat`（`redhat.java`）和 `Debugger for Java`（`vscjava.vscode-java-debug`），避免同时启用多个 Java 语言服务。打开项目根目录，在“运行和调试”中选择共享配置 `CryptoBench (MySQL)`，按 F5 调试或 Ctrl+F5 运行。
 
 先运行上述准备工具命令，将输出的 JDK 路径配置到 VS Code **用户设置**的 `java.configuration.runtimes`，不要把个人路径提交到工作区。Java 语言服务优先使用扩展自带的运行时；它可能需要比 Java 21 更新的版本，项目编译和运行仍使用 JDK 21。IDE 的 Maven 缓存可以使用默认位置，无需复制个人缓存路径。
 
@@ -56,7 +56,7 @@ macOS/Linux 在项目根目录执行 `bash start.sh`。首次源码启动需要�
 .\start.cmd clean verify
 ```
 
-生成的 `target/cryptobench-1.1.0.jar` 包含前端、公开题库和后端。推荐通过上述 Docker 入口部署；如果直接执行 `java -jar target/cryptobench-1.1.0.jar`，运行该命令的终端必须已配置 Java 21，构建脚本不会修改父终端环境。启动工作目录决定本地数据库相对路径，请固定工作目录；关闭程序后再备份 H2 数据文件。健康检查地址为 `/actuator/health`。
+生成的 `target/cryptobench-1.1.0.jar` 包含前端、公开题库和后端。推荐通过上述 Docker 入口部署；如果直接执行 `java -jar target/cryptobench-1.1.0.jar`，运行该命令的终端必须已配置 Java 21，构建脚本不会修改父终端环境。应用默认连接本机 MySQL；备份时应使用 `mysqldump`，健康检查地址为 `/actuator/health`。
 
 ## MySQL 配置
 
@@ -78,7 +78,7 @@ java -jar target/cryptobench-1.1.0.jar
 
 Flyway 在启动时执行 `src/main/resources/db/migration/` 中的版本化迁移。后续变更应新增 `V2__...sql` 等迁移文件，不修改已经执行的迁移。
 
-生产环境默认关闭体验账号，并使用 Secure Cookie，需通过 HTTPS 访问。服务器对外监听时设置 `SERVER_ADDRESS=0.0.0.0`，使用反向代理提供 HTTPS。仅在本机通过 HTTP 验证 MySQL 配置时，可临时设置 `SECURE_COOKIE=false`。
+生产环境使用 Secure Cookie，需通过 HTTPS 访问。服务器对外监听时设置 `SERVER_ADDRESS=0.0.0.0`，使用反向代理提供 HTTPS。仅在本机通过 HTTP 验证 MySQL 配置时，可临时设置 `SECURE_COOKIE=false`。
 
 Compose 会读取 `.env` 做变量替换，并只向容器传入配置中明确映射的变量；可从 `.env.example` 复制需要的配置。直接运行 Spring Boot 不会自动加载 `.env`，请在系统环境、PowerShell 或 IDEA 运行配置中设置。修改 Compose 环境变量后需重新创建容器，`restart` 不会更新容器环境。
 
@@ -102,7 +102,7 @@ src/
       migration/                         旧版 JSON 数据迁移
     resources/
       application.yml                    公共配置
-      application-local.yml              本地 H2 配置
+      application-local.yml              本地 MySQL 配置
       application-prod.yml               MySQL 配置
       db/migration/                      Flyway 数据库迁移
       static/
@@ -139,7 +139,6 @@ target/                                 编译和打包产物，不提交 Git
 | `GET /api/auth/me` | 当前账号 |
 | `GET /api/auth/csrf` | CSRF 令牌 |
 | `POST /api/auth/register`、`login`、`logout` | 注册、登录、退出 |
-| `POST /api/auth/demo` | 体验账号：源码 local 默认启用，Compose 默认关闭、可显式开启 |
 | `GET /api/bootstrap` | 工作台与公开数据 |
 | `GET/POST /api/connections` | 连接列表和新增 |
 | `DELETE /api/connections/{id}` | 删除自己的连接 |
@@ -148,13 +147,8 @@ target/                                 编译和打包产物，不提交 Git
 | `GET /api/reports/public` | 所有公开报告，登录身份不影响返回范围；供首页成本效果图自动刷新 |
 | `POST /api/reports/{id}/sync`、`publish` | 同步、公开自己的报告 |
 | `POST /api/datasets/custom` | 管理员发布测评集版本 |
-| `GET /api/admin/users`、`GET /api/admin/audit` | 管理员查看账号与操作审计 |
-| `POST /api/admin/invitations` | 管理员发出一次性管理员邀请（邮件或本地 outbox） |
-| `PATCH /api/admin/users/{id}/role`、`status` | 管理员变更角色、启用或停用账号 |
-| `POST /api/admin/users/{id}/sessions/revoke` | 撤销目标账号全部会话 |
-| `POST /api/auth/admin-invitations/accept` | 受邀管理员设置密码并创建账号 |
 
-注册接口只创建研究者，不能通过客户端指定管理员角色。本地体验入口可创建管理员体验账号；生产管理员通过一次性环境变量初始化首个管理员，后续使用管理员邀请和后台账号管理。设置 `CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME`、`CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD` 后启动一次即可创建首个管理员；密码要求为 8 至 24 位，启动成功后应移除密码环境变量。邀请令牌只保存哈希，邮件内容可通过 `PASSWORD_RESET_OUTBOX` 或内部邮件网关投递。
+账号体系只保留邮箱密码注册、登录、退出、忘记密码和邮箱验证码重置。注册接口只创建研究者，不提供管理员初始化、管理员邀请、角色调整或账号停用入口。
 
 ## 旧版本数据迁移
 
@@ -166,7 +160,7 @@ $env:CRYPTOBENCH_DB_FILE = '<old-project>/data/runtime/db.json'
 .\start.cmd
 ```
 
-导入用户、连接、报告和已发布测评集，保留旧版 scrypt 密码兼容；原文件不修改，旧会话不导入，用户重新登录。目标数据库已有用户时拒绝导入。完成后必须移除 `LEGACY_IMPORT_ENABLED` 或将其设为 `false`，再正常启动。请先备份源文件；H2 切换 MySQL 不会自动迁移已有数据。
+导入用户、连接、报告和已发布测评集，保留旧版 scrypt 密码兼容；原文件不修改，旧会话不导入，用户重新登录。目标 MySQL 已有用户时拒绝导入。完成后必须移除 `LEGACY_IMPORT_ENABLED` 或将其设为 `false`，再正常启动。请先备份源文件和目标数据库。
 
 ## 前端开发与验证
 
@@ -223,7 +217,7 @@ Agent 的 `/capabilities` 若声明 `datasets`，服务端会在执行前校验�
 
 密码找回接口为 `POST /api/auth/forgot` 和 `POST /api/auth/reset`。令牌只保存哈希且一次性使用；邮件投递可通过 `PASSWORD_RESET_DELIVERY_URL` 配置内网邮件网关，本地联调可用 `PASSWORD_RESET_OUTBOX` 写入临时 outbox 文件。
 
-管理员邀请与密码重置共用加密持久队列，支持显式 SMTP、HTTP 网关和本地测试邮箱。管理后台可查看投递状态、重发和撤销；接口不返回明文令牌。SMTP 配置、重试和密钥备份见 [邮件投递](docs/mail-delivery.md)。
+密码重置验证码使用加密持久队列，支持显式 SMTP、HTTP 网关和本地测试邮箱。接口不返回验证码明文。SMTP 配置、重试和密钥备份见 [邮件投递](docs/mail-delivery.md)。
 
 忘记密码支持所有符合格式的注册邮箱：获取 6 位邮件验证码 → 验证邮箱 → 设置并确认新密码（8～24 位）→ 返回登录。验证码 10 分钟有效，60 秒后可重发，改密会撤销原登录会话。QQ SMTP 为可选发件通道，不限制收件邮箱服务商；本地 outbox 不发送真实邮件。接口、限流和 QQ 配置见 [邮箱验证码找回密码](docs/password-recovery.md)。
 

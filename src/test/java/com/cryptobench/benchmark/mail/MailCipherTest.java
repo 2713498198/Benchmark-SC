@@ -3,12 +3,19 @@ package com.cryptobench.benchmark.mail;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.env.MockEnvironment;
 import static org.assertj.core.api.Assertions.*;
 
 class MailCipherTest {
+    private Path temp;
+
+    @BeforeEach
+    void prepare() throws Exception {
+        temp = Files.createTempDirectory(Path.of("target"), "mail-cipher-");
+    }
+
     @Test void codesAreBoundToChallengeAndUserAndSurviveRestartAndKeyRotation() {
         MailProperties original = new MailProperties();
         original.setKey(Base64.getEncoder().encodeToString(new byte[32]));
@@ -31,15 +38,14 @@ class MailCipherTest {
         assertThatThrownBy(() -> fresh.verifyCode("challenge-a", "user-a", "003917", digest.value(), digest.keyId()))
                 .isInstanceOf(MailCipher.CodeKeyUnavailableException.class).hasMessage("reset_code_key_unavailable");
     }
-    @TempDir Path temp;
     @Test void localKeySurvivesRestartAndCiphertextIsBoundToItsMessage() throws Exception {
         MailProperties properties = new MailProperties(); properties.setKeyFile(temp.resolve("private/key").toString());
         MailCipher first = new MailCipher(properties, new MockEnvironment());
-        var encrypted = first.encrypt("message1", "admin_invite", "invite1", "secret-token");
+        var encrypted = first.encrypt("message1", "password_reset_code", "reset1", "secret-token");
         assertThat(encrypted.ciphertext()).doesNotContain("secret-token");
         MailCipher restarted = new MailCipher(properties, new MockEnvironment());
-        assertThat(restarted.decrypt("message1", "admin_invite", "invite1", encrypted)).isEqualTo("secret-token");
-        assertThatThrownBy(() -> restarted.decrypt("message2", "admin_invite", "invite1", encrypted)).hasMessage("mail_decryption_failed");
+        assertThat(restarted.decrypt("message1", "password_reset_code", "reset1", encrypted)).isEqualTo("secret-token");
+        assertThatThrownBy(() -> restarted.decrypt("message2", "password_reset_code", "reset1", encrypted)).hasMessage("mail_decryption_failed");
         assertThat(Files.readString(Path.of(properties.getKeyFile()))).doesNotContain("secret-token");
     }
     @Test void productionRequiresAnExistingSecretAndCanReadRotatedKeys() {
@@ -66,5 +72,21 @@ class MailCipherTest {
         environment.setProperty("benchmark.password-reset.delivery-url", "http://127.0.0.1:1234/mail");
         assertThat(settings.mode()).isEqualTo("http");
         properties.setMode("smtp"); assertThat(settings.mode()).isEqualTo("smtp");
+    }
+
+    @Test void supportsExplicitSmtpSecurityAliasesFor163() {
+        MailProperties properties = new MailProperties();
+        properties.setMode("smtp");
+        properties.setSmtpHost("smtp.163.com");
+        properties.setSmtpPort(465);
+        properties.setSmtpUsername("nsslab@163.com");
+        properties.setFrom("CryptoBench <nsslab@163.com>");
+        properties.setSecurity("ssl");
+
+        MailSettings settings = new MailSettings(properties, new MockEnvironment());
+
+        assertThat(settings.configurationError()).isNull();
+        assertThat(properties.useImplicitTls()).isTrue();
+        assertThat(properties.useStartTls()).isFalse();
     }
 }

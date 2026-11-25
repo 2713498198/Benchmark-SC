@@ -25,25 +25,10 @@ class PasswordResetNotifierTest {
         assertThat(body.getValue().has("resetUrl")).isFalse();
     }
     @Test
-    void queuesInvitationWithoutReturningTheToken() {
-        MailDeliveryService delivery = mock(MailDeliveryService.class);
-        when(delivery.baseUrl()).thenReturn("http://127.0.0.1:4173");
-        when(delivery.enqueue(anyString(), anyString(), isNull(), anyInt(), any(), anyLong())).thenReturn("mail_example");
-        PasswordResetNotifier notifier = new PasswordResetNotifier(new ObjectMapper(), delivery);
-        String result = notifier.sendAdminInvite("invite_example", 1, "admin@example.com", "Admin", "a".repeat(64), Instant.parse("2027-01-01T00:00:00Z"));
-        assertThat(result).isEqualTo("mail_example").doesNotContain("a".repeat(64));
-        ArgumentCaptor<ObjectNode> body = ArgumentCaptor.forClass(ObjectNode.class);
-        verify(delivery).enqueue(eq("admin_invite"), eq("invite_example"), isNull(), eq(1), body.capture(), anyLong());
-        assertThat(body.getValue().path("inviteUrl").asText()).endsWith("token=" + "a".repeat(64));
-        assertThat(body.getValue().path("email").asText()).isEqualTo("admin@example.com");
-    }
-
-    @Test
     void reportsUnconfiguredDeliveryWithoutPretendingTheMessageWasSent() {
         MailDeliveryService delivery = mock(MailDeliveryService.class);
         when(delivery.status()).thenReturn(new MailDeliveryService.Status("disabled", false, "delivery_disabled", ""));
         PasswordResetNotifier notifier = new PasswordResetNotifier(new ObjectMapper(), delivery);
-        assertThat(notifier.deliveryMode()).isEqualTo("disabled");
         assertThat(notifier.ready()).isFalse();
         verify(delivery, never()).enqueue(any(), any(), any(), anyInt(), any(), anyLong());
     }
