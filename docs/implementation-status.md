@@ -64,14 +64,16 @@ npm run test:docker:e2e
 
 ## 当前待收尾项
 
-### CryptoBench-SC V4.1 工作区验证器部署
+### CryptoBench-SC V4.2 发布版 judge 部署
 
-V4.1 已导入 170 道公开题目和 75 个公开附件，`executionReady: true`，只保留 `cryptobench-sc-v4@4.1.0`。服务端私有目录当前按规则分布：
+V4.2 已导入 170 道公开题目和 75 个公开附件，`executionReady: true`，当前发布版本为 `cryptobench-sc-v4@4.2.0`。上游 `20261125-auto1` 修订了 18 份题面；服务端私有目录当前按评分路由分布：
 
-- 确定性声明式规则 105 道：`numeric` 33、`string` 31、`boolean` 1、`fields` 39、`piecewise` 1。
-- `workspace-validator` 65 道：经上游逐题 Python 验证器打分。
+- 共享 judge 规则 103 道：最终答案与 oracle 证据由 `grade_submission.py`、`run_task_validator.py` 和 `score_run_v3.py` 共同判定。
+- 专用验证器 67 道：由发布版题目路由指定具体实现。
+- 8 道自动检查题：023、057、110、121、129、130、149、170。
+- 121、129、130、149 的完整证明暂不进入完成率分母。
 
-声明式题目可直接评分；`workspace-validator` 题目需要先把服务端私有套件部署到非静态目录并配置 `CRYPTOBENCH_V4_SUITE_ROOT`，否则相关题目按未通过处理。部署步骤见 [V4 部署说明](v4-deployment.md)，套件准备使用 `scripts/prepare-v4-private-suite.py`。
+所有题目均需要把服务端私有 judge 套件部署到非静态目录并配置 `CRYPTOBENCH_V4_SUITE_ROOT`，否则按未通过处理。部署步骤见 [V4 部署说明](v4-deployment.md)，套件由 `scripts/import-v4-release.py` 生成。
 
 ## 重启后继续清单
 
@@ -109,7 +111,7 @@ V4.1 已导入 170 道公开题目和 75 个公开附件，`executionReady: true
 
 6. 若 Docker E2E 失败，保留完整错误输出，优先检查 Agent/代理镜像构建、代理端口、internal network、Agent 三个接口和清理阶段。
 
-7. Docker 与回归测试通过后，再验证本地网页版部署；V4.1 的 65 道 workspace-validator 题需按部署说明配置私有套件后才能完整评分。
+7. Docker 与回归测试通过后，再验证本地网页版部署；V4.2 的 170 道题都需按部署说明挂载私有 judge 套件后才能完整评分。
 
 ## 当前已知验证结果
 

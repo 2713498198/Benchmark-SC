@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,36 +21,32 @@ class V4DeterministicRulesTest {
             new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0, ""), mapper));
 
     @Test
-    void everyDeterministicRuleAcceptsItsAuthoritativeAnswer() throws Exception {
+    void everyTaskUsesTheServerPrivateJudgeAndExposesNoAnswer() throws Exception {
         JsonNode catalog = mapper.readTree(getClass().getResourceAsStream(
-                "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"));
+                "/evaluation/cryptobench-sc-v4/4.2.0/tasks.json"));
         int count = 0;
+        Map<String, Long> routes;
         for (JsonNode node : catalog.path("tasks")) {
             TaskDefinition task = task(node);
-            if ("workspace-validator".equals(task.verification().path("type").asText())) continue;
-            ObjectNode response = response(expectedAnswer(task.verification()));
-            ObjectNode result = evaluator.evaluate(task, response);
-            assertThat(result.path("passed").asBoolean())
-                    .as(task.id() + " / " + task.verification().path("type").asText())
-                    .isTrue();
-            assertThat(result.path("score").asDouble()).isEqualTo(1.0);
+            assertThat(task.verification().path("type").asText()).isEqualTo("workspace-validator");
+            assertThat(task.expectedAnswer()).isEmpty();
             count++;
         }
-        assertThat(count).isEqualTo(105);
+        routes = catalog.path("tasks").findValuesAsText("judgeRoute").stream()
+                .collect(Collectors.groupingBy(value -> value, Collectors.counting()));
+        assertThat(count).isEqualTo(170);
+        assertThat(routes).containsEntry("generic", 103L).containsEntry("task_specific", 67L);
     }
 
     @Test
-    void everyDeterministicRuleRejectsAnObviousWrongAnswer() throws Exception {
+    void missingPrivateSuiteFailsClosedForEveryTask() throws Exception {
         JsonNode catalog = mapper.readTree(getClass().getResourceAsStream(
-                "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"));
+                "/evaluation/cryptobench-sc-v4/4.2.0/tasks.json"));
         for (JsonNode node : catalog.path("tasks")) {
             TaskDefinition task = task(node);
-            JsonNode rule = task.verification();
-            if ("workspace-validator".equals(rule.path("type").asText())) continue;
-            ObjectNode response = response(wrongAnswer(rule));
-            assertThat(evaluator.evaluate(task, response).path("passed").asBoolean())
-                    .as(task.id() + " must reject a wrong answer")
-                    .isFalse();
+            ObjectNode result = evaluator.evaluate(task, response("anything"));
+            assertThat(result.path("passed").asBoolean()).as(task.id()).isFalse();
+            assertThat(result.path("reason").asText()).contains("未启用");
         }
     }
 
@@ -69,29 +67,9 @@ class V4DeterministicRulesTest {
         return response;
     }
 
-    private JsonNode expectedAnswer(JsonNode rule) {
-        return switch (rule.path("type").asText()) {
-            case "numeric", "string", "boolean" -> rule.get("expected");
-            case "fields" -> rule.get("fields");
-            case "piecewise" -> mapper.createObjectNode().set("cases", rule.get("cases"));
-            default -> throw new IllegalStateException("Unexpected rule: " + rule);
-        };
-    }
-
-    private JsonNode wrongAnswer(JsonNode rule) {
-        return switch (rule.path("type").asText()) {
-            case "numeric" -> mapper.getNodeFactory().numberNode(
-                    rule.path("expected").asDouble()
-                            + Math.max(1.0, rule.path("absoluteTolerance").asDouble() + 1.0));
-            case "string" -> mapper.getNodeFactory().textNode(rule.path("expected").asText() + "-wrong");
-            case "boolean" -> mapper.getNodeFactory().booleanNode(!rule.path("expected").asBoolean());
-            case "fields" -> {
-                ObjectNode copy = ((ObjectNode) rule.get("fields")).deepCopy();
-                if (!copy.isEmpty()) copy.remove(copy.fieldNames().next());
-                yield copy;
-            }
-            case "piecewise" -> mapper.createArrayNode();
-            default -> throw new IllegalStateException("Unexpected rule: " + rule);
-        };
+    private ObjectNode response(String answer) {
+        ObjectNode response = mapper.createObjectNode().put("status", "completed");
+        response.putObject("artifact").put("answer", answer);
+        return response;
     }
 }

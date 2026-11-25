@@ -28,12 +28,19 @@ async function prepare(page){
   };
  });
 }
-async function go(page){if(page.url()===base+'/#/')await page.reload();else await page.goto(base+'/#/');await page.waitForLoadState('networkidle');await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));}
+async function go(page){
+ if(page.url()===base+'/#/')await page.reload();else await page.goto(base+'/#/');
+ await page.waitForLoadState('networkidle');
+ await page.evaluate(()=>document.fonts.ready);
+ await page.locator('[data-home-filter="type"]').selectOption('public');
+ await page.locator('.rank-chart').waitFor();
+ await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
+}
 async function geometry(page){return page.evaluate(()=>Object.fromEntries(['.home-hero','.hero-title-shell','.hero-subtitle','.hero-actions'].map(selector=>{const b=document.querySelector(selector).getBoundingClientRect();return [selector,{x:b.x,y:b.y,width:b.width,height:b.height}];})));}
 const pointCount=page=>page.locator('[data-chart-point]').count();
 const text=page=>page.locator('[data-home-cost-chart]').innerText();
 const trust={rankingEligible:true,answerVerified:true,modelIdentityVerified:true,usageVerified:true,costVerified:true};
-const row=(id,extra={})=>({id,agent:'Agent '+id,model:'Model '+id,datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',demo:false,published:true,total:120,passed:96,score:80,cost:1,time:30,trust,...extra});
+const row=(id,extra={})=>({id,agent:'Agent '+id,model:'Model '+id,datasetId:'cryptobench-sc-v4',version:'4.2.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',demo:false,published:true,total:120,passed:96,score:80,cost:1,time:30,trust,...extra});
 const officialReports=[
  row('official-round',{agent:'RoundKey',model:'Model C',cost:0.5,score:80}),
  row('official-fast',{agent:'DiffHunter',model:'DeepSeek V3',cost:1,score:88}),
@@ -135,7 +142,7 @@ try{
  const homeBudgets=await page.locator('[data-home-filter="budget"] option').evaluateAll(options=>options.map(o=>[o.value,o.textContent]));
  await page.locator('[data-home-filter="source"]').selectOption('local');
  await page.locator('.home-cost-heading .text-link').click();await page.locator('.leaderboard-page').waitFor();
- check('Full ranking link preserves selected public context',await page.locator('[data-rank="type"]').inputValue()==='public'&&await page.locator('[data-rank="version"]').inputValue()==='4.1.0');
+ check('Full ranking link preserves selected public context',await page.locator('[data-rank="type"]').inputValue()==='public'&&await page.locator('[data-rank="version"]').inputValue()==='4.2.0');
  check('Homepage and ranking budget options match exactly',JSON.stringify(homeBudgets)===JSON.stringify(await page.locator('[data-rank="budget"] option').evaluateAll(options=>options.map(o=>[o.value,o.textContent]))));
  check('Full ranking link preserves execution source filter',await page.locator('[data-rank="source"]').inputValue()==='local');
  const leftRequests=requests;await page.clock.runFor(90001);check('Leaving homepage stops polling and releases observer',requests===leftRequests&&await page.evaluate(()=>window.activeChartObservers===0));

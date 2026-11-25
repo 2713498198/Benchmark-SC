@@ -5,11 +5,20 @@ import com.cryptobench.benchmark.runner.dto.RunnerHeartbeatRequest;
 import com.cryptobench.benchmark.runner.dto.RunnerPairRequest;
 import com.cryptobench.benchmark.runner.dto.RunnerResultRequest;
 import com.cryptobench.benchmark.runner.model.Runner.RunnerResponse;
+import com.cryptobench.benchmark.runner.service.RunnerPackageService;
 import com.cryptobench.benchmark.runner.service.RunnerService;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,9 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RunnerController {
     private final RunnerService service;
+    private final RunnerPackageService packages;
 
-    public RunnerController(RunnerService service) {
+    public RunnerController(RunnerService service, RunnerPackageService packages) {
         this.service = service;
+        this.packages = packages;
     }
 
     /** Create a pairing code for the currently logged-in account. */
@@ -49,6 +60,26 @@ public class RunnerController {
         ObjectNode response = new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode();
         response.put("ok", true);
         return response;
+    }
+
+    /** Metadata for the authenticated browser's Runner download. */
+    @GetMapping("/api/runners/package")
+    public ObjectNode packageManifest(@AuthenticationPrincipal BenchmarkUser user) {
+        return packages.manifest();
+    }
+
+    /** Stream the release-built portable Runner archive to an authenticated browser. */
+    @GetMapping("/api/runners/download")
+    public ResponseEntity<Resource> download(@AuthenticationPrincipal BenchmarkUser user) {
+        RunnerPackageService.Artifact artifact = packages.artifact();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .contentLength(artifact.bytes())
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofMinutes(5)).cachePrivate())
+                .eTag("\"" + artifact.sha256() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(artifact.filename(), StandardCharsets.UTF_8).build().toString())
+                .body(new FileSystemResource(artifact.path()));
     }
 
     /** Consume a one-time pairing code; this endpoint is authenticated by the code itself. */

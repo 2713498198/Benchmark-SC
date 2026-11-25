@@ -23,14 +23,14 @@ function argumentsMap(values){
 }
 
 const [command='run',...rest]=process.argv.slice(2);const args=argumentsMap(rest);
-if(command==='pair')await pair(args);else if(command==='run')await run(args);else if(command==='status')await status();else if(command==='doctor')await doctor();else{console.error('用法：pair | run | status | doctor');process.exitCode=2;}
+if(command==='pair')await pair(args);else if(command==='run')await run(args);else if(command==='status')await status();else if(command==='doctor')await doctor();else if(command==='version')await version();else if(command==='help'||command==='--help'||command==='-h')usage();else{usage();process.exitCode=2;}
 
 // Exchange the browser-generated one-time code for a long-lived local token.
 async function pair(args){
  const serverUrl=String(args.url||'').replace(/\/$/,'');const pairingCode=String(args.token||'');
  if(!serverUrl||!pairingCode)throw new Error('pair 需要 --url <网站地址> 和 --token <配对码>');
  const profiles=await pairingProfiles(args);
- const config={serverUrl,runnerVersion:'1.1.0',agent:profiles[0],agents:profiles,sandbox:{enabled:Boolean(args['docker-image']),image:String(args['docker-image']||'')}};
+ const config={serverUrl,runnerVersion:await packageVersion(),agent:profiles[0],agents:profiles,sandbox:{enabled:Boolean(args['docker-image']),image:String(args['docker-image']||'')}};
  const response=await rawRequest(serverUrl+'/api/runner/register',{method:'POST',body:JSON.stringify({pairingCode,displayName:String(args.name||'我的本地 Runner'),runnerVersion:config.runnerVersion,agents:publicAgents(config)})});
  config.runnerId=response.id;config.runnerToken=response.runnerToken;delete response.runnerToken;await saveConfig(config);
  console.log(`Runner 配对成功：${config.runnerId}`);console.log(`已配置 Agent：${profiles.map(profile=>`${profile.name} (${profile.model})`).join(', ')}`);console.log(`配置文件：${configPath}`);console.log('长 Token 和 Agent 命令配置只保存在本机配置文件中。');
@@ -127,6 +127,24 @@ function selectProfile(config,request){
 }
 
 async function status(){const config=await loadConfig();console.log(JSON.stringify({configPath,runnerId:config.runnerId,serverUrl:config.serverUrl,agents:publicAgents(config)},null,2));}
+
+async function version(){
+ console.log(`CryptoBench Runner ${await packageVersion()}`);console.log(`Node ${process.version}`);console.log(`Platform ${process.platform}-${process.arch}`);
+}
+
+async function packageVersion(){
+ const pkg=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
+ return String(pkg.version||'unknown');
+}
+
+function usage(){
+ console.log('用法：cryptobench-runner.cmd <pair|run|status|doctor|version> [options]');
+ console.log('  pair    使用网站生成的一次性配对码注册本机 Runner');
+ console.log('  run     轮询并执行网站下发的测评任务');
+ console.log('  status  查看本机 Runner 配置与公开能力');
+ console.log('  doctor  检查已保存的本地 Agent 配置');
+ console.log('  version 查看 Runner、Node 和平台版本');
+}
 
 // Validate every local command profile without contacting the website or running a benchmark task.
 async function doctor(){

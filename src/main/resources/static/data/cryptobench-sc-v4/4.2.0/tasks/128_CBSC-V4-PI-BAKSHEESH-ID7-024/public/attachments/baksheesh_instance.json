@@ -1,0 +1,43 @@
+{
+  "schema_version": "baksheesh_integral_instance_v1",
+  "state": {
+    "block_size_bits": 128,
+    "key_size_bits": 128,
+    "bit_order": "state bit 0 is the least significant bit",
+    "nibble_order": "S-box j acts on state bits 4*j, 4*j+1, 4*j+2, 4*j+3; bit 4*j is the S-box input LSB"
+  },
+  "sbox": [3, 0, 6, 13, 11, 5, 8, 14, 12, 15, 9, 2, 4, 10, 7, 1],
+  "permutation": {
+    "semantics": "an input bit at position i is moved to position P[i]",
+    "P": [
+      0, 33, 66, 99, 96, 1, 34, 67, 64, 97, 2, 35, 32, 65, 98, 3,
+      4, 37, 70, 103, 100, 5, 38, 71, 68, 101, 6, 39, 36, 69, 102, 7,
+      8, 41, 74, 107, 104, 9, 42, 75, 72, 105, 10, 43, 40, 73, 106, 11,
+      12, 45, 78, 111, 108, 13, 46, 79, 76, 109, 14, 47, 44, 77, 110, 15,
+      16, 49, 82, 115, 112, 17, 50, 83, 80, 113, 18, 51, 48, 81, 114, 19,
+      20, 53, 86, 119, 116, 21, 54, 87, 84, 117, 22, 55, 52, 85, 118, 23,
+      24, 57, 90, 123, 120, 25, 58, 91, 88, 121, 26, 59, 56, 89, 122, 27,
+      28, 61, 94, 127, 124, 29, 62, 95, 92, 125, 30, 63, 60, 93, 126, 31
+    ]
+  },
+  "round_function": {
+    "whitening": "X^0 is XORed with RK^0 before round 0",
+    "order": ["SubCells", "PermBits", "AddRoundConstants", "AddRoundKey"],
+    "round_key": "RK^r = ROR_128(K, r); round r uses RK^(r+1) after PermBits",
+    "round_constants": [2, 33, 16, 9, 36, 19, 40, 53, 26, 13, 38, 51, 56, 61, 62, 31, 14, 7, 34, 49, 24, 45, 54, 59, 28, 47, 22, 43, 20, 11, 4, 3, 32, 17, 8],
+    "round_constant_placement": "for the six-bit constant c, bit j is XORed into state position [8,13,19,35,67,106][j]"
+  },
+  "integral_structure": {
+    "rounds": 7,
+    "active_input_positions": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    "inactive_input_positions": "all positions 14..127 are fixed but arbitrary",
+    "structure_size": 16384,
+    "candidate_output_positions": "all positions 4*i+3 for 0 <= i < 32",
+    "balanced_definition": "the XOR sum of a bit over the full structure is zero for every master key and every fixed assignment of inactive input bits"
+  },
+  "extension_scope": {
+    "known_state": "the output after two additional rounds",
+    "guessed_key_indexing": "report positions in the 128-bit round subkey entering the last inverse round; use the same LSB-first state indexing",
+    "round_constants": "known round constants may be absorbed into the guessed round-subkey value when deriving candidate equivalence"
+  }
+}

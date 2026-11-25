@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import {spawn} from 'node:child_process';
+import {execFileSync,spawn} from 'node:child_process';
 import {createWriteStream,existsSync} from 'node:fs';
-import {mkdir,mkdtemp,readFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {availablePort} from './portable-test-utils.mjs';
 
@@ -10,12 +10,19 @@ const jar=path.resolve('target/cryptobench-1.1.0.jar');assert.ok(existsSync(jar)
 await mkdir('target',{recursive:true});const temporary=await mkdtemp(path.resolve('target/workflow-integration-'));
 const port=await availablePort(),base='http://127.0.0.1:'+port,outbox=path.join(temporary,'outbox.jsonl');
 const java=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin',process.platform==='win32'?'java.exe':'java'):'java';
+const python=process.env.CRYPTOBENCH_PYTHON||(process.platform==='win32'?'python':'python3');
+const runnerPackage=path.join(temporary,'runner-package'),nodeLicense=path.join(temporary,'NODE-LICENSE.txt');
+await writeFile(nodeLicense,'test license\n','utf8');
+execFileSync(python,[path.resolve('scripts/build-runner-package.py'),'--output-dir',runnerPackage,
+ '--node-exe',process.execPath,'--node-license',nodeLicense,'--source-commit','workflow-test'],
+ {cwd:process.cwd(),stdio:'inherit'});
 const logPath=path.join(temporary,'server.log'),log=createWriteStream(logPath);
 const flags=['-jar',jar,'--server.address=127.0.0.1','--server.port='+port,'--spring.profiles.active=local',
  '--spring.datasource.url=jdbc:h2:file:'+path.join(temporary,'db').replaceAll('\\','/')+';MODE=MySQL;DATABASE_TO_LOWER=TRUE',
  '--spring.datasource.username=sa','--spring.datasource.password=','--benchmark.legacy-import-enabled=false','--benchmark.secure-cookie=false',
  '--benchmark.docker.enabled=false','--benchmark.gateway.enabled=false','--benchmark.mail.mode=outbox','--benchmark.mail.outbox='+outbox,
- '--benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=','--benchmark.mail.poll-ms=100'];
+ '--benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=','--benchmark.mail.poll-ms=100',
+ '--benchmark.runner-package.directory='+runnerPackage];
 const backend=spawn(java,flags,{windowsHide:true,stdio:['ignore','pipe','pipe']});backend.stdout.pipe(log);backend.stderr.pipe(log);
 let backendError;backend.on('error',error=>backendError=error);
 let testProcess;

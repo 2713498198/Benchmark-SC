@@ -1,0 +1,8 @@
+{
+  "schema_version": "fixed_linear_masks_v1",
+  "rounds": 6,
+  "input_mask_binary": "0000000000000000000000000000000000000000000000000000000000000001",
+  "input_mask_one_positions": [63],
+  "output_mask_binary": "0000000100000000000000000000000000000001000000000000000100000000",
+  "output_mask_one_positions": [7, 39, 55]
+}

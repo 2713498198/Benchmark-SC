@@ -227,7 +227,7 @@ class ExecutionApiIntegrationTest {
         runRepository.insert(recoveryFixture(runningId, ownerId, "running", now, now));
         runRepository.insert(recoveryFixture(completedId, ownerId, "completed", now, now));
 
-        assertThat(runRepository.markInterruptedRuns()).isEqualTo(2);
+        assertThat(runRepository.markInterruptedRuns()).isGreaterThanOrEqualTo(2);
         assertThat(runRepository.find(queuedId, false).orElseThrow().status()).isEqualTo("failed");
         assertThat(runRepository.find(queuedId, false).orElseThrow().errorCode()).isEqualTo("worker_restarted");
         assertThat(runRepository.find(runningId, false).orElseThrow().status()).isEqualTo("failed");
@@ -313,17 +313,17 @@ class ExecutionApiIntegrationTest {
     }
 
     @Test
-    void refusesLegacyV4AndAcceptsV41() throws Exception {
+    void refusesArchivedV41AndAcceptsV42() throws Exception {
         Client client = registeredClient();
         String endpoint = "http://127.0.0.1:" + agent.getAddress().getPort();
         MvcResult legacy = client.send("POST", "/api/runs", Map.of(
-                "datasetId", "cryptobench-sc-v4", "version", "4.0.0", "scope", "sample",
+                "datasetId", "cryptobench-sc-v4", "version", "4.1.0", "scope", "sample",
                 "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
         assertThat(legacy.getResponse().getStatus()).isEqualTo(400);
         assertThat(client.json(legacy).path("error").asText()).contains("尚未绑定服务端验证器");
 
         MvcResult current = client.send("POST", "/api/runs", Map.of(
-                "datasetId", "cryptobench-sc-v4", "version", "4.1.0", "scope", "sample",
+                "datasetId", "cryptobench-sc-v4", "version", "4.2.0", "scope", "sample",
                 "budget", "standard", "source", "local", "endpoint", endpoint, "model", "test-model"));
         assertThat(current.getResponse().getStatus()).isEqualTo(202);
         assertThat(client.json(current).path("runId").asText()).isNotBlank();

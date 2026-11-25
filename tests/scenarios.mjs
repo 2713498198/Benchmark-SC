@@ -5,7 +5,7 @@ export async function runScenarios({page,check,go,shot}) {
  const reportCount=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('cryptobench.v1')).reports.length);
  const fresh=async route=>{await go(route);await page.reload();await page.waitForLoadState('networkidle');await page.locator('#main h1').first().waitFor();};
  const openReport=async()=>{const link=page.locator('a[href^="#/report/"]').first();await link.waitFor();await link.click();await page.locator('[data-report-json]').waitFor();return latest();};
- const ready=async ({scope='full',failure='none',dataset,model='GPT-4.1'}={})=>{
+ const ready=async ({scope='sample',failure='none',dataset,model='GPT-4.1'}={})=>{
   await fresh('/evaluate');
   await page.locator('[data-form="model"]').selectOption(model);
   await page.locator('[data-check-connection]').click();
@@ -48,6 +48,7 @@ export async function runScenarios({page,check,go,shot}) {
  await page.locator('[aria-label="访问凭证"]').fill('test-only-credential-should-not-persist');
  await page.locator('[data-check-connection]').click();
  await page.locator('[data-eval-next]').click();
+ await page.locator('[data-form="scope"]').selectOption('sample');
  await page.locator('[data-eval-next]').click();
  await start();const custom=await openReport();
  check('custom model in report',custom.model==='research-local-model');

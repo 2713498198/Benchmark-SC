@@ -1,0 +1,1260 @@
+{
+  "schema": "cryptobench-v4-private-release-v2",
+  "datasetId": "cryptobench-sc-v4",
+  "version": "4.2.0",
+  "releaseRevision": "2026-11-25",
+  "upstreamRelease": "20261125-auto1",
+  "evaluatorVersion": "cryptobench-sc-v4-evaluator-1.1.0",
+  "publicationStatus": "technical_ready",
+  "publicCatalogSha256": "fadb521540f8fbaaeb63645b77d423ea209ccfd169943f3d0092cc733205118d",
+  "publicReleaseSha256": "79af974fd4a45894d4c9a58a56e2a2c841971dd6e7a99058c6110c332b0b04a2",
+  "publicZipSha256": "b1e7eb0f57d47f5dda18d73ca838e798d2d30aecbc9055ed7e62c391675a378c",
+  "privateCatalogSha256": "2907821f235016ad24fe54a11d0c44a88ff2b8f5871988157364a8dfb92b97a0",
+  "sourcePublicZipSha256": "6858d3ac8721aad066789ed70ef13fa1d44f4e0abeb1ef85fac354ca0de1fabe",
+  "sourceJudgeZipSha256": "ea6656e416b4b7a8eb31fadc3988cea9c5b8beb9591aaa2d9a561cb267e15756",
+  "taskCount": 170,
+  "routeCounts": {
+    "generic": 103,
+    "task_specific": 67
+  },
+  "validatorCount": 67,
+  "automaticTasks": [
+    "023_CBSC-V2-NL-D11",
+    "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+    "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+    "121_CBSC-V4-PD-WARP-MP20-003",
+    "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+    "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+    "149_CBSC-V4-PB-LEA128-RKID4-045",
+    "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066"
+  ],
+  "completionMetricExcludedTasks": [
+    "121_CBSC-V4-PD-WARP-MP20-003",
+    "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+    "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+    "149_CBSC-V4-PB-LEA128-RKID4-045"
+  ],
+  "changedTasks": [
+    "023_CBSC-V2-NL-D11",
+    "047_CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+    "053_CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+    "054_CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+    "055_CBSC-V2-PS-2405-XOR3-INEQ-027",
+    "056_CBSC-V2-PS-2405-XOR4-DDT-028",
+    "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+    "108_CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+    "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+    "114_CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+    "121_CBSC-V4-PD-WARP-MP20-003",
+    "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+    "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+    "148_CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+    "149_CBSC-V4-PB-LEA128-RKID4-045",
+    "150_CBSC-V4-PD-TWINE15-NLPROJ-046",
+    "151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+    "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066"
+  ],
+  "preservedAttachments": [
+    "tasks/148_CBSC-V4-PB-CRAFT64-R7MATRIX-044/public/attachments/reference_paper.pdf",
+    "tasks/149_CBSC-V4-PB-LEA128-RKID4-045/public/attachments/reference_paper.pdf",
+    "tasks/150_CBSC-V4-PD-TWINE15-NLPROJ-046/public/attachments/reference_paper.pdf",
+    "tasks/151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047/public/attachments/reference_paper.pdf"
+  ],
+  "rightsReview": {
+    "status": "attribution_recorded",
+    "document": "docs/v4-source-attribution.md",
+    "manifest": "data/cryptobench-sc-v4/4.2.0/attribution.json"
+  },
+  "tasks": [
+    {
+      "id": "001_CBSC-V2-NL-A01",
+      "questionNumber": 1,
+      "oracleSha256": "8d9649a384be73ff67c755066a5cb1100d5f0b5836dc2d611808b277ad155c03",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "002_CBSC-V2-NL-A02",
+      "questionNumber": 2,
+      "oracleSha256": "5cfcbf439484aa15bbfcea327371b86985164bd9c3b8efcaf15013c82c1bbf68",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "003_CBSC-V2-NL-A03",
+      "questionNumber": 3,
+      "oracleSha256": "f9c15b071e7932ab1899331e24ccc888d98ce9ab7cafa6f639134713d8ec741c",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "004_CBSC-V2-NL-A04",
+      "questionNumber": 4,
+      "oracleSha256": "29f694dab68035b9e39be06fb55a4c6ae8c1596a9f76d6818cea87a736c357cb",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "005_CBSC-V2-NL-A05",
+      "questionNumber": 5,
+      "oracleSha256": "1120d64cef65a0c9cf1367babca645a6ccffa673389f503344debe9efb7bc678",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "006_CBSC-V2-NL-A06",
+      "questionNumber": 6,
+      "oracleSha256": "44c797593600e610a2b0ed5e86db3722609d66a0f4e226f22afea13ab4fb9edb",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "007_CBSC-V2-NL-A07",
+      "questionNumber": 7,
+      "oracleSha256": "47bfe5bc6e11f8923bdf1aa636cd34514e82898a83b3ee550934f9cd259fceb4",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "008_CBSC-V2-NL-A08",
+      "questionNumber": 8,
+      "oracleSha256": "3fc517a4ab7e8e195706810ae0f063e8caae5099298b55ff5e8740e76f7d50b5",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "009_CBSC-V2-NL-A09",
+      "questionNumber": 9,
+      "oracleSha256": "914674bc5c0d97c5fcfb624fb925930611241091d4e9ddfdccb8d936bf511501",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "010_CBSC-V2-NL-A10",
+      "questionNumber": 10,
+      "oracleSha256": "256a050cef48259e3b2ac4539a76c28483b9d68972dbbb1118b65018e5ed847c",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "011_CBSC-V2-NL-A11",
+      "questionNumber": 11,
+      "oracleSha256": "60473a946f71073c9edb78ec6a00bc41d714b7b72d53fa4367c91b2e6e9279ff",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "012_CBSC-V2-NL-A12",
+      "questionNumber": 12,
+      "oracleSha256": "2865a55444960007166426c3daa8ba95b46b86fc582ce05b4533f4641a095411",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "013_CBSC-V2-NL-D01",
+      "questionNumber": 13,
+      "oracleSha256": "f986c69a81239138c7d3cabe9bbeb486f92b51627d9f5065dc3df8fe01011aba",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "014_CBSC-V2-NL-D02",
+      "questionNumber": 14,
+      "oracleSha256": "40915ad24fd7096a13e48f9bf5313cbc4371ecd293b24e8758e3ff5fb272ee3c",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "015_CBSC-V2-NL-D03",
+      "questionNumber": 15,
+      "oracleSha256": "a3dd58accfef09b4e51ce39780f0e30cc0068a5297ff1510e820635030573ff2",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "016_CBSC-V2-NL-D04",
+      "questionNumber": 16,
+      "oracleSha256": "facaa687082bec5cf03ef13b4e897a36efa29f862ff899a9368bdc8a3655c693",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "017_CBSC-V2-NL-D05",
+      "questionNumber": 17,
+      "oracleSha256": "c7057b5fcb566410d3f0debc5e420bee1a37dc63764f0cadf5fa26c793cec0e7",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "018_CBSC-V2-NL-D06",
+      "questionNumber": 18,
+      "oracleSha256": "a33936a44f6e5a5bcd8d82638b71a4985b35bc02acae236d9b75420c46abce10",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "019_CBSC-V2-NL-D07",
+      "questionNumber": 19,
+      "oracleSha256": "b71d2bdbb1cbc02ad9fa6bcab3f4bba3ac62adadb01930c8a57c58aeafab2ce6",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "020_CBSC-V2-NL-D08",
+      "questionNumber": 20,
+      "oracleSha256": "e22895474df667abe10dde18dc0af346f463a423034c40dc93a24f139c7f8ccf",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "021_CBSC-V2-NL-D09",
+      "questionNumber": 21,
+      "oracleSha256": "1eaccef9c54017244caf5e10a257daf0295ac1233e51d6096a377647ed250f0b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "022_CBSC-V2-NL-D10",
+      "questionNumber": 22,
+      "oracleSha256": "f01188aaffbfb3c9a98f5581c1e9f0659eb42c789f11c5a91c2e3b094b0a5b45",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "023_CBSC-V2-NL-D11",
+      "questionNumber": 23,
+      "oracleSha256": "65cf20e90445cc496f9d22afe0b6e16b6d96b6bc7754a9fa7b3416d2ada59a65",
+      "routeMode": "task_specific",
+      "implementation": "tasks/023_CBSC-V2-NL-D11/oracle/validator.py"
+    },
+    {
+      "id": "024_CBSC-V2-NL-L01",
+      "questionNumber": 24,
+      "oracleSha256": "6b91e2b5c00dfd62aecc6848a3f83ebf783079bb07a2f244c47fca000ea7ab49",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "025_CBSC-V2-NL-L02",
+      "questionNumber": 25,
+      "oracleSha256": "e5788a9137de3f8ce0c96be8d2d77de3a882b25c36ec15cd119838ce68f860fe",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "026_CBSC-V2-NL-L03",
+      "questionNumber": 26,
+      "oracleSha256": "f54079b5a00605e955d77bbef5949fc832b9347abc70b9fcf5455839f4d9f5fe",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "027_CBSC-V2-NL-L04",
+      "questionNumber": 27,
+      "oracleSha256": "a9618f2bca5be6f7b7a3812b0a73b7b5a882f10c42c26194b2a2bfb4f540c29f",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "028_CBSC-V2-NL-L05",
+      "questionNumber": 28,
+      "oracleSha256": "ff1cd8f78183ddb2858ff92b6b75ede5b76446e5220ad5278df519696edceffb",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "029_CBSC-V2-NL-L06",
+      "questionNumber": 29,
+      "oracleSha256": "b7e1417ff7870df5b10462b87a85ad9eb4b4c9f9dc650e038463d884addc7ec5",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "030_CBSC-V2-NL-L07",
+      "questionNumber": 30,
+      "oracleSha256": "6cf70925e7d61c3cb9c62bc5ba72ae57a529d17a71d9f8b807eb3a13747cf6da",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "031_CBSC-V2-NL-L08",
+      "questionNumber": 31,
+      "oracleSha256": "19934f499ddeab8d3b37c4294af6ae1c0a9451d105c05e6ec5eb10f4045be207",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "032_CBSC-V2-NL-L09",
+      "questionNumber": 32,
+      "oracleSha256": "2bf6ebed4aecead85e6319417c0c64829c21f2e30f6d0a22e2d8217fb2134f2d",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "033_CBSC-V2-NL-X01",
+      "questionNumber": 33,
+      "oracleSha256": "63ac2c558607124aa227b64aadbcd6cccbe6d42dd19ab407881673867561a69b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "034_CBSC-V2-NL-X02",
+      "questionNumber": 34,
+      "oracleSha256": "08e870552e87768bd938af09232713ca8f7776052c61cc48ed8bbf06b6ecb047",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "035_CBSC-V2-NL-X03",
+      "questionNumber": 35,
+      "oracleSha256": "f1538c5c1df2058126f3075b769327f7daef34b0e1afd1a23c59bf4ebb69adb9",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "036_CBSC-V2-NL-X04",
+      "questionNumber": 36,
+      "oracleSha256": "7438988c44a72a7608cea148a178c6ede9a290a29f4c1e47c9d65eece1b72e0d",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "037_CBSC-V2-PS-2013-DESL-8RK-009",
+      "questionNumber": 37,
+      "oracleSha256": "6a2221eb79ef12ca03aa81f19edb53ab072bb7354a37833100dafa0ebb2526de",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "038_CBSC-V2-PS-2013-LBLOCK-13FACT-005",
+      "questionNumber": 38,
+      "oracleSha256": "8385d892e2f069eaf0f61cb5bd41754d432be5f737b05a7695fe338a4619ef11",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "039_CBSC-V2-PS-2013-LBLOCK-14CHAR-008",
+      "questionNumber": 39,
+      "oracleSha256": "6505a7513d1914c946584e8df1bdf8532a4781eb3ff99ae5b45a498dba3278ac",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "040_CBSC-V2-PS-2013-LBLOCK-FULL-004",
+      "questionNumber": 40,
+      "oracleSha256": "338c69c23163e77fba3f8651e3c1e49a93bc6c93d81b32fcbb4fda7bd2209b5b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "041_CBSC-V2-PS-2013-LBLOCK-TABLE5-010",
+      "questionNumber": 41,
+      "oracleSha256": "7d69e9995c7a247b8ec9d6d1c9c571d078d71527c5a83d31443d0f1d8160f4d2",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "042_CBSC-V2-PS-2013-PRESENT128-7RK-007",
+      "questionNumber": 42,
+      "oracleSha256": "f2cfb8d5b3ab4507fa56a9dbc9a870919158e97f97a8fc7b49e9442d7e8cdb3b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "043_CBSC-V2-PS-2013-PRESENT80-12ACTIVE-002",
+      "questionNumber": 43,
+      "oracleSha256": "e1264dd25a8635056c1f0abdf3f3b63565097a334f109a505cd89977e63d29ae",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "044_CBSC-V2-PS-2013-PRESENT80-7CUTS-003",
+      "questionNumber": 44,
+      "oracleSha256": "055aef9e9d78bc565b599d7f4264be9cc1155908a8cdb5230b068dc03f5169c8",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "045_CBSC-V2-PS-2013-PRESENT80-RK24-001",
+      "questionNumber": 45,
+      "oracleSha256": "71a058b309256a6641dace96080a92cd480c796b651421e55761f9f5a6971ccd",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "046_CBSC-V2-PS-2013-SIMON48-15DIFF-006",
+      "questionNumber": 46,
+      "oracleSha256": "22a0a0e448fd0483fa2f39dca5151a5afb552544bd2c621350432d6419e009c1",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "047_CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+      "questionNumber": 47,
+      "oracleSha256": "70bc5472b2ec615c3c983fa3ea33e337518e3651140f51a018bfded861ce4702",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "048_CBSC-V2-PS-2023-SPECK128-ALGB-011",
+      "questionNumber": 48,
+      "oracleSha256": "81fc20a9d54d3bf28d179e2b189287bafa0dacd9e3556e6dac66099f55b8034d",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "049_CBSC-V2-PS-2023-SPECK32-ALGC3-013",
+      "questionNumber": 49,
+      "oracleSha256": "492a49329d105aa1744266b9228d2a0d00016e93cadec2ac9ba730e651d7edd5",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "050_CBSC-V2-PS-2023-SPECK32-ALGC5-014",
+      "questionNumber": 50,
+      "oracleSha256": "ee6f9e9fd45746a4f44dc3be055378ec402683dbbf0d44f098acb7585efd79cb",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "051_CBSC-V2-PS-2023-SPECK48-FIXEDDIFF-015",
+      "questionNumber": 51,
+      "oracleSha256": "07fef187d5be36f67ede54e7e0376c6fca5a41a945bb0d83eb359f1769338d5f",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "052_CBSC-V2-PS-2405-GIFT64-FIDCOUNT-024",
+      "questionNumber": 52,
+      "oracleSha256": "6ca6534481a1cc4b43cc476de748773bc36b510f177a57b5eed43c3415426ad2",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "053_CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+      "questionNumber": 53,
+      "oracleSha256": "2c49a011fc92243663aa9aa78d1e0827d2f33f7ff16807d3cb3565f9a688f691",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "054_CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+      "questionNumber": 54,
+      "oracleSha256": "def532878275b6efc0d536dbec3b912429e450cc51d26b3182b589daab6fb6b5",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "055_CBSC-V2-PS-2405-XOR3-INEQ-027",
+      "questionNumber": 55,
+      "oracleSha256": "0815e3073b7af0681fb4b51ed3af05ac795b3176c32cce85f9f296fa3247e72e",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "056_CBSC-V2-PS-2405-XOR4-DDT-028",
+      "questionNumber": 56,
+      "oracleSha256": "14ba1e61ecfd8fa2b62d50ac67b523624e9b77e9a7d475bdb140cc3bb22e2b12",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+      "questionNumber": 57,
+      "oracleSha256": "8f08f1499402b23bedc08441dd146e635100fcc30ff3a2643e7598c2a7a2f553",
+      "routeMode": "task_specific",
+      "implementation": "tasks/057_CBSC-V2-PS-2408-DL-TRANSFORM-022/oracle/validator.py"
+    },
+    {
+      "id": "058_CBSC-V2-PS-2408-SIMECK32-TABLE7-023",
+      "questionNumber": 58,
+      "oracleSha256": "e59e05d1066451265819708708193013f1eee9d7d69f025f76fe4a53bdaeba2a",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "059_CBSC-V2-PS-2408-SIMON-FAMILY-021",
+      "questionNumber": 59,
+      "oracleSha256": "e1fb2061bbb8120cd9152ef3a092a8019c3b4f31e900db3d4a13bfa9ac44390b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "060_CBSC-V2-PS-2408-SIMON32-13DL-019",
+      "questionNumber": 60,
+      "oracleSha256": "d4358f9168a47b6bcd399215e6fd2a04b96ef9bcd8c5ef695aea363541b53946",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "061_CBSC-V2-PS-2408-SIMON32-14ORDER-020",
+      "questionNumber": 61,
+      "oracleSha256": "bbdfadb33f28b628d59d5d61ec9951ad88f55435454c003a0eafa3b2a4270c9b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "062_CBSC-V2-HARD-GIFT64-DIFF-KR-001",
+      "questionNumber": 62,
+      "oracleSha256": "77bc46b733ad77d1a34b1350f6614c032a2438641d668b506c05535843766d94",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "063_CBSC-V2-HARD-GIFT64-FAMILY-FID-003",
+      "questionNumber": 63,
+      "oracleSha256": "86ea082260d8e22a0690934901efff84e197dbb6e14abdb4fca52a073118a3b9",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "064_CBSC-V2-HARD-GIFT64-FUZZY-ID-001",
+      "questionNumber": 64,
+      "oracleSha256": "f6ccd3468e1f511372d38d102ae248db4b1ed02aa08d0c6a0ee97e7eb2940071",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "065_CBSC-V2-HARD-GIFT64-HIDDEN-FID-002",
+      "questionNumber": 65,
+      "oracleSha256": "4b93656f1c2594676b29d002cea8065c9d80ac18135e53a7a9b78810caf584d1",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "066_CBSC-V2-HARD-PRESENT64-BDPT-CODEVERIFY-031",
+      "questionNumber": 66,
+      "oracleSha256": "25696d26bdebba02ee119bcb844c97b63f53fd76a66e8462a6a8e331615ea398",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "067_CBSC-V2-HARD-SIMON32-DL-SEARCH-002",
+      "questionNumber": 67,
+      "oracleSha256": "c61784bc98d813bfb7884229e0f7a2e6cd9214fbd2690307c81bd78a9580e210",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "068_CBSC-V2-HARD-SIMON32-DL-TRANSFORM-001",
+      "questionNumber": 68,
+      "oracleSha256": "f74f8b2ad9a613681f16e53ac3538296b0ce3adf04ddf89ae5cda112c73977b5",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "069_CBSC-V2-HARD-SKINNY64-FID-016",
+      "questionNumber": 69,
+      "oracleSha256": "a8efedb20a868f95b071ac3399bd12ccd907b132a2b6487cc82a3b76e4086bc1",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "070_CBSC-V2-HARD-SPECK128-FIXEDIO-015",
+      "questionNumber": 70,
+      "oracleSha256": "58a93810198bfdb5785eb47488263fac1f9c4455a463b245d56dec81292caf47",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "071_CBSC-V2-HARD-SPECK128-FREEOPT-010",
+      "questionNumber": 71,
+      "oracleSha256": "59ee3831f8fbe3ec0467b6c6766248e07d23acc78779eee6a2c3f43655a2266f",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "072_CBSC-V2-HARD-SPECK128-LBPROOF-013",
+      "questionNumber": 72,
+      "oracleSha256": "17841634dd1e61aac37cb6c28e861874b7e22e86d3be939ed948e743d6bd2a16",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "073_CBSC-V2-HARD-SPECK128-LBPROOF-019",
+      "questionNumber": 73,
+      "oracleSha256": "594077f43fed48e214de6fba1de240073863e9971573963863d4abbbf703e5ec",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "074_CBSC-V2-HARD-SPECK32-FIXEDIO-004",
+      "questionNumber": 74,
+      "oracleSha256": "124ad2d4812b460ba9ba2e104575a7036efdbb43dbc51559201706a81d317d05",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "075_CBSC-V2-HARD-SPECK32-FREEOPT-005",
+      "questionNumber": 75,
+      "oracleSha256": "f39ccf7100b458693466f418007aeb2853ac6e4cdeab5d3549c7ee484f6d2917",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "076_CBSC-V2-HARD-SPECK32-LBPROOF-006",
+      "questionNumber": 76,
+      "oracleSha256": "f455fe1e2fe5848aff9d5f547915df9c8106fa71471dcaf2eff00c93584a183b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "077_CBSC-V2-HARD-SPECK32-VTDP-CODEVERIFY-ZH-032",
+      "questionNumber": 77,
+      "oracleSha256": "e23e29bc39918a881f08f9203643f15c370af3b424479e91b6c5a7459711ba94",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "078_CBSC-V2-HARD-SPECK48-LBPROOF-007",
+      "questionNumber": 78,
+      "oracleSha256": "d94f0d059760ef498e3fe516892e20a44e75c3e5e77e35cb762429d966f54c09",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "079_CBSC-V2-HARD-SPECK48-LBPROOF-014",
+      "questionNumber": 79,
+      "oracleSha256": "16b7f209b86a813150beadca233838141cd94f2ede31662a94d2e9cae6bad38e",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "080_CBSC-V2-HARD-SPECK48-LBPROOF-021",
+      "questionNumber": 80,
+      "oracleSha256": "2bee2c0bdab0f4c80f5ab56aac84d5b98309ae220155152715863685e7b113f3",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "081_CBSC-V2-HARD-SPECK64-FIXEDIO-017",
+      "questionNumber": 81,
+      "oracleSha256": "16b80bd870e9c044574a40d25ea6f89484b16aaab595e48df7c4ff6fbd6fcdc5",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "082_CBSC-V2-HARD-SPECK64-FREEOPT-008",
+      "questionNumber": 82,
+      "oracleSha256": "693c5b19ba5cf1cec1643ce5f531b28a015a16ad5b55d45c7bce0729b76fba99",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "083_CBSC-V2-HARD-SPECK64-LBPROOF-011",
+      "questionNumber": 83,
+      "oracleSha256": "0dc723bdfb55fcaaee59e995c5f61217e7b593e4c7a7274307ed3d87836a46dc",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "084_CBSC-V2-HARD-SPECK64-LBPROOF-018",
+      "questionNumber": 84,
+      "oracleSha256": "b40ccc9b78985b56aa209cdbf93047c0322d6478a5003e3cabffc368c4983954",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "085_CBSC-V2-HARD-SPECK96-FREEOPT-009",
+      "questionNumber": 85,
+      "oracleSha256": "b5882926eb38d825a3f35b9fdb887e61984ea0d1854142b067f8784c9688b6ad",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "086_CBSC-V2-HARD-SPECK96-LBPROOF-012",
+      "questionNumber": 86,
+      "oracleSha256": "2ee6df50f9b3b9384b843efdc11761b7619ad6f816f6711d7fee9433934cbd40",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "087_CBSC-V2-HARD-SPECK96-LBPROOF-020",
+      "questionNumber": 87,
+      "oracleSha256": "1a30855a761fc185dd33b0172bf1f3f809e076b0f8f3789c62111bf4d3b31ebe",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "088_CBSC-V2-STRICT-SPECK128-20DP-ID9R01-009",
+      "questionNumber": 88,
+      "oracleSha256": "ec98d388651a6899dc6e6413b0e7388e286d69e05d8c51ffaf5d37c93bda3efd",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "089_CBSC-V2-STRICT-SPECK128-LB19-016",
+      "questionNumber": 89,
+      "oracleSha256": "d5783c98df9d3f0228d76d8943672d69b91134a5a581e38cee84b3cdcad6110d",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "090_CBSC-V2-STRICT-SPECK48-LB11-013",
+      "questionNumber": 90,
+      "oracleSha256": "0191c776eb7739b562a6e582e512cae4badee4708658d5d98a39ed69e3efdeae",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "091_CBSC-V2-STRICT-SPECK64-LB15-014",
+      "questionNumber": 91,
+      "oracleSha256": "54163b25ce5e2eb078a7574068ae87a7f29cbc631ae59c0a8401df1185904fdf",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "092_CBSC-V2-STRICT-SPECK96-LB16-015",
+      "questionNumber": 92,
+      "oracleSha256": "db4956f52759a45f2f7104d185ea2a4e2382ec4dbb6357a9c4de2e7a96fcf952",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "093_CBSC-V3-NA-GIFT128-3R-AID-EXC-007",
+      "questionNumber": 93,
+      "oracleSha256": "dd0ae82bbcbd844c92eb12f16167fda0e04f5d48ff98167667a75eddbd6f7397",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "094_CBSC-V3-NA-GIFT64-2R-TID-006",
+      "questionNumber": 94,
+      "oracleSha256": "0251c0aa2fab17c84a75a5f40e79f02ebed8b591b4d37a003b8d22e6efcf1d9b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "095_CBSC-V3-NA-GIFT64-LNC-RIGHTKEY-040",
+      "questionNumber": 95,
+      "oracleSha256": "7466129f70d7e517afc89cf2150fd0d3f758bcc609f00540bb6fae8c8abcf88e",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "096_CBSC-V3-NA-GIFT64-TRAIL-REPLAY-031",
+      "questionNumber": 96,
+      "oracleSha256": "bc18d9a9f9188f3bc94a7b9d5d0006d9263ad12bcc6bb7ecdf55e52c943b0af3",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "097_CBSC-V3-NA-IBD-PRESENT80-6R-001",
+      "questionNumber": 97,
+      "oracleSha256": "ea1464b6dc99eaf41d15e5fd0d054c78a5bb6bf954f7806888cc697eed78cddd",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "098_CBSC-V3-NA-INVARIANT-P0-WEAKKEY-038",
+      "questionNumber": 98,
+      "oracleSha256": "70dcedd12d556eab75be2b164a320d2fd76121629f4c691b86c9b5d01e3cf4ef",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "099_CBSC-V3-NA-LBLOCK-KS-CONTRADICTION-004",
+      "questionNumber": 99,
+      "oracleSha256": "3531924c85bc7e5c110616ee5067a0456e1a77a9d8e185cb8a70d1b015a69fa6",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "100_CBSC-V3-NA-LBLOCK-KS-DERIVE-005",
+      "questionNumber": 100,
+      "oracleSha256": "e48a597303f4051e1425d368f7994741ba32a5e405fc59e155d95b674ee41d1b",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "101_CBSC-V3-NA-LBLOCK-KS-TABLE-009",
+      "questionNumber": 101,
+      "oracleSha256": "a2fcbe489e60ec78f08d3114849186a3439413bafdd0b9c9ab417a85db8f67f8",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "102_CBSC-V3-NA-MIDORI64-INVARIANT-PARITY-010",
+      "questionNumber": 102,
+      "oracleSha256": "72b4380420e7d0e5f880b20514178648de3aae4af70dd191fe84fa75edad80d8",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "103_CBSC-V3-NA-RKIBD-SPECK64128-9R-002",
+      "questionNumber": 103,
+      "oracleSha256": "e7937e0f2fbef6c01a8c458a6641d73cbbb8e76d641b974edf99e506fea01446",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "104_CBSC-V3-NA-SIMON64-ID-COMPLEXITY-008",
+      "questionNumber": 104,
+      "oracleSha256": "223b841d03e0f3e260e197d11076f752a3939091292af9d2a6e74f4d14ef63af",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "105_CBSC-V3-NA-SKINNY128-DP14-003",
+      "questionNumber": 105,
+      "oracleSha256": "5f95b8a7c883698d23628c6241ff073bc83560e94f29b8d784b93be04db73ccf",
+      "routeMode": "generic",
+      "implementation": "scripts/score_run_v3.py"
+    },
+    {
+      "id": "106_CBSC-V4-PB-GIFT64-3DIFF-ZERO-016",
+      "questionNumber": 106,
+      "oracleSha256": "60f1bf810b5efa297aafed0c1a95a57baec71b798b0ac1fba0a71a84741651eb",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/gift64_3differential.py"
+    },
+    {
+      "id": "107_CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022",
+      "questionNumber": 107,
+      "oracleSha256": "3c67396e7b2ddc16288af7397f42558813030650dee7ef9e8598ecfe5f9e1005",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny64_lower_joint_key_distribution.py"
+    },
+    {
+      "id": "108_CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+      "questionNumber": 108,
+      "oracleSha256": "7b47ac6e85f5c6f1e7e757609189f8402ce0fa0018581d2517b543bf91a17249",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/boomerang_factor_probability.py"
+    },
+    {
+      "id": "109_CBSC-V4-PB-WARP-MID10-FBCT-009",
+      "questionNumber": 109,
+      "oracleSha256": "c629ed4dfb40ef158e3f7f44c06ed5a855636596d71b4d706746c022e8d22bd4",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/feistel_boomerang_probability.py"
+    },
+    {
+      "id": "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+      "questionNumber": 110,
+      "oracleSha256": "82c4e670cee66d002021ce6e7fdf15c96474d29d8f70bd1b220c5d63c4866c4a",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/aes_key_projection.py"
+    },
+    {
+      "id": "111_CBSC-V4-PD-ARX-RXCONST-020",
+      "questionNumber": 111,
+      "oracleSha256": "0db8c5ac1446b334afad8d53689feaa70ce8a03a1fcc6ff3423187e8286b32ab",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/rx_add_constant_exact_count.py"
+    },
+    {
+      "id": "112_CBSC-V4-PD-GIFT128-INVALID18-004",
+      "questionNumber": 112,
+      "oracleSha256": "aa7148a19b80f27bda810a984a062c5eda30f71dedfb25fe5947798af65e643f",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/trail_conflict.py"
+    },
+    {
+      "id": "113_CBSC-V4-PD-GIFT64-SK12-DEPEND-015",
+      "questionNumber": 113,
+      "oracleSha256": "7827b3bce296deae7cef1479be04f04f8963a02ca5bedd7b7ad16a9680c2d110",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/gift64_sk12_dependency.py"
+    },
+    {
+      "id": "114_CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+      "questionNumber": 114,
+      "oracleSha256": "6a96dccdfdb8e053a83b0a1e5ce92185a89073dc9122b6d67696765fc57d13c6",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/affine_key_space.py"
+    },
+    {
+      "id": "115_CBSC-V4-PD-RECT64-QDT14-017",
+      "questionNumber": 115,
+      "oracleSha256": "89fb158f99bb28678541ff0e899658d54145926b29680516107500f78d4e8608",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/rectangle_qdt_leading.py"
+    },
+    {
+      "id": "116_CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023",
+      "questionNumber": 116,
+      "oracleSha256": "ec0efdc4d046e1857ec4bb99934a8200bbfb10a37d2ce708110a0e785cccebf3",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/simeck64_id17_indirect.py"
+    },
+    {
+      "id": "117_CBSC-V4-PD-SKINNY64-R3-KEYDIST-019",
+      "questionNumber": 117,
+      "oracleSha256": "5f482356c552661387cb9e5e0f42994f300bcca60619f76ad6d14dfb7ea14029",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny64_r3_key_distribution.py"
+    },
+    {
+      "id": "118_CBSC-V4-PD-SKINNY64-TK1-INVALID10-013",
+      "questionNumber": 118,
+      "oracleSha256": "28902aa64eebf754db29125c4600e5c58439b0bdddc20be6ca54c95f40f9d0a8",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny_key_conflict.py"
+    },
+    {
+      "id": "119_CBSC-V4-PD-SPECK32-PROJKEY9-006",
+      "questionNumber": 119,
+      "oracleSha256": "73097ed962f38ac264e194017ea32b98729773f73d33db8194b552a311a33115",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/projected_key_relation.py"
+    },
+    {
+      "id": "120_CBSC-V4-PD-SPEEDY192-JOINTZERO-021",
+      "questionNumber": 120,
+      "oracleSha256": "82cbef8dd12c417ddc7a6a7d5b8ac1a29c805143f7ae75eb6e52bffe7cf254e3",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/consecutive_sbox_joint_probability.py"
+    },
+    {
+      "id": "121_CBSC-V4-PD-WARP-MP20-003",
+      "questionNumber": 121,
+      "oracleSha256": "08b9738248a88a02fe9a99319a86666048c3e3237a54fe5830f0bc2aaa2abaa2",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/balanced_bits.py"
+    },
+    {
+      "id": "122_CBSC-V4-PD-WARP-MP21-A-001",
+      "questionNumber": 122,
+      "oracleSha256": "0e424dd491510b104c1d39b2ac55b0ac6713a641969a56fa4c1fad9c2af35056",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/balanced_bits.py"
+    },
+    {
+      "id": "123_CBSC-V4-PD-WARP-MP21-B-002",
+      "questionNumber": 123,
+      "oracleSha256": "dee0bb9734a55ac82e79f43b520e00410e9f29247d166e8341078758fddaeef2",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/balanced_bits.py"
+    },
+    {
+      "id": "124_CBSC-V4-PDL-AES128-CORR4-014",
+      "questionNumber": 124,
+      "oracleSha256": "dc4e2f086b84308cfc163c74e1091798b7ee6d48776ed86475409800bfad1332",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/aes_generalized_dlct.py"
+    },
+    {
+      "id": "125_CBSC-V4-PI-ALZETTE64-DEG4-018",
+      "questionNumber": 125,
+      "oracleSha256": "2cba395b59bd7b786a2ddc16ba4fb8baad6a9222d7188c489790e194ad403ac8",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/alzette_monomial_degree.py"
+    },
+    {
+      "id": "126_CBSC-V4-PL-MIDORI64-RANKONE-011",
+      "questionNumber": 126,
+      "oracleSha256": "d4f76bc4ed12fbb966e3d5d194fc15d551a3375c42d7bfdc4d9787a17fecc0e0",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/midori_rankone_correlation.py"
+    },
+    {
+      "id": "127_CBSC-V4-PL-PRESENT64-ZC6-007",
+      "questionNumber": 127,
+      "oracleSha256": "bdae1fd44d6ab87abdb4da33f0d38722e8aa3cbf90cca6041422cf591b7b5576",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/fixed_linear_trail.py"
+    },
+    {
+      "id": "128_CBSC-V4-PI-BAKSHEESH-ID7-024",
+      "questionNumber": 128,
+      "oracleSha256": "65f52b6043fb6f322e70c3352013fa843fc3445ca61d4c0bbf2932166bc1882a",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/baksheesh_integral_key_equivalence.py"
+    },
+    {
+      "id": "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "questionNumber": 129,
+      "oracleSha256": "c8b3443a99600aba4d92159ef2dcffad801d3a426c09fd293675de4f907af122",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/baksheesh_optimal_trail.py"
+    },
+    {
+      "id": "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "questionNumber": 130,
+      "oracleSha256": "c29bc1a8dc91a48fad7d04e520a3ce8f10dd1e22aef01705a3712ddeff63d6d0",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/baksheesh_linear_key_recovery.py"
+    },
+    {
+      "id": "131_CBSC-V4-PD-GIFT64-STATEID6-027",
+      "questionNumber": 131,
+      "oracleSha256": "c524556bd5c7cc69df2d1e4d4f61602163a5553317c18e69d04ce5b23b9e4eda",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/gift64_state_impossible_differential.py"
+    },
+    {
+      "id": "132_CBSC-V4-PDL-SPECK32-DL11-AUDIT-028",
+      "questionNumber": 132,
+      "oracleSha256": "bc35544b69b43201bc00ef6cc20abb826d5cda39ab5ddb44faae9eb10eb54f10",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/speck32_dl11_audit.py"
+    },
+    {
+      "id": "133_CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029",
+      "questionNumber": 133,
+      "oracleSha256": "f1ea98d960617bf394350ccb9459182f4f50f3ce21967f480b09299a0fb4ecf8",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny128_ddt_model_audit.py"
+    },
+    {
+      "id": "134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030",
+      "questionNumber": 134,
+      "oracleSha256": "d933da1f9b5188591fbe2796a2e77a36635827da49366b2086f5c0f4ba755806",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/warp23_partial_boomerang_audit.py"
+    },
+    {
+      "id": "135_CBSC-V4-PDL-WARP11-DETERMINISTIC-031",
+      "questionNumber": 135,
+      "oracleSha256": "f7479a60135d185aa7f52c66ddcbd0ae7fd5f9fe58e62be11e601832827ad5b8",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/warp11_deterministic_dl.py"
+    },
+    {
+      "id": "136_CBSC-V4-PD-SPEEDY192-QD-B0-032",
+      "questionNumber": 136,
+      "oracleSha256": "67357613ed1b9ec346b2bbc273e19f9b12fb987546b358f70f268c68bdf31fb3",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/speedy_b0_quasidifferential.py"
+    },
+    {
+      "id": "137_CBSC-V4-PI-FORKSKINNY64-AGG14-033",
+      "questionNumber": 137,
+      "oracleSha256": "8cf572f5c1b2a4f0f4b15ff31532e801e89a45a76fcecffa5242f91049484ff1",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/forkskinny14_integral_aggregate.py"
+    },
+    {
+      "id": "138_CBSC-V4-PI-QARMAV2-PS13-COST-034",
+      "questionNumber": 138,
+      "oracleSha256": "fa6e32354480d6062906368c6efe383270a8fd9bf8ef4a60871083545d645cc2",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/qarmav2_partial_sum_cost.py"
+    },
+    {
+      "id": "139_CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035",
+      "questionNumber": 139,
+      "oracleSha256": "06816a376673e9f0fc37c703925abf21e0c9f7c9354933e92c48869d02b6bdc3",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny64_tk2_key_dependency.py"
+    },
+    {
+      "id": "140_CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036",
+      "questionNumber": 140,
+      "oracleSha256": "649134f908e82c56ab51d7bbf7d7aef1b6f40e431f52aca9c3c3d4063b6912ec",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/speck32_mif_dynamic_count.py"
+    },
+    {
+      "id": "141_CBSC-V4-PI-PRESENT-LTRAIL-AUDIT-037",
+      "questionNumber": 141,
+      "oracleSha256": "76acea61d6c00e1a7ad3735892aafba8315211cf2030e97e7d6e6a2b11254f51",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/present_ltrail_audit.py"
+    },
+    {
+      "id": "142_CBSC-V4-PDL-CA10-SBOX-AUDIT-038",
+      "questionNumber": 142,
+      "oracleSha256": "78eeb2389d9d2cd5da8a5438885d583f65cf65c6db11db550cd247c6c8147833",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/ca10_sbox_audit.py"
+    },
+    {
+      "id": "143_CBSC-V4-PI-MIDPSQUARE-DEGTAIL-039",
+      "questionNumber": 143,
+      "oracleSha256": "f36ebbda4ee945895b525f050626f853b7b7828d7f514fce385393514b53ea23",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/mid_psquare_degree_tail.py"
+    },
+    {
+      "id": "144_CBSC-V4-PDL-SERPENT-DATF-BIAS-040",
+      "questionNumber": 144,
+      "oracleSha256": "c413f78f5bf395d7e7542e3c3f35ed11242a269366f4d8a8a8059fa0c0667d4a",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/serpent_datf_bias.py"
+    },
+    {
+      "id": "145_CBSC-V4-PD-LBLOCK-RKID16-041",
+      "questionNumber": 145,
+      "oracleSha256": "d8ae0f4e18194a7b604f2fd32faa26313516a8f436ab441f53c6f3db7b978c8e",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/lblock_rkid16.py"
+    },
+    {
+      "id": "146_CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042",
+      "questionNumber": 146,
+      "oracleSha256": "a1c60f35228ec922c7bdb82f637a686e0df1b9c3348aafdf5cb3bea3f0885ebb",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/speedy_segment_audit.py"
+    },
+    {
+      "id": "147_CBSC-V4-PI-SKINNY64-TK1-INT10-043",
+      "questionNumber": 147,
+      "oracleSha256": "23bfcf2808025c47778cd7800d2c5c0d99955fc21e0bda1bbf8a24afbbeb8f8c",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny_tk1_integral10.py"
+    },
+    {
+      "id": "148_CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+      "questionNumber": 148,
+      "oracleSha256": "15ae6c9f3399bb71a373a2db60382cad270130fafd6db28786972be9b4290973",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/craft_r7_matrix.py"
+    },
+    {
+      "id": "149_CBSC-V4-PB-LEA128-RKID4-045",
+      "questionNumber": 149,
+      "oracleSha256": "8251e8f1e786f43dcb69c600a90299939239b61d5dfbdd2f7f5dd9e78d29edb9",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/lea128_rkid4.py"
+    },
+    {
+      "id": "150_CBSC-V4-PD-TWINE15-NLPROJ-046",
+      "questionNumber": 150,
+      "oracleSha256": "823368b50a2b9e45afac6c11dfbd75f7d741120fd0c40be814215e24edd6fa99",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/twine15_nonlinear_projection.py"
+    },
+    {
+      "id": "151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+      "questionNumber": 151,
+      "oracleSha256": "52a833950b4772a94796d26d1a5da5c7c647f2d979cc71926c8e130ec5726411",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/pride_cor10_compatibility.py"
+    },
+    {
+      "id": "152_CBSC-V4-PI-GIFT64-DP9-AUDIT-048",
+      "questionNumber": 152,
+      "oracleSha256": "f82a08769c0b1e012a09e2d0ccee7e445d689f534ec6c66e26d8acf4e527db2c",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/gift64_integral9.py"
+    },
+    {
+      "id": "153_CBSC-V4-PD-TWINE15-FIXEDIO-049",
+      "questionNumber": 153,
+      "oracleSha256": "8c1d9e3393e18ae100e1cf75f5bf022f6b8e9642b569dc0f473e659ff12fd57f",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/twine15_fixed_io.py"
+    },
+    {
+      "id": "154_CBSC-V4-PI-SIMON32-UTDIV8-050",
+      "questionNumber": 154,
+      "oracleSha256": "d7aa06186d4d63b0145ded99e9e787c9e16e17f99a9b21b01fdc8294eb4c977b",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/simon32_utdiv8.py"
+    },
+    {
+      "id": "155_CBSC-V4-PI-PRESENT9-ATMRANK-051",
+      "questionNumber": 155,
+      "oracleSha256": "09e7c2be24f9a9313b506dfdebd443c46e421629b723bf8081ea7883eb72c9bc",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/present9_atm_rank.py"
+    },
+    {
+      "id": "156_CBSC-V4-PL-CRAFT16-WEAKKEY-052",
+      "questionNumber": 156,
+      "oracleSha256": "d8eb16ad3aadd31a7c11fa3ff024b47d51f5146081246fa5da3a4be67695ec35",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/craft16_weakkey_linear.py"
+    },
+    {
+      "id": "157_CBSC-V4-PD-MODADD16-BCTPART-053",
+      "questionNumber": 157,
+      "oracleSha256": "b2b9acd1cb59f20ebe0c81539dfbe031db5fab062c75dec206792b28a74285b3",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/modadd_boomerang_partition.py"
+    },
+    {
+      "id": "158_CBSC-V4-PL-GIFT4-LATCLOSURE-054",
+      "questionNumber": 158,
+      "oracleSha256": "1988ea2018c6b513e373adc7ccd9ed079518a897a3406998421f54fd26f241c3",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/sbox_lat_minimal_closures.py"
+    },
+    {
+      "id": "159_CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055",
+      "questionNumber": 159,
+      "oracleSha256": "6e7cdccd62fac0f7f07bd1069dc0c46e3cbcee07ff5f8abb02ad0d8f44fcef7b",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/skinny128_iulbct_zero.py"
+    },
+    {
+      "id": "160_CBSC-V4-PI-KOALA257-DP56-CALLBACK-056",
+      "questionNumber": 160,
+      "oracleSha256": "9b7ccc09321585edbccd295d095a4dd8bb806cd49b3bca247975073d25d285c1",
+      "routeMode": "task_specific",
+      "implementation": "tasks/160_CBSC-V4-PI-KOALA257-DP56-CALLBACK-056/oracle/validator.py"
+    },
+    {
+      "id": "161_CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057",
+      "questionNumber": 161,
+      "oracleSha256": "381f0f4ea526e742aca23c7bda8dc5048d0c35e3e6ddb824774ad92e14fb11b9",
+      "routeMode": "task_specific",
+      "implementation": "tasks/161_CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057/oracle/validator.py"
+    },
+    {
+      "id": "162_CBSC-V4-PD-KNOT256-QDTCANCEL10-058",
+      "questionNumber": 162,
+      "oracleSha256": "ce4dcee6acaf4428a6d5473194e653d9bbec228fe154d1cb436b8eb0f9e37754",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/knot_qdt_cancellation.py"
+    },
+    {
+      "id": "163_CBSC-V4-PD-PRESENT64-IBD6-059",
+      "questionNumber": 163,
+      "oracleSha256": "e9ca7c9eee16a3dac752a6f4732a3d3627b8a094f15a0a7141fdf8d45fdbce7c",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/present_four_state_ibd.py"
+    },
+    {
+      "id": "164_CBSC-V4-PD-LBLOCK4-KEYDIST-060",
+      "questionNumber": 164,
+      "oracleSha256": "ef4fc8776eb255ef35cbcefbcef25dd3206ff00191a0dcd8ba010443430d294a",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/lblock4_key_distribution.py"
+    },
+    {
+      "id": "165_CBSC-V4-PI-LBLOCK17-DP-AUDIT-061",
+      "questionNumber": 165,
+      "oracleSha256": "d932ddc6152d8137df94afeeb9d66ac6aab140d95aac6a9e1c32cb4199d2a5cf",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/lblock17_integral.py"
+    },
+    {
+      "id": "166_CBSC-V4-PD-PRESENT80-KR18-062",
+      "questionNumber": 166,
+      "oracleSha256": "ce28fecd9964772de584eebaa96d793fe90a025c0030e983e42f98214c8ecfaf",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/present80_key_recovery.py"
+    },
+    {
+      "id": "167_CBSC-V4-PI-INV-IR3-AUDIT-063",
+      "questionNumber": 167,
+      "oracleSha256": "a66c7027a86cd0a1c23b8e6d9a6ede0ee417468246946579f3918cac4ead6e73",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/inverse_integral_resistance.py"
+    },
+    {
+      "id": "168_CBSC-V4-PL-SIMON32-ZC11-AUDIT-064",
+      "questionNumber": 168,
+      "oracleSha256": "2019536d3b0a710a24c5fe5599bceadceea3b0e409961de30d5b0995e561778b",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/simon32_zc11.py"
+    },
+    {
+      "id": "169_CBSC-V4-PD-SPECK64-RKRX3-ID-065",
+      "questionNumber": 169,
+      "oracleSha256": "c5255ca0d96c4004f8995e9898af3d0be41356c0c7f1eb503d7c4ed7e8ab83f6",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/speck64_rkrx3.py"
+    },
+    {
+      "id": "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066",
+      "questionNumber": 170,
+      "oracleSha256": "9e2913fcf483bd50f30da148f37fcfae248cbbab4595e51241929dfa6b0aff08",
+      "routeMode": "task_specific",
+      "implementation": "scripts/validators/scream_affine_weakkey.py"
+    }
+  ]
+}

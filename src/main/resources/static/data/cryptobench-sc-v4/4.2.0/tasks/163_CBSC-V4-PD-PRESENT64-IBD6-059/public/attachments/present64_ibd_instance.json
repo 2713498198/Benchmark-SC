@@ -1,0 +1,29 @@
+{
+  "schema_version": "cbsc_present64_ibd_instance_v1",
+  "primitive": "PRESENT-64 round core",
+  "state_bits": 64,
+  "rounds": 6,
+  "bit_numbering": "LSB0; integer bit i is state bit i",
+  "sbox": [12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2],
+  "sbox_layer": "Apply the listed 4-bit S-box independently to nibbles state[4*j+3:4*j], j=0..15.",
+  "p_layer": {
+    "direction": "source_to_destination",
+    "formula": "P(i)=(16*i) mod 63 for 0<=i<63, and P(63)=63",
+    "meaning": "input bit i becomes output bit P(i)"
+  },
+  "round_semantics": "For i=0..5, XOR the same arbitrary 64-bit K_i into all four lanes, then apply the S-box layer. Apply pLayer after rounds i=0..4 only; the last pLayer is omitted. A common final key XOR, if included, does not change any boundary XOR and may be omitted.",
+  "round_key_quantification": "K_0,...,K_5 are existential and independent across rounds, but K_i is shared by all four lanes in round i.",
+  "quartet_difference_order": {
+    "input": ["x0 xor x1", "x2 xor x3", "x1 xor x2", "x0 xor x3"],
+    "output": ["y0 xor y1", "y2 xor y3", "y1 xor y2", "y0 xor y3"]
+  },
+  "fixed_boundary": {
+    "x0_xor_x1": "0x0000000000000001",
+    "x2_xor_x3": "0x0000000000000001",
+    "y1_xor_y2": "0x0000000000000001",
+    "y0_xor_y3": "0x0000000000000005"
+  },
+  "decision_problem": "Decide the existential four-state/shared-round-key formula exactly. SAT requires a concrete witness. UNSAT requires a complete solver result plus a checkable contradiction or equivalent finite certificate. A timeout or failure to find a witness is not UNSAT.",
+  "local_table_definition": "For four nibble inputs a0..a3 and bj=S(aj), define Din=(a0 xor a1,a2 xor a3,a1 xor a2,a0 xor a3) and Dout=(b0 xor b1,b2 xor b3,b1 xor b2,b0 xor b3). Enumerating all 16^4 input quartets gives an exact generalized connectivity relation and may be used as a local certificate."
+}
+

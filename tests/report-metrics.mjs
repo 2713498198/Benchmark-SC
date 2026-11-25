@@ -43,9 +43,11 @@ assert.deepEqual(sorted.map(e=>e.record.id),['large','small','unknown'],'Sort by
 assert.deepEqual(chartModel(rows,'time').points.map(p=>p.x),[1,2]);
 assert.equal(chartModel(rows,'time').excluded,1);
 const csv=leaderboardCsvRows(sorted);
-assert.deepEqual(csv[0].slice(-6),['total_time_s','average_time_s','model_verified','usage_verified','cost_verified','ranking_eligible']);
-assert.equal(csv[1][9],100,'Keep the original time_s column');
-assert.deepEqual(csv[1].slice(-6),[100,1,true,true,true,true]);
+assert.deepEqual(csv[0].slice(-10),['total_time_s','average_time_s','relations_vcr','search_vcr','exact_vcr','bounds_vcr','model_verified','usage_verified','cost_verified','ranking_eligible']);
+const csvColumn=name=>csv[0].indexOf(name);
+assert.equal(csv[1][csvColumn('time_s')],100,'Keep the original time_s column');
+assert.equal(csv[1][csvColumn('average_time_s')],1);
+assert.deepEqual(['model_verified','usage_verified','cost_verified','ranking_eligible'].map(name=>csv[1][csvColumn(name)]),[true,true,true,true]);
 assert.deepEqual(reportCsvRows(legacy)[0].slice(-2),['category','participant_key']);
 assert.deepEqual(reportCsvRows(legacy)[1].slice(-2),[' A ','main']);
 console.log('PASS report metrics: cumulative/average timing, strict legacy fallback, null/zero, PK isolation, named categories, sorting/chart/CSV, raw immutability');

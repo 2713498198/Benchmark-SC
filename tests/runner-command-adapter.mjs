@@ -11,6 +11,13 @@ import {loadAgentProfiles,runCommand,validateCommandProfile} from '../runner/src
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fixture = join(root, 'tests', 'fixtures', 'command-agent.mjs');
+const version = await promisify(execFile)(process.execPath, ['runner/src/cli.mjs', 'version'], {
+  cwd: root,
+  timeout: 10000
+});
+assert.match(version.stdout, /CryptoBench Runner 1\.1\.0/);
+assert.match(version.stdout, new RegExp(`Node ${process.version.replaceAll('.', '\\.')}`));
+assert.match(version.stdout, /Platform /);
 const request = {
   runId: 'run-fixture',
   taskId: 'mini-spn-001',

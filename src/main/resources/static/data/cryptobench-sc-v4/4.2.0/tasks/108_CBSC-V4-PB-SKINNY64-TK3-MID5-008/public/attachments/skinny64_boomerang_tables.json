@@ -1,0 +1,16 @@
+{
+  "schema_version": "cbsc_skinny64_boomerang_tables_v1",
+  "field": "4-bit values represented by integers 0..15; addition is XOR",
+  "sbox": [12, 6, 9, 0, 1, 10, 2, 11, 3, 8, 5, 13, 4, 14, 7, 15],
+  "inverse_sbox_rule": "Sinv[S[x]] = x",
+  "definitions": {
+    "DDT": "DDT(gamma, theta) = #{x : S(x) XOR S(x XOR gamma) = theta}",
+    "boomerang_return": "R(x,gamma,delta) holds iff Sinv(S(x) XOR delta) XOR Sinv(S(x XOR gamma) XOR delta) = gamma",
+    "BCT": "BCT(gamma, delta) = #{x : R(x,gamma,delta)}",
+    "UBCT": "UBCT(gamma, theta, delta) = #{x : R(x,gamma,delta) and S(x) XOR S(x XOR gamma) = theta}",
+    "LBCT": "LBCT(gamma, lambda, delta) = #{x : R(x,gamma,delta) and x XOR Sinv(S(x) XOR delta) = lambda}",
+    "FBCT": "FBCT(gamma, theta, lambda, delta) = #{x : R(x,gamma,delta), S(x) XOR S(x XOR gamma) = theta, and x XOR Sinv(S(x) XOR delta) = lambda}"
+  },
+  "normalization": "Every DDT/BCT/UBCT/LBCT/FBCT factor in factor_graph.json is its integer count divided by 16.",
+  "naming_note": "FBCT denotes the fully specified four-argument extended boomerang connectivity table; it is not the unrelated Feistel FBCT."
+}

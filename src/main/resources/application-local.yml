@@ -10,9 +10,9 @@ spring:
 benchmark:
   v4:
     # 本地完整题库已放在 gitignored 的 private 目录；生产部署应显式覆盖。
-    suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:./private/cryptobench-sc-v4/170-20261112}
+    suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:./private/v4-suite}
     python: ${CRYPTOBENCH_V4_PYTHON:python}
-    budget-profiles: ${CRYPTOBENCH_V4_BUDGET_PROFILES:./private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json}
+    budget-profiles: ${CRYPTOBENCH_V4_BUDGET_PROFILES:./private/v4-suite/configs/budget_profiles.json}
   password-reset:
     # Local development uses SMTP directly; leave the outbox unset so credentials
     # cannot silently degrade into writing verification codes to a local file.

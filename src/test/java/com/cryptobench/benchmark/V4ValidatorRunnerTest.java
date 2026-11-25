@@ -55,6 +55,48 @@ class V4ValidatorRunnerTest {
     }
 
     @Test
+    void usesReleaseJudgeAndMapsCompletionMetadata() throws Exception {
+        String python = resolvePython();
+        if (python == null) return;
+
+        Path suite = Files.createTempDirectory("cryptobench-v4-judge-");
+        try {
+            Files.createDirectories(suite.resolve("scripts"));
+            Files.writeString(suite.resolve("scripts").resolve("grade_submission.py"), """
+                    import json, sys
+                    from pathlib import Path
+                    args = sys.argv[1:]
+                    out = Path(args[args.index('--out') + 1])
+                    report = {
+                        'task_id': '023_TEST',
+                        'status': 'passed',
+                        'final_score': 1.0,
+                        'completion_status': 'answer_verified',
+                        'completion_metric_eligible': False,
+                        'release_check_status': 'passed',
+                        'release_check_scope': 'fixed_instance_record',
+                    }
+                    out.write_text(json.dumps(report), encoding='utf-8')
+                    """);
+
+            V4ValidatorRunner runner = new V4ValidatorRunner(
+                    new V4ScoringProperties(suite.toString(), python, 60, ""), mapper);
+            ObjectNode response = mapper.createObjectNode().put("status", "completed");
+            response.putObject("artifact").put("answer", "certificate");
+            ObjectNode result = runner.evaluate("023_TEST", response);
+
+            assertThat(result.path("passed").asBoolean()).isTrue();
+            assertThat(result.path("score").asDouble()).isEqualTo(1.0);
+            assertThat(result.path("completionStatus").asText()).isEqualTo("answer_verified");
+            assertThat(result.path("completionMetricEligible").asBoolean()).isFalse();
+            assertThat(result.path("releaseCheckStatus").asText()).isEqualTo("passed");
+            assertThat(result.path("releaseCheckScope").asText()).isEqualTo("fixed_instance_record");
+        } finally {
+            deleteRecursively(suite);
+        }
+    }
+
+    @Test
     void writesArtifactFilesAndEvidenceIntoValidatorWorkspace() throws Exception {
         String python = resolvePython();
         if (python == null) return;

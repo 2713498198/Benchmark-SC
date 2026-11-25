@@ -52,7 +52,7 @@ try{
  const scenarios=[
   [guest,'home','/'],[guest,'datasets','/datasets'],[guest,'dataset-detail','/datasets/mini-spn'],
   [guest,'suite','/datasets/cryptobench-sc-v4',async page=>{await page.locator('nav [data-suite-tab="overview"]').click();}],
-  [guest,'task','/datasets/cryptobench-sc-v4?version=4.0.0&task=127_CBSC-V4-PL-PRESENT64-ZC6-007'],
+  [guest,'task','/datasets/cryptobench-sc-v4?version=4.2.0&task=127_CBSC-V4-PL-PRESENT64-ZC6-007'],
   [guest,'tools','/tools'],[guest,'leaderboard','/leaderboard'],
   [guest,'login','/login'],[guest,'register','/register'],[guest,'forgot','/forgot-password'],
   [guest,'docs','/docs?tab=agent'],[guest,'download','/download'],

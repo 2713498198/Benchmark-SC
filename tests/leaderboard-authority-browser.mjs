@@ -11,7 +11,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
 const page=await context.newPage(),checks=[],errors=[],layouts=[];
 let publicReports=[];
-const demoCommon={datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',total:100,published:true,demo:true};
+const demoCommon={datasetId:'cryptobench-sc-v4',version:'4.2.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',total:100,published:true,demo:true};
 const demoReports=[
  {...demoCommon,id:'rank-cipher-pilot',agent:'CipherPilot',model:'Model A',passed:92,score:91.7,cost:2.84,time:38.6,averageTimeSeconds:38.6,totalTimeSeconds:4632},
  {...demoCommon,id:'rank-sbox-sage',agent:'S-box Sage',model:'Model B',passed:88,score:88.3,cost:3.16,time:42.1,averageTimeSeconds:42.1,totalTimeSeconds:5052},
@@ -26,9 +26,16 @@ const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
 const rows=()=>page.locator('[data-rank-record]');
 const view=name=>page.locator(`[data-rank-view="${name}"]`).click();
 const filter=(key,value)=>page.locator(`[data-rank="${key}"]`).selectOption(value);
+function demoRoute(route='/leaderboard'){
+ const [path,query='']=route.split('?'),params=new URLSearchParams(query);
+ if(!params.has('type'))params.set('type','demo');
+ if(params.get('type')==='demo'&&!params.has('budget'))params.set('budget','standard');
+ return path+'?'+params.toString();
+}
 async function go(route='/leaderboard'){
- await page.goto(base+'/#'+route);await page.reload();await page.waitForLoadState('networkidle');
- await page.waitForFunction(route=>document.querySelector('#main')?.dataset.route===route,route);
+ const normalized=demoRoute(route);
+ await page.goto(base+'/#'+normalized);await page.reload();await page.waitForLoadState('networkidle');
+ await page.waitForFunction(route=>document.querySelector('#main')?.dataset.route===route,normalized);
 }
 async function shot(name,fullPage=true){if(fullPage)await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:resolve(out,name+'.png'),fullPage,animations:'disabled'});}
 async function download(button){const waiting=page.waitForEvent('download');await button.click();return readFile(await (await waiting).path(),'utf8');}
@@ -54,7 +61,9 @@ try{
  await page.setViewportSize({width:1440,height:1000});
  const initial=await ranks();await filter('sort','cost');
  check('Cost sorting keeps pass-rate rank',JSON.stringify(Object.entries(await ranks()).sort())===JSON.stringify(Object.entries(initial).sort()));
- check('Cost sort indicator matches actual column',await page.locator('th[aria-sort="ascending"]').innerText()==='费用 USD ↑');
+ const costHeader=page.locator('.leaderboard-table th').filter({hasText:'费用 USD'});
+ check('Cost sort indicator matches actual column',
+  await costHeader.getAttribute('aria-sort')==='ascending'&&/费用 USD\s*↑/.test(await costHeader.innerText()));
  check('Missing cost stays last',await rows().last().getAttribute('data-rank-record')==='rank-linear-lab');
  check('Sort restores focus',await page.locator('[data-rank="sort"]').evaluate(el=>el===document.activeElement));
  await page.locator('#rank-search').fill('deepseek');
@@ -88,13 +97,19 @@ try{
  await page.keyboard.press('Enter');check('Chart locates and focuses correct ranking row',await page.locator('[data-rank-record="rank-diff-hunter"]').evaluate(el=>el===document.activeElement)&&await page.locator('.rank-evidence').isVisible());await shot('located-1440');
  await filter('type','public');check('Public records empty state',await rows().count()===0&&await page.locator('[data-show-demo]').isVisible());await shot('public-empty-1440');
  await view('analysis');await page.locator('[data-show-demo]').click();check('Analysis empty action returns examples',await page.locator('[data-chart-point]').count()===4);
- await view('ranking');await filter('budget','extended');await page.locator('[data-reset-rank]').click();check('Ranking reset restores conditions',await rows().count()===5);
+ await view('ranking');await filter('budget','extended');await page.locator('[data-reset-rank]').click();
+ check('Ranking reset restores default paper conditions',
+  await page.locator('[data-rank="type"]').inputValue()==='official'&&
+  await page.locator('[data-rank="budget"]').inputValue()==='official'&&
+  await rows().count()===24&&
+  await page.locator('[data-official-bar-chart] .official-bar-group').count()===24&&
+  await page.locator('[data-official-category-chart]').count()===4);
 
- const common={datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',source:'docker',total:100,passed:90,score:90,model:'Research Model',published:true};
+ const common={datasetId:'cryptobench-sc-v4',version:'4.2.0',budget:'standard',scope:'full',source:'docker',total:100,passed:90,score:90,model:'Research Model',published:true};
  const trust={rankingEligible:true,answerVerified:true,modelIdentityVerified:true,usageVerified:true,costVerified:true};
  const raw={...common,id:'public-a',agent:'配置 A',score:90.04,cost:2,time:30,demo:false,trust,agentVersion:'a2.1',evaluatorVersion:'v3.4',config:{seed:0,temperature:0.2},createdAt:'2026-10-18T01:00:00Z',results:[{taskId:'t1',passed:true}]};
  publicReports=[raw,{...common,id:'public-b',agent:'配置 B',score:90.01,cost:1,time:20,trust},{...common,id:'public-c',agent:'超长研究配置名称'.repeat(10),score:70,cost:null,time:null}, {...common,id:'public-demo',agent:'公开模拟示例',demo:true,score:100,cost:0,time:1}];
- await go('/leaderboard?dataset=cryptobench-sc-v4&version=4.1.0');
+ await go('/leaderboard?dataset=cryptobench-sc-v4&version=4.2.0');
  check('Published demo report joins example cohort',await rows().count()===1&&/公开模拟示例/.test(await rows().innerText()));
  await filter('type','public');
  check('Verified cohort excludes demo and uninspected cost records',await rows().count()===2&&JSON.stringify(await rows().locator('.rank-number').allTextContents())===JSON.stringify(['01','01']));
@@ -128,7 +143,7 @@ try{
  await page.keyboard.press('Home');check('Home key returns to ranking',await rows().count()===5);
  const touch=await browser.newContext({viewport:{width:360,height:800},isMobile:true,hasTouch:true});
  const mobile=await touch.newPage();await mobile.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports:demoReports}}));
- await mobile.goto(base+'/#/leaderboard');await mobile.waitForLoadState('networkidle');
+ await mobile.goto(base+'/#'+demoRoute('/leaderboard'));await mobile.waitForLoadState('networkidle');
  await mobile.locator('.rank-compare-check').first().tap();check('Mobile comparison label is tappable',await mobile.locator('[data-compare]').first().isChecked());
  await mobile.locator('[data-rank-view="analysis"]').tap();
  for(let i=0;i<4;i++){
