@@ -98,7 +98,8 @@ async function run(args){
 async function executeJob(client,config,job){
  const request=job.request||{};const profile=selectProfile(config,request);const started=Date.now();let sandbox=null;
  const taskLabel=request.taskId||job.jobId;
- console.log(`任务开始：${taskLabel} · ${profile.name||profile.model||'Local Agent'}`);
+ const budget=Number(request.budget?.timeoutSeconds);
+ console.log(`任务开始：${taskLabel} · ${profile.name||profile.model||'Local Agent'}${Number.isFinite(budget)&&budget>0?` · 预算 ${budget} 秒`:''}`);
  try{
   let endpoint=profile.endpoint;
   const commandAdapter=profile.adapter==='command'||profile.mode==='command';

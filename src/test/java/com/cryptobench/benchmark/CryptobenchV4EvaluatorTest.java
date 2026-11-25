@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CryptobenchV4EvaluatorTest {
     private final ObjectMapper mapper = new ObjectMapper();
     private final V4ValidatorRunner validatorRunner =
-            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0), mapper);
+            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0, ""), mapper);
     private final CryptobenchV4Evaluator evaluator = new CryptobenchV4Evaluator(mapper, validatorRunner);
 
     private ObjectNode answer(Object value) {

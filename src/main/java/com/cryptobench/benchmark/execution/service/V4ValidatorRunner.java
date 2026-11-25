@@ -40,6 +40,10 @@ public class V4ValidatorRunner {
     }
 
     public ObjectNode evaluate(String taskId, JsonNode artifact) {
+        return evaluate(taskId, artifact, properties.timeoutSecondsOrDefault());
+    }
+
+    public ObjectNode evaluate(String taskId, JsonNode artifact, long timeoutSeconds) {
         ObjectNode result = mapper.createObjectNode();
         if (!properties.enabled()) {
             result.put("status", "failed");
@@ -66,7 +70,7 @@ public class V4ValidatorRunner {
                     "--run-dir", runDir.toString(),
                     "--out", out.toString()));
             Process process = new ProcessBuilder(command).redirectErrorStream(false).start();
-            boolean finished = process.waitFor(properties.timeoutSecondsOrDefault(), TimeUnit.SECONDS);
+            boolean finished = process.waitFor(Math.max(1, timeoutSeconds), TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
                 result.put("status", "failed");
