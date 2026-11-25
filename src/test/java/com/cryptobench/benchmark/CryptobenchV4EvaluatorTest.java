@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CryptobenchV4EvaluatorTest {
     private final ObjectMapper mapper = new ObjectMapper();
     private final V4ValidatorRunner validatorRunner =
-            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0), mapper);
+            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0, ""), mapper);
     private final CryptobenchV4Evaluator evaluator = new CryptobenchV4Evaluator(mapper, validatorRunner);
 
     private ObjectNode answer(Object value) {
@@ -173,11 +173,16 @@ class CryptobenchV4EvaluatorTest {
         private JsonNode response;
 
         private CapturingValidatorRunner(ObjectMapper mapper) {
-            super(new V4ScoringProperties("configured", "python3", 60), mapper);
+            super(new V4ScoringProperties("configured", "python3", 60, ""), mapper);
         }
 
         @Override
         public ObjectNode evaluate(String taskId, JsonNode response) {
+            return evaluate(taskId, response, 60);
+        }
+
+        @Override
+        public ObjectNode evaluate(String taskId, JsonNode response, long timeoutSeconds) {
             this.response = response.deepCopy();
             return mapper.createObjectNode().put("status", "passed").put("passed", true).put("score", 1);
         }

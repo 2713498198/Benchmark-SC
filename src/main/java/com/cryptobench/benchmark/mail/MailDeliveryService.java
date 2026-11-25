@@ -42,9 +42,7 @@ public class MailDeliveryService {
                 "retry_wait".equals(message.state()) || "queued".equals(message.state()) ? Instant.ofEpochMilli(message.nextAttemptAt()).toString() : null,
                 message.errorCode())).orElse(new DeliveryView(null, null, "legacy_unknown", 0, null, null));
     }
-    public String baseUrl() { return settings.baseUrl(); }
     public void guard() { messages.guard(); }
-    public void cancelInvitation(String id) { messages.cancelReference("admin_invite", id, System.currentTimeMillis()); }
     public void cancelResets(String userId) { messages.cancelOwner(userId, System.currentTimeMillis()); }
     public record Status(String mode, boolean ready, String errorCode, String explanation) {}
     public record DeliveryView(String messageId, String transport, String state, int attempts, String nextAttemptAt, String errorCode) {}

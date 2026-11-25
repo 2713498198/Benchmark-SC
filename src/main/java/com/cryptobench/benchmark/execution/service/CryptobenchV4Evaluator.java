@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,10 +25,18 @@ import org.springframework.stereotype.Component;
 public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
     private final ObjectMapper mapper;
     private final V4ValidatorRunner validatorRunner;
+    private final TaskBudgetService taskBudgets;
 
     public CryptobenchV4Evaluator(ObjectMapper mapper, V4ValidatorRunner validatorRunner) {
+        this(mapper, validatorRunner, null);
+    }
+
+    @Autowired
+    public CryptobenchV4Evaluator(ObjectMapper mapper, V4ValidatorRunner validatorRunner,
+                                  TaskBudgetService taskBudgets) {
         this.mapper = mapper;
         this.validatorRunner = validatorRunner;
+        this.taskBudgets = taskBudgets;
     }
 
     @Override
@@ -62,7 +71,9 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
         JsonNode rule = task.verification();
         String type = rule.path("type").asText("");
         if ("workspace-validator".equals(type)) {
-            return validatorRunner.evaluate(task.id(), response);
+            long timeout = taskBudgets == null ? 120
+                    : taskBudgets.validationTimeoutSeconds(datasetId(), version(), task.id());
+            return validatorRunner.evaluate(task.id(), response, timeout);
         }
         boolean passed = switch (type) {
             case "numeric" -> numericMatch(rule, actual);

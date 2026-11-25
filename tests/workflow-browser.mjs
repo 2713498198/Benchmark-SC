@@ -14,7 +14,7 @@ const installed='C:/Program Files/Google/Chrome/Application/chrome.exe';
 const browser=await chromium.launch({headless:true,...((process.env.CHROME_PATH||existsSync(installed))?{executablePath:process.env.CHROME_PATH||installed}:{})});
 const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],requests=[];
 page.on('pageerror',e=>errors.push(e.message));
-let user=null,bootstrapFailure=false,runNetworkFailure=false,invites=[];
+let user=null,bootstrapFailure=false,runNetworkFailure=false;
 let gatewayFixture={enabled:false,providers:[]},dockerFixture={dockerEnabled:false,dockerAvailable:false,allowedImages:[],limits:{}};
 const makeReport=(id,published=true)=>({id,ownerId:'owner',published,synced:false,kind:'evaluation',scope:'full',source:'local',datasetId:'mini-spn',version:'1.0.0',budget:'standard',agent:'Fixture Agent',model:'Fixture Model',score:100,passed:8,total:8,time:1,cost:0.1,date:'2026-11-01',seed:987,evaluatorVersion:'fixture-evaluator-2.1',pricingVersion:'fixture-prices',categories:[{name:'全部任务',passed:8,total:8}],results:[{taskId:'fixture-task',status:'passed',passed:true,elapsedMs:12,costUsd:0.1}]});
 const reports={report_public:makeReport('report_public'),private:makeReport('private',false),slow:makeReport('slow'),fast:makeReport('fast')};
@@ -24,7 +24,7 @@ await page.route('**/api/**',async route=>{
  const req=route.request(),url=new URL(req.url()),p=url.pathname,method=req.method(),body=req.postDataJSON?.();requests.push({p,method,body});
  const json=(data,status=200)=>route.fulfill({status,json:data});
  if(p==='/api/auth/csrf')return json({headerName:'X-CSRF-TOKEN',token:'fixture'});
- if(p==='/api/bootstrap')return bootstrapFailure?json({error:'bootstrap offline'},503):json({user,reports:user?.id==='owner'?[reports.private]:[],connections:[],customDatasets:[],publicReports:[],demoEnabled:true});
+ if(p==='/api/bootstrap')return bootstrapFailure?json({error:'bootstrap offline'},503):json({user,reports:user?.id==='owner'?[reports.private]:[],connections:[],customDatasets:[],publicReports:[]});
  if(p==='/api/auth/login')return json({});
  if(p==='/api/auth/logout'){user=null;return json({});}
  if(p==='/api/reports/public')return json([]);
@@ -54,14 +54,6 @@ await page.route('**/api/**',async route=>{
   if(p.endsWith('/cancel')){currentRun={...currentRun,status:'cancelled'};return json(currentRun);}
   return json(currentRun);
  }
- if(p==='/api/admin/mail/status')return json({mode:'http',ready:true});
- if(p==='/api/admin/invitations'){
-  if(method==='POST'){const row={id:'invite_fixture',email:body.email,name:body.name,status:'pending',createdAt:'2026-11-01',expiresAt:'2026-11-03',deliveryStatus:{state:'queued',transport:'http',attempts:0}};invites=[row];return json(row,202);}
-  return json({items:invites,total:invites.length,page:0,size:20});
- }
- if(p.endsWith('/resend')){invites[0].deliveryStatus.state='queued';return json(invites[0],202);}
- if(p.endsWith('/revoke')){invites[0].status='revoked';invites[0].deliveryStatus.state='cancelled';return json(invites[0]);}
- if(p==='/api/admin/users'||p==='/api/admin/audit')return json({items:[],total:0,page:0,size:20});
  if(p==='/api/admin/pricing')return json([]);
  if(p==='/api/pricing/active')return json({version:'fixture-default',status:'config',prices:[]});
  return json({error:'unhandled fixture: '+p},404);
@@ -113,9 +105,7 @@ try{
  await page.locator('[aria-label="访问凭证"]').fill('leave-page-secret');await navigate('/workspace');await navigate('/evaluate?new=1');await page.locator('[aria-label="访问凭证"]').waitFor();assert.equal(await page.locator('[aria-label="访问凭证"]').inputValue(),'');
  currentRun={...currentRun,status:'failed',credentialsRequired:['main'],config:{...currentRun.config,gateway:{credentialRequired:true}}};await go('/evaluate?run=run_fixture');await page.locator('[data-retry-run]').waitFor();await page.locator('[data-run-credential="main"]').fill('retry-secret');await page.locator('[data-run-credential="gateway"]').fill('retry-gateway-key');await page.locator('[data-retry-run]').click();await page.waitForURL(/run=run_retried/);
  assert.deepEqual(requests.find(r=>r.p.endsWith('/retry')).body,{credentials:{main:{token:'retry-secret'},gateway:{token:'retry-gateway-key'}}});assert.equal(await page.locator('[data-run-seed]').innerText(),'987');
- await go('/admin');await page.getByRole('button',{name:'管理员邀请',exact:true}).click();await page.locator('#invitation-email').fill('invitee@example.com');await page.locator('#invitation-name').fill('Invitee');await page.getByRole('button',{name:'发送邀请',exact:true}).click();await page.getByRole('button',{name:'重发',exact:true}).waitFor();
- await page.getByRole('button',{name:'重发',exact:true}).click();assert.match(await page.locator('#modal').innerText(),/之前的邀请链接立即失效/);await confirm();await page.getByRole('button',{name:'撤销',exact:true}).click();await confirm();await page.waitForFunction(()=>!document.querySelector('[aria-label="管理员邀请"] table button'));
- assert.match(await page.locator('[aria-label="管理员邀请"]').innerText(),/已撤销/);
+ await go('/admin');assert.equal(await page.getByRole('button',{name:'管理员邀请',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'账号管理',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'操作审计',exact:true}).count(),0);
  await page.getByRole('button',{name:'模型价格',exact:true}).click();await page.locator('#pricing-version').waitFor();
  await page.getByRole('button',{name:'测评集管理',exact:true}).click();assert.ok(await page.locator('textarea').count());
 

@@ -1,7 +1,7 @@
 package com.cryptobench.benchmark;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.UserAccountService;
 import com.cryptobench.benchmark.common.ApiException;
 import com.cryptobench.benchmark.dataset.service.DatasetService;
 import com.cryptobench.benchmark.execution.model.RunTask;
@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -39,7 +39,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Real application lifecycle and durable H2 database, isolated from normal accounts and data. */
 class RunApplicationRestartIntegrationTest {
-    @TempDir Path temporary;
+    Path temporary;
+
+    @BeforeEach
+    void prepare() throws Exception {
+        temporary = Files.createTempDirectory(Path.of("target"), "restart-integration-");
+    }
 
     @Test
     void closingAndReopeningApplicationPreservesCommittedResultsAndResumesOnlyUnfinishedTask() throws Exception {
@@ -55,7 +60,7 @@ class RunApplicationRestartIntegrationTest {
                 ObjectMapper mapper = first.getBean(ObjectMapper.class);
                 BenchmarkUser owner = new BenchmarkUser(ownerId, "restart@example.test", "Restart fixture", "admin",
                         "test-only-hash", null, Instant.now().toString());
-                first.getBean(UserRepository.class).insert(owner);
+                first.getBean(UserAccountService.class).insert(owner);
                 ObjectNode pack = CustomDatasetRulesTest.fixture(mapper, "restart-dataset");
                 pack.putArray("tasks");
                 for (int i = 1; i <= 3; i++) {
@@ -91,7 +96,7 @@ class RunApplicationRestartIntegrationTest {
 
             try (ConfigurableApplicationContext second = application(database)) {
                 ObjectMapper mapper = second.getBean(ObjectMapper.class);
-                BenchmarkUser owner = second.getBean(UserRepository.class).findById(ownerId).orElseThrow();
+                BenchmarkUser owner = second.getBean(UserAccountService.class).findById(ownerId).orElseThrow();
                 RunService restoredService = second.getBean(RunService.class);
                 RunRepository repository = second.getBean(RunRepository.class);
                 assertThat(restoredService).isNotSameAs(firstService);
@@ -154,12 +159,11 @@ class RunApplicationRestartIntegrationTest {
                 "--spring.datasource.url=jdbc:h2:file:" + database.toAbsolutePath().toString().replace('\\', '/')
                         + ";MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE",
                 "--spring.datasource.username=sa", "--spring.datasource.password=",
-                "--benchmark.demo-enabled=false", "--benchmark.legacy-import-enabled=false",
+                "--benchmark.legacy-import-enabled=false",
                 "--benchmark.docker.enabled=false", "--benchmark.gateway.enabled=false",
                 "--benchmark.gateway.providers-json=[]",
                 "--benchmark.mail.worker-enabled=false", "--benchmark.mail.mode=disabled",
-                "--benchmark.mail.key-file=" + temporary.resolve("mail.key").toAbsolutePath(),
-                "--benchmark.admin.bootstrap.email=", "--benchmark.admin.bootstrap.name=", "--benchmark.admin.bootstrap.password=");
+                "--benchmark.mail.key-file=" + temporary.resolve("mail.key").toAbsolutePath());
     }
 
     private static PricingService.ModelPriceInput price(String input, String output) {

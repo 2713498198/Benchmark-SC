@@ -82,10 +82,11 @@ public class MailTransport {
         if (!properties.getSmtpPassword().isBlank()) sender.setPassword(properties.getSmtpPassword());
         Properties options = sender.getJavaMailProperties();
         options.setProperty("mail.smtp.auth", String.valueOf(!properties.getSmtpUsername().isBlank()));
-        boolean starttls = properties.isSmtpStarttls() && !properties.isSmtpSsl();
+        boolean ssl = properties.useImplicitTls();
+        boolean starttls = properties.useStartTls();
         options.setProperty("mail.smtp.starttls.enable", String.valueOf(starttls));
         options.setProperty("mail.smtp.starttls.required", String.valueOf(starttls));
-        options.setProperty("mail.smtp.ssl.enable", String.valueOf(properties.isSmtpSsl()));
+        options.setProperty("mail.smtp.ssl.enable", String.valueOf(ssl));
         options.setProperty("mail.smtp.ssl.checkserveridentity", "true");
         options.setProperty("mail.smtp.connectiontimeout", "10000");
         options.setProperty("mail.smtp.timeout", "10000");
@@ -95,12 +96,9 @@ public class MailTransport {
         };
         MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
         helper.setFrom(properties.getFrom()); helper.setTo(payload.path("email").asText());
-        boolean invite = "admin_invite".equals(payload.path("type").asText());
-        boolean code = "password_reset_code".equals(payload.path("type").asText());
-        helper.setSubject(invite ? "CryptoBench 管理员邀请" : "CryptoBench 找回密码验证码");
-        String content = code ? "你的 CryptoBench 找回密码验证码是：\n" + payload.path("code").asText()
-                + "\n请在找回密码页面输入此验证码。验证码仅能使用一次，请勿提供给他人。"
-                : "你收到了一份 CryptoBench 管理员邀请。\n" + payload.path("inviteUrl").asText();
+        helper.setSubject("CryptoBench 找回密码验证码");
+        String content = "你的 CryptoBench 找回密码验证码是：\n" + payload.path("code").asText()
+                + "\n请在找回密码页面输入此验证码。验证码仅能使用一次，请勿提供给他人。";
         helper.setText(content + "\n有效期至：" + payload.path("expiresAt").asText()
                 + "\n如果你未请求此操作，请忽略这封邮件。", false);
         sender.send(message);

@@ -39,7 +39,11 @@ class V4PrivateSuiteIntegrationTest {
         }
 
         V4ValidatorRunner runner = new V4ValidatorRunner(
-                new V4ScoringProperties(suite, System.getenv().getOrDefault("CRYPTOBENCH_V4_PYTHON", "python3"), 120),
+                new V4ScoringProperties(
+                        suite,
+                        System.getenv().getOrDefault("CRYPTOBENCH_V4_PYTHON", "python3"),
+                        120,
+                        ""),
                 mapper);
         ObjectNode result = runner.evaluate(TASK_ID, response);
 

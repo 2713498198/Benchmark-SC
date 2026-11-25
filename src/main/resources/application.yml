@@ -3,7 +3,7 @@ spring:
   application:
     name: cryptobench
   profiles:
-    # 未显式设置 SPRING_PROFILES_ACTIVE 时使用本地 H2 环境。
+    # 未显式设置 SPRING_PROFILES_ACTIVE 时使用连接本机 MySQL 的 local 环境。
     default: local
   jackson:
     time-zone: UTC
@@ -35,8 +35,6 @@ management:
     health:
       show-details: never
 benchmark:
-  # 公共默认关闭体验账号，由 local profile 单独开放。
-  demo-enabled: false
   docker:
     enabled: ${CRYPTOBENCH_DOCKER_ENABLED:false}
     proxy-image: ${CRYPTOBENCH_DOCKER_PROXY_IMAGE:cryptobench-agent-proxy:local}
@@ -50,6 +48,7 @@ benchmark:
     suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:}
     python: ${CRYPTOBENCH_V4_PYTHON:python3}
     validator-timeout-seconds: ${CRYPTOBENCH_V4_VALIDATOR_TIMEOUT_SECONDS:120}
+    budget-profiles: ${CRYPTOBENCH_V4_BUDGET_PROFILES:private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json}
   gateway:
     enabled: ${CRYPTOBENCH_GATEWAY_ENABLED:false}
     image: ${CRYPTOBENCH_GATEWAY_IMAGE:cryptobench-model-gateway:local}
@@ -62,11 +61,6 @@ benchmark:
   # 旧数据导入必须显式启用；相对源路径以应用工作目录为基准。
   legacy-import-enabled: ${LEGACY_IMPORT_ENABLED:false}
   legacy-db-file: ${CRYPTOBENCH_DB_FILE:data/runtime/db.json}
-  admin:
-    bootstrap:
-      email: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL:}
-      name: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME:}
-      password: ${CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD:}
   auth-rate-limit:
     # Rolling-window abuse limits. Values can be overridden by environment,
     # but recorded attempts are never cleared by a config change.
@@ -84,17 +78,18 @@ benchmark:
     # 配置邮件网关 URL 后由后端投递 JSON；本地也可写入 outbox 文件联调。
     delivery-url: ${PASSWORD_RESET_DELIVERY_URL:}
     outbox: ${PASSWORD_RESET_OUTBOX:}
-    base-url: ${PASSWORD_RESET_BASE_URL:http://127.0.0.1:4173}
   mail:
     # auto preserves existing HTTP gateway/outbox deployments; SMTP is explicit.
     mode: ${CRYPTOBENCH_MAIL_MODE:auto}
+    key: ${CRYPTOBENCH_MAIL_KEY:}
     key-file: ${CRYPTOBENCH_MAIL_KEY_FILE:var/secrets/mail.key}
     worker-enabled: ${CRYPTOBENCH_MAIL_WORKER_ENABLED:true}
-    smtp-host: ${CRYPTOBENCH_SMTP_HOST:}
-    smtp-port: ${CRYPTOBENCH_SMTP_PORT:587}
-    smtp-username: ${CRYPTOBENCH_SMTP_USERNAME:}
-    smtp-password: ${CRYPTOBENCH_SMTP_PASSWORD:}
-    from: ${CRYPTOBENCH_MAIL_FROM:}
+    smtp-host: ${SMTP_SERVER:${CRYPTOBENCH_SMTP_HOST:}}
+    smtp-port: ${SMTP_PORT:${CRYPTOBENCH_SMTP_PORT:587}}
+    smtp-username: ${SMTP_USER:${CRYPTOBENCH_SMTP_USERNAME:}}
+    smtp-password: ${SMTP_PASSWORD:${CRYPTOBENCH_SMTP_PASSWORD:}}
+    from: ${SMTP_FROM:${CRYPTOBENCH_MAIL_FROM:}}
+    security: ${SMTP_SECURITY:${CRYPTOBENCH_SMTP_SECURITY:}}
     smtp-starttls: ${CRYPTOBENCH_SMTP_STARTTLS:true}
     smtp-ssl: ${CRYPTOBENCH_SMTP_SSL:false}
   pricing:

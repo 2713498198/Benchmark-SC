@@ -1,17 +1,32 @@
-# 本地开发使用 H2 文件库，数据在重启后保留，无需单独安装数据库。
+# 本地开发直接连接本机 MySQL；数据库和表需提前创建。
 spring:
   datasource:
-    # 文件路径相对于应用工作目录；MySQL 模式便于共用建表与查询语句。
-    url: ${DB_URL:jdbc:h2:file:./var/data/cryptobench;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE}
-    username: ${DB_USERNAME:sa}
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/cryptobench?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
 benchmark:
-  # 研究者和管理员体验入口仅供本地使用。
-  demo-enabled: true
+  v4:
+    # 本地完整题库已放在 gitignored 的 private 目录；生产部署应显式覆盖。
+    suite-root: ${CRYPTOBENCH_V4_SUITE_ROOT:./private/cryptobench-sc-v4/170-20261112}
+    python: ${CRYPTOBENCH_V4_PYTHON:python}
+    budget-profiles: ${CRYPTOBENCH_V4_BUDGET_PROFILES:./private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json}
   password-reset:
-    # 本地没有邮件服务时，将重置邮件写入项目数据目录，便于联调。
-    # 需要真实邮件投递时可通过 PASSWORD_RESET_OUTBOX 覆盖，或配置 PASSWORD_RESET_DELIVERY_URL。
-    outbox: ${PASSWORD_RESET_OUTBOX:./var/data/password-reset.outbox.jsonl}
+    # Local development uses SMTP directly; leave the outbox unset so credentials
+    # cannot silently degrade into writing verification codes to a local file.
+    outbox: ${PASSWORD_RESET_OUTBOX:}
+  mail:
+    mode: ${CRYPTOBENCH_MAIL_MODE:smtp}
+    worker-enabled: true
+    key-file: ${CRYPTOBENCH_MAIL_KEY_FILE:./var/secrets/mail.key}
+    smtp-host: ${SMTP_SERVER:}
+    smtp-port: ${SMTP_PORT:587}
+    smtp-username: ${SMTP_USER:}
+    smtp-password: ${SMTP_PASSWORD:}
+    from: "${SMTP_FROM:}"
+    security: ${SMTP_SECURITY:}
   docker:
     enabled: ${CRYPTOBENCH_DOCKER_ENABLED:true}
     proxy-image: ${CRYPTOBENCH_DOCKER_PROXY_IMAGE:cryptobench-agent-proxy:local}

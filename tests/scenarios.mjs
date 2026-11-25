@@ -73,34 +73,6 @@ export async function runScenarios({page,check,go,shot}) {
  await page.getByRole('heading',{name:'任务已取消',exact:true}).waitFor();
  check('cancel stops run',await page.locator('.run-heading h3').innerText()==='任务已取消'&&await reportCount()===beforeFailure);
 
- // Published task versions cannot overwrite each other or share a leaderboard.
- await go('/admin');await page.locator('[data-template]').click();
- const pack=JSON.parse(await page.locator('#dataset-json').inputValue());
- await page.locator('[data-validate]').click();
- check('published version cannot be overwritten',await page.locator('#import-error').innerText().then(t=>t.includes('已经发布')));
- pack.version='2.0.0';pack.tasks.push({...pack.tasks[0],id:'task-002'});
- await page.locator('#dataset-json').fill(JSON.stringify(pack));await page.locator('[data-validate]').click();
- pack.name='自定义 SPN 新版本';await page.locator('#dataset-json').fill(JSON.stringify(pack));
- check('editing import invalidates preview',await page.locator('[data-publish-dataset]').isDisabled());
- await page.locator('[data-validate]').click();await page.locator('[data-publish-dataset]').click();await page.locator('[data-publish-dataset]').waitFor({state:'hidden'});
- check('multiple dataset versions persist',await page.evaluate(()=>JSON.parse(localStorage.getItem('cryptobench.v1')).customDatasets.filter(d=>d.id==='custom-spn').length===2));
- await go('/datasets/custom-spn?version=2.0.0');
- check('dataset detail keeps version',await page.locator('.detail-title-meta').innerText().then(t=>t.includes('2.0.0')&&t.includes('2 个任务')));
- await page.locator('[data-detail-tab="conditions"]').click();await page.locator('.code-disclosure > summary').click();
- const task=JSON.parse((await downloadText('[data-download-dataset]')).text);
- check('task sample keeps version',task.dataset==='custom-spn'&&task.version==='2.0.0');
- await page.locator('a[href^="#/evaluate?dataset="]').click();
- await page.locator('[data-check-connection]').click();await page.locator('[data-eval-next]').click();
- check('dataset version passed to evaluation',await page.locator('[data-form="datasetId"]').inputValue()==='custom-spn@2.0.0');
- await page.locator('[data-form="datasetId"]').selectOption('mini-spn@1.0.0');await page.locator('[data-eval-next]').click();
- check('changing dataset overrides entry query',await page.locator('.info-list').innerText().then(t=>t.includes('Mini-SPN')&&t.includes('120 项')));
- await ready({dataset:'custom-spn@2.0.0'});await start();
- await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('尚未绑定'));
- check('unbound dataset blocks execution',await page.locator('a[href^="#/report/"]').count()===0);
- await go('/leaderboard?dataset=custom-spn&version=2.0.0');
- check('unbound version has no leaderboard records',await page.locator('[data-rank="version"]').inputValue()==='2.0.0'&&await page.locator('tbody tr').count()===0);
- await page.locator('[data-rank="version"]').selectOption('1.0.0');
- check('leaderboard versions remain isolated',await page.locator('tbody tr').count()===0);
  await go('/datasets');await shot('datasets-desktop');
 
  // Distinct contenders and independent Agent metadata are retained.
@@ -128,6 +100,6 @@ export async function runScenarios({page,check,go,shot}) {
  check('password not persisted',await page.evaluate(()=>!localStorage.getItem('cryptobench.v1').includes('test-only-password')));
  await go('/forgot-password');await page.locator('#recovery-email').fill('test-'+Date.now()+'@example.com');await page.locator('[data-recovery-send]').click();await page.locator('#recovery-code').waitFor();
  check('password reset interface',await page.locator('#main h1').innerText()==='找回密码'&&await page.locator('[data-recovery-notice]').innerText().then(text=>text.includes('如果')));
- await go('/login');
- await page.locator('[data-demo-user="admin"]').click();await page.locator('[data-template]').waitFor();
+ await go('/login');check('login omits removed demo controls',await page.locator('[data-demo-user]').count()===0);
+ check('login omits administrator invitation workflow',await page.locator('[name="token"]').count()===0);
 }

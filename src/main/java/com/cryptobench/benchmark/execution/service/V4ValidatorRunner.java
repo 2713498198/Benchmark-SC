@@ -41,6 +41,10 @@ public class V4ValidatorRunner {
     }
 
     public ObjectNode evaluate(String taskId, JsonNode response) {
+        return evaluate(taskId, response, properties.timeoutSecondsOrDefault());
+    }
+
+    public ObjectNode evaluate(String taskId, JsonNode response, long timeoutSeconds) {
         ObjectNode result = mapper.createObjectNode();
         if (!available()) {
             result.put("status", "failed");
@@ -54,11 +58,13 @@ public class V4ValidatorRunner {
         try {
             runDir = Files.createTempDirectory("cryptobench-v4-run-");
             Path workspace = Files.createDirectories(runDir.resolve("workspace"));
-            JsonNode artifact = response == null ? null : response.get("artifact");
+            JsonNode artifact = response != null && response.isObject() && response.has("artifact")
+                    ? response.get("artifact") : response;
             Files.writeString(runDir.resolve("final_answer.md"),
                     artifact == null ? "" : text(artifact.get("answer")), StandardCharsets.UTF_8);
             writeWorkspaceFiles(runDir, workspace, artifact);
-            writeEvidence(runDir, response == null ? null : response.get("evidence"));
+            writeEvidence(runDir, response != null && response.isObject()
+                    ? response.get("evidence") : null);
 
             Path out = runDir.resolve("validator_report.json");
             List<String> command = new ArrayList<>(List.of(
@@ -69,7 +75,7 @@ public class V4ValidatorRunner {
                     "--run-dir", runDir.toString(),
                     "--out", out.toString()));
             Process process = new ProcessBuilder(command).redirectErrorStream(false).start();
-            boolean finished = process.waitFor(properties.timeoutSecondsOrDefault(), TimeUnit.SECONDS);
+            boolean finished = process.waitFor(Math.max(1, timeoutSeconds), TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
                 result.put("status", "failed");

@@ -20,7 +20,7 @@
 - Docker Agent 启动增加 HTTP 就绪检查：端口监听后继续轮询 `/health`，避免代理端口已开放但 Agent 尚未完成启动时误报 `agent_unavailable`。
 - Docker 容器、网络的运行结束清理及应用重启时遗留资源回收。
 - 本地进程和 Docker 沙箱两种执行来源的前端入口。
-- 连接管理、账号认证、管理员账号管理、报告公开和权限隔离。
+- 连接管理、邮箱密码账号认证、密码重置、报告公开和权限隔离。
 - 首个管理员环境变量初始化规则已增加独立单元测试：缺配置不创建、密码不在 8～24 位范围内拒绝、已有邮箱不覆盖、首次创建只写入密码哈希。
 - Compose、Dockerfile、本地网页版部署与下载内容。
 - GitHub Actions 前端、后端和 Docker 沙箱验证工作流。
@@ -31,7 +31,7 @@
 - 通用模型价格表支持版本化配置；未知模型或无效用量保留空费用，并由 `ServerCostCalculatorTest` 验证自定义价格表覆盖和 token 计费。
 - 管理员价格后台已接入版本草稿、启用、三位 ISO 货币校验和公开 `GET /api/pricing/active` 快照；启用后服务端费用计算器即时重新加载，API 权限和版本生命周期由 `PricingApiIntegrationTest` 覆盖。
 - 应用启动会回收遗留 Docker 资源，并恢复未取消的 `queued/running` 运行；运行配置和任务状态会重新排队，取消的运行保持终态。凭证仍只保存在当前 worker 内存中，重启后需重新输入受保护 Agent 的凭证。
-- 管理员邀请邮件现在明确返回 `gateway`、`outbox` 或 `unconfigured` 投递状态；邀请令牌仍只保存哈希，明文只进入已配置的网关或本地 outbox，不出现在 API 响应、日志和审计记录。
+- 密码重置验证码邮件明确返回 `gateway`、`outbox` 或 `unconfigured` 投递状态；验证码正文只进入加密队列和已配置的网关或本地 outbox，不出现在 API 响应和普通日志。
 - 生产部署统一使用 `docker compose --env-file .env.prod -f compose.prod.yaml`，备份、升级和健康检查使用同一入口。
 - 正式榜单增加 `cryptobench-trust-v1`：只有平台模型网关确认供应商、模型和完整用量，且价格快照可计算全部费用的完整测评才进入正式排名；其他公开报告保留查看但 `rankingEligible=false`。
 - V17 新增跨实例运行配额锁。运行创建按用户限制活跃数量和每日创建数，并限制全平台活跃运行数，超限返回 HTTP 429。
@@ -125,7 +125,7 @@ V4.1 已导入 170 道公开题目和 75 个公开附件，`executionReady: true
 - `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
 - `PricingApiIntegrationTest`：通过，验证游客价格快照、研究者 403、管理员创建/启用多模型价格表和非法价格拒绝。
 - `ExecutionApiIntegrationTest`：通过，验证重启恢复会重新排队未取消运行、清理进行中任务结果并保留取消终态。
-- `PasswordResetNotifierTest`：通过，验证管理员邀请写入本地 outbox、投递模式状态和未配置投递时不虚报成功。
+- `PasswordResetNotifierTest`：通过，验证密码重置验证码写入本地 outbox、投递模式状态和未配置投递时不虚报成功。
 - `npm run validate:evaluator`：通过，Mini-SPN 私有目录 8 项任务校验通过；不安全的 hidden/oracle/answer 公开路径会被拒绝。
 - GitHub Actions run 43：通过 Ubuntu Docker sandbox、平台 Docker 执行和 Compose 健康检查；CI 使用兼容代理桥接网络，Agent 仍保持 internal 网络隔离。
 - GitHub Actions run 45（提交 `5781d1b`）：通过 `Run Docker Agent sandbox E2E`、`Run platform Docker execution E2E` 和 `Run Docker Compose deployment smoke test`；验证 Docker Agent HTTP 就绪检查修复。

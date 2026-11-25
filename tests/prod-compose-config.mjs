@@ -46,7 +46,6 @@ const docs = await readFile('docs/DEPLOY-PROD.md', 'utf8');
 for (const command of [
   'docker compose --env-file .env.prod -f compose.prod.yaml up -d --build',
   'docker compose --env-file .env.prod -f compose.prod.yaml ps',
-  'docker compose --env-file .env.prod -f compose.prod.yaml up -d --force-recreate app',
   'docker compose --env-file .env.prod -f compose.prod.yaml build app',
   'docker compose --env-file .env.prod -f compose.prod.yaml up -d app',
   'docker compose --env-file .env.prod -f compose.prod.yaml exec -T app'

@@ -3,10 +3,8 @@ package com.cryptobench.benchmark.auth.service;
 import com.cryptobench.benchmark.auth.dto.LoginRequest;
 import com.cryptobench.benchmark.auth.dto.RegisterRequest;
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
 import com.cryptobench.benchmark.auth.service.AuthRateLimitService;
 import com.cryptobench.benchmark.common.ApiException;
-import com.cryptobench.benchmark.config.BenchmarkProperties;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
@@ -15,20 +13,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 账号业务服务：负责注册、密码验证与受配置开关控制的体验账号创建。
+ * 账号业务服务：负责注册和密码验证。
  */
 @Service
 public class AuthService {
-    private final UserRepository users;
+    private final UserAccountService users;
     private final PasswordService passwords;
-    private final BenchmarkProperties properties;
     private final AuthRateLimitService rates;
 
-    public AuthService(UserRepository users, PasswordService passwords, BenchmarkProperties properties,
-                       AuthRateLimitService rates) {
+    public AuthService(UserAccountService users, PasswordService passwords, AuthRateLimitService rates) {
         this.users = users;
         this.passwords = passwords;
-        this.properties = properties;
         this.rates = rates;
     }
 
@@ -62,29 +57,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "邮箱或密码不正确");
         }
         rates.loginSucceeded(email);
-        if (!"active".equals(user.accountStatus())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "账号已停用");
-        }
         return user;
     }
 
-    /**
-     * 仅在启用体验入口的环境中复用或创建固定角色账号；生产环境默认关闭。
-     */
-    @Transactional
-    public BenchmarkUser demo(String requestedRole) {
-        if (!properties.demoEnabled()) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "当前环境未启用体验账号");
-        }
-        // 只识别明确的 admin 请求，其余角色输入统一使用 researcher。
-        String role = "admin".equals(requestedRole) ? "admin" : "researcher";
-        String email = role + "@cryptobench.local";
-        return users.findByEmail(email).orElseGet(() -> {
-            BenchmarkUser user = new BenchmarkUser("demo_" + role, email,
-                    "admin".equals(role) ? "测评集管理员" : "研究者", role,
-                    passwords.encode(UUID.randomUUID().toString()), null, Instant.now().toString());
-            users.insert(user);
-            return user;
-        });
-    }
 }

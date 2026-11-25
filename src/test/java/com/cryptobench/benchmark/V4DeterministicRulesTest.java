@@ -16,7 +16,7 @@ class V4DeterministicRulesTest {
     private final ObjectMapper mapper = new ObjectMapper();
     private final CryptobenchV4Evaluator evaluator = new CryptobenchV4Evaluator(
             mapper,
-            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0), mapper));
+            new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0, ""), mapper));
 
     @Test
     void everyDeterministicRuleAcceptsItsAuthoritativeAnswer() throws Exception {

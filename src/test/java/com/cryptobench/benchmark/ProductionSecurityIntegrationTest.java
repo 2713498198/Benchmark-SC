@@ -23,12 +23,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProductionSecurityIntegrationTest {
     @Autowired MockMvc mvc;
 
-    /**
-     * 使用有效 CSRF 排除令牌问题，确认生产环境本身禁止管理员体验登录。
-     */
+    /** 使用有效 CSRF 排除令牌问题，确认已删除的体验登录接口不再存在。 */
     @Test
-    void productionRejectsAdminDemoLoginEvenWithValidCsrf() throws Exception {
+    void productionDoesNotExposeDemoLogin() throws Exception {
         mvc.perform(post("/api/auth/demo").with(csrf()).contentType("application/json")
-                .content("{\"role\":\"admin\"}")).andExpect(status().isForbidden());
+                .content("{\"role\":\"admin\"}")).andExpect(status().isNotFound());
     }
 }

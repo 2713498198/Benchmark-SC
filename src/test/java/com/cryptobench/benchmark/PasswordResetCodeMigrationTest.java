@@ -1,15 +1,20 @@
 package com.cryptobench.benchmark;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import static org.assertj.core.api.Assertions.*;
 
 /** 升级隔离的文件数据库，重启 JDBC 连接后仍应保留验证码流程状态。 */
 class PasswordResetCodeMigrationTest {
-    @TempDir Path temporary;
+    Path temporary;
+
+    @BeforeEach void prepare() throws Exception {
+        temporary = Files.createTempDirectory(Path.of("target"), "reset-migration-");
+    }
 
     @Test void v11CreatesCodeResetTablesAndPreservesSessions()throws Exception{
         String url="jdbc:h2:file:"+temporary.resolve("reset-upgrade").toAbsolutePath().toString().replace('\\','/')+";MODE=MySQL;DATABASE_TO_LOWER=TRUE";
