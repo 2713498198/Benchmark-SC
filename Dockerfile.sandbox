@@ -34,7 +34,7 @@ RUN apt-get update \
 
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=build /workspace/target/cryptobench-1.1.0.jar /app/cryptobench.jar
-COPY --from=build /workspace/runner-package /app/runner-package
+COPY --from=build /workspace/runner-package /opt/cryptobench/runner-package
 COPY docker/entrypoint.sh /usr/local/bin/cryptobench-entrypoint
 RUN groupadd -r app && useradd -r -g app app \
     && mkdir -p /app/var && chown -R app:app /app \
@@ -42,6 +42,7 @@ RUN groupadd -r app && useradd -r -g app app \
 ENV SERVER_ADDRESS=0.0.0.0
 ENV PORT=4173
 ENV CRYPTOBENCH_RUNNER_DOWNLOAD_DIR=/app/runner-package
+ENV CRYPTOBENCH_RUNNER_BUNDLED_DIR=/opt/cryptobench/runner-package
 EXPOSE 4173
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=12 \
     CMD wget --spider --quiet http://127.0.0.1:4173/actuator/health || exit 1

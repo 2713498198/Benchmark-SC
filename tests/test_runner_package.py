@@ -59,6 +59,21 @@ class RunnerPackageTest(unittest.TestCase):
                 first_digest = digest
             self.assertEqual(first_digest, digest)
 
+    def test_docker_deployment_materializes_runner_package_on_host(self) -> None:
+        for dockerfile in ("Dockerfile", "Dockerfile.sandbox"):
+            content = (ROOT / dockerfile).read_text(encoding="utf-8")
+            self.assertIn("/opt/cryptobench/runner-package", content)
+            self.assertIn("CRYPTOBENCH_RUNNER_BUNDLED_DIR", content)
+
+        entrypoint = (ROOT / "docker" / "entrypoint.sh").read_text(encoding="utf-8")
+        self.assertIn('cp -a "$bundled_runner"/. "$runner_directory"/', entrypoint)
+        self.assertIn("chown -R app:app \"$runner_directory\"", entrypoint)
+
+        for compose_file in ("compose.yaml", "compose.prod.yaml"):
+            content = (ROOT / compose_file).read_text(encoding="utf-8")
+            self.assertIn("CRYPTOBENCH_RUNNER_PACKAGE_HOST_DIR", content)
+            self.assertIn(":/app/runner-package", content)
+
 
 if __name__ == "__main__":
     unittest.main()

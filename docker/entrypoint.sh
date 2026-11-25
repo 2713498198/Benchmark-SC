@@ -11,6 +11,16 @@ if [ "$(id -u)" = "0" ]; then
         touch /app/var/.cryptobench-owner-v1
         chown app:app /app/var/.cryptobench-owner-v1
     fi
+    # Materialize the release-built Runner archive into the host-mounted
+    # directory so Docker deployments expose the ZIP in the checkout instead
+    # of keeping it only inside the image.
+    bundled_runner="${CRYPTOBENCH_RUNNER_BUNDLED_DIR:-/opt/cryptobench/runner-package}"
+    runner_directory="${CRYPTOBENCH_RUNNER_DOWNLOAD_DIR:-/app/runner-package}"
+    if [ -d "$bundled_runner" ]; then
+        mkdir -p "$runner_directory"
+        cp -a "$bundled_runner"/. "$runner_directory"/
+        chown -R app:app "$runner_directory"
+    fi
     if [ -S /var/run/docker.sock ]; then
         socket_gid="$(stat -c '%g' /var/run/docker.sock)"
         socket_group="$(awk -F: -v gid="$socket_gid" '$3 == gid { print $1; exit }' /etc/group)"
