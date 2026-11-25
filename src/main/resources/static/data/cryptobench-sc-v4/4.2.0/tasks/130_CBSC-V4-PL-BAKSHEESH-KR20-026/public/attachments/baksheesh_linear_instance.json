@@ -1,0 +1,44 @@
+{
+  "schema_version": "baksheesh_fixed_boundary_linear_instance_v1",
+  "block_size_bits": 128,
+  "rounds": 20,
+  "state_bit_order": "bit 0 is the least significant bit",
+  "nibble_order": "S-box j acts on bits 4*j..4*j+3, with bit 4*j as the nibble LSB",
+  "sbox": [3, 0, 6, 13, 11, 5, 8, 14, 12, 15, 9, 2, 4, 10, 7, 1],
+  "permutation_semantics": "an S-box output bit at source position i is moved to destination P[i]",
+  "P": [
+    0, 33, 66, 99, 96, 1, 34, 67, 64, 97, 2, 35, 32, 65, 98, 3,
+    4, 37, 70, 103, 100, 5, 38, 71, 68, 101, 6, 39, 36, 69, 102, 7,
+    8, 41, 74, 107, 104, 9, 42, 75, 72, 105, 10, 43, 40, 73, 106, 11,
+    12, 45, 78, 111, 108, 13, 46, 79, 76, 109, 14, 47, 44, 77, 110, 15,
+    16, 49, 82, 115, 112, 17, 50, 83, 80, 113, 18, 51, 48, 81, 114, 19,
+    20, 53, 86, 119, 116, 21, 54, 87, 84, 117, 22, 55, 52, 85, 118, 23,
+    24, 57, 90, 123, 120, 25, 58, 91, 88, 121, 26, 59, 56, 89, 122, 27,
+    28, 61, 94, 127, 124, 29, 62, 95, 92, 125, 30, 63, 60, 93, 126, 31
+  ],
+  "lat_definition": "LAT[a][b] = sum over x in {0,...,15} of (-1)^parity((a & x) xor (b & S(x)))",
+  "local_correlation": "LAT[a][b] / 16",
+  "trail_absolute_correlation": "product of the absolute values of all 640 local S-box correlations",
+  "optimization_boundary": {
+    "input_mask_hex": "00000000000000000000410000000090",
+    "input_active_nibbles": {"1": "9", "10": "1", "11": "4"},
+    "output_mask_hex": "00000800000000000000000a00000005",
+    "output_active_nibbles": {"0": "5", "8": "a", "26": "8"},
+    "object": "one linear characteristic/trail between the fixed masks, not a linear hull",
+    "required_claim": "minimum absolute-correlation weight over all valid 20-round trails between the fixed masks"
+  },
+  "key_recovery_extension": {
+    "attacked_rounds": 21,
+    "master_key_bits": 128,
+    "guessed_key_bits_per_active_output_sbox": 4,
+    "data_exponent_formula": "2*c",
+    "partial_decryption_time": "2^(2*c + 4*N) / R",
+    "remaining_key_search_time": "2^(128 - m)",
+    "definitions": {
+      "c": "the 20-round trail weight",
+      "N": "the number of active output nibbles entering the appended inverse round",
+      "m": "the Hamming weight of the fixed output mask",
+      "R": "the attacked-round count, here 21"
+    }
+  }
+}

@@ -69,7 +69,7 @@ Content-Type: application/json
 ```json
 {
   "path": "attachments/input.json",
-  "url": "data/cryptobench-sc-v4/4.1.0/tasks/.../public/attachments/input.json",
+  "url": "data/cryptobench-sc-v4/4.2.0/tasks/.../public/attachments/input.json",
   "encoding": "base64",
   "bytes": 123,
   "sha256": "...",

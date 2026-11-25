@@ -12,6 +12,8 @@ docker compose up -d --build
 
 访问 `http://127.0.0.1:4173`，停止服务使用 `docker compose down`。数据保存在项目的 `var/` 目录，重建容器仍然保留。可在 `.env` 设置 `HOST_PORT=4180` 更换宿主机端口，或设置 `CRYPTOBENCH_DATA_DIR` 指定数据目录。首次需要下载镜像与 Maven 依赖；代理配置见 [启动指南](../docs/SETUP.md)。
 
+镜像构建阶段会自动下载并校验固定版本的 Windows Node.js，生成无安装依赖的 Runner 便携包。登录用户可以在“本地 Runner”页面下载；ZIP 和 manifest 位于镜像 `/app/runner-package`，不会提交到 Git。
+
 基础 Compose 和 sandbox 均只将网站端口发布到宿主机 `127.0.0.1`。普通用户可直接注册并使用邮箱密码登录，不再提供管理员初始化或邀请入口。这两种配置用于本地使用，不是带 HTTPS/MySQL 的生产部署栈。容器内部仍监听 `0.0.0.0:4173`，用于端口转发和健康检查。
 
 ## 完全自包含的本地沙箱部署

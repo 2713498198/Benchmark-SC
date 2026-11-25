@@ -1,5 +1,5 @@
-import {cryptobenchV4_4_1_0} from './cryptobench-v4-4-1-0.js';
-export const datasets=[cryptobenchV4_4_1_0];
+import {cryptobenchV4_4_2_0} from './cryptobench-v4-4-2-0.js';
+export const datasets=[cryptobenchV4_4_2_0];
 export const agents=[
 {id:'cipher-pilot',name:'CipherPilot',model:'GPT-4.1',provider:'OpenAI',color:'#111111',version:'1.2.0'},
 {id:'sbox-sage',name:'S-box Sage',model:'Claude Sonnet 4',provider:'Anthropic',color:'#3a3a3c',version:'1.1.0'},

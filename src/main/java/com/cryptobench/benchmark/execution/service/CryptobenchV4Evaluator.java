@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Server-owned binding for CryptoBench-SC V4.1.
+ * Server-owned binding for CryptoBench-SC V4.2.
  *
  * The public site exposes questions and attachments only. This catalog keeps
  * each task's authoritative expected answer as a deterministic declarative
@@ -43,13 +43,13 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
     public String datasetId() { return "cryptobench-sc-v4"; }
 
     @Override
-    public String version() { return "4.1.0"; }
+    public String version() { return "4.2.0"; }
 
     @Override
-    public String evaluatorVersion() { return "cryptobench-sc-v4-evaluator-1.0.1"; }
+    public String evaluatorVersion() { return "cryptobench-sc-v4-evaluator-1.1.0"; }
 
     @Override
-    public String taskResource() { return "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"; }
+    public String taskResource() { return "/evaluation/cryptobench-sc-v4/4.2.0/tasks.json"; }
 
     @Override
     public boolean executionReady() { return true; }

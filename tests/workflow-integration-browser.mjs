@@ -37,6 +37,18 @@ try{
   await page.locator('[data-logout]').waitFor();
   assert.equal(await page.locator('.nav-end a').innerText(),'工作台');
 
+  await go('/runner');
+  await page.getByRole('link',{name:/下载 Runner ZIP/}).waitFor();
+  await page.locator('#runner-adapter').selectOption('command');
+  assert.equal(await page.locator('#runner-config-preset option').count(),5);
+  await page.locator('#runner-config-preset').selectOption('generic');
+  assert.equal(await page.locator('#runner-agent-config').inputValue(),'.\\examples\\generic-cli-agent.json');
+  await page.getByText('查看自定义配置格式').click();
+  await page.locator('code').filter({hasText:'"adapter": "command"'}).waitFor();
+  await page.getByRole('button',{name:'生成配对码'}).click();
+  await page.locator('code').filter({hasText:'.\\cryptobench-runner.cmd pair'}).waitFor();
+
+  await go('/workspace');
   await page.locator('[data-logout]').click();
   await page.waitForURL(/#\/$/);
   await go('/login');

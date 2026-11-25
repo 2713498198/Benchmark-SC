@@ -1,0 +1,52 @@
+{
+  "schema_version": "knot256_qdt_fixed_characteristic_v1",
+  "state_convention": {
+    "size_bits": 256,
+    "bit_order": "LSB-first: integer bit 4*j+r is row r, column j",
+    "round_order": ["xor_round_constant", "parallel_sboxes", "permute_rows"],
+    "round_constant_injection": "bit j of RC_r is XORed into state bit 4*j for j=0,...,7 before the S-box layer"
+  },
+  "sbox": [4, 0, 10, 7, 11, 14, 1, 13, 9, 15, 6, 8, 5, 2, 12, 3],
+  "permutation": {
+    "row_left_rotations": [0, 1, 8, 25],
+    "exact_mapping": "U_next[4*j+r] = V[4*((j-shift[r]) mod 64)+r]"
+  },
+  "round_constants_hex": ["01", "02", "04", "08", "10", "20", "41", "03", "06", "0c"],
+  "characteristic": {
+    "rounds": 10,
+    "sequence_semantics": "differences[2*r] is the S-box input difference A_r; differences[2*r+1] is the S-box output difference B_r; differences[2*r+2]=P(B_r)",
+    "differences_hex_256": [
+      "0000000000000000000000000000000010000000000000000100000000000000",
+      "0000000000000000000000000000000040000000000000000c00000000000000",
+      "000000000000000000000000c000000000000000040000000000000000000000",
+      "00000000000000000000000040000000000000000c0000000000000000000000",
+      "0000000000000000c00000000000000004000000000000000000000000000000",
+      "000000000000000040000000000000000c000000000000000000000000000000",
+      "00000000c0000000000000000400000000000000000000000000000000000000",
+      "0000000040000000000000000c00000000000000000000000000000000000000",
+      "c000000000000000040000000000000000000000000000000000000000000000",
+      "40000000000000000c0000000000000000000000000000000000000000000000",
+      "00000000040000000000000000000000000000000000000000000000c0000000",
+      "000000000a000000000000000000000000000000000000000000000040000000",
+      "000000002000000000000000000000000000000000000000c000000000000000",
+      "0000000010000000000000000000000000000000000000002000000000000000",
+      "0000000010000000000000000000000000000000000000020000000000000000",
+      "0000000040000000000000000000000000000000000000010000000000000000",
+      "4000000000000000000000000000000000000000000000010000000000000000",
+      "a000000000000000000000000000000000000000000000040000000000000000",
+      "000000000000000000000000000000000000000c000000000000000000000002",
+      "0000000000000000000000000000000000000001000000000000000000000001",
+      "0000000000000000000000000000000000000001000000000000000000000001"
+    ]
+  },
+  "signed_qdt_definition": "D[(v,b),(u,a)] = (1/16) * sum over x satisfying S(x xor a)=S(x) xor b of (-1)^(<u,x> xor <v,S(x)>), with GF(2) inner products",
+  "global_mask_trail": {
+    "variables": "U_0,...,U_10 before S-boxes and V_0,...,V_9 after S-boxes",
+    "boundary": "U_0=U_10=0",
+    "propagation": "U_(r+1)=P(V_r)",
+    "coefficient": "product of the 640 local signed QDT coefficients",
+    "constant_phase": "multiply round r by (-1)^<U_r,C_r>, where C_r contains RC_r[j] at state bit 4*j",
+    "leading_definition": "a leading trail has absolute coefficient equal to the all-zero-mask trail coefficient"
+  },
+  "strict_zero_criterion": "If any collection of leading mask trails for a fixed characteristic has signed coefficients summing to zero, XOR translation by those masks partitions all remaining mask trails into equally cancelling classes; therefore the complete fixed-constant characteristic probability is exactly zero."
+}

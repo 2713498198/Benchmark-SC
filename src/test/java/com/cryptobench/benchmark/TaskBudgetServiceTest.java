@@ -51,7 +51,7 @@ class TaskBudgetServiceTest {
                 new ObjectMapper(), new V4ScoringProperties("", "python3", 120, profiles.toString()));
 
         TaskBudgetService.TaskBudget budget = service.resolve(
-                "cryptobench-sc-v4", "4.1.0", "001_CBSC-V2-NL-A01", "standard");
+                "cryptobench-sc-v4", "4.2.0", "001_CBSC-V2-NL-A01", "standard");
 
         assertThat(budget.budgetClass()).isEqualTo("easy_to_medium");
         assertThat(budget.profile()).isEqualTo("standard");

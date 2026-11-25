@@ -1,11 +1,20 @@
 FROM eclipse-temurin:21.0.13_9-jdk-jammy AS build
-RUN apt-get update && apt-get install -y --no-install-recommends unzip && rm -rf /var/lib/apt/lists/*
+ARG CRYPTOBENCH_SOURCE_COMMIT=unknown
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates python3 unzip \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 ENV MAVEN_USER_HOME=/root/.m2
 COPY .mvn/maven.config .mvn/maven.config
 COPY .mvn/wrapper/maven-wrapper.properties .mvn/wrapper/maven-wrapper.properties
 COPY mvnw pom.xml ./
 COPY src ./src
+COPY runner ./runner
+COPY scripts/build-runner-package.py ./scripts/build-runner-package.py
+RUN --mount=type=cache,target=/workspace/target/runner-cache \
+    python3 scripts/build-runner-package.py \
+      --output-dir /workspace/runner-package \
+      --source-commit "$CRYPTOBENCH_SOURCE_COMMIT"
 RUN --mount=type=cache,target=/root/.m2 --mount=type=cache,target=/workspace/.mvn/repository \
     sh ./mvnw --batch-mode -DskipTests package
 
@@ -18,16 +27,18 @@ LABEL org.opencontainers.image.title="CryptoBench" \
 # and remove the package index so the application image stays self-contained.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends wget python3 python3-pip \
-    && python3 -m pip install --no-cache-dir --disable-pip-version-check python-sat==1.8.dev24 \
+    && python3 -m pip install --no-cache-dir --disable-pip-version-check python-sat==1.9.dev25 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /workspace/target/cryptobench-1.1.0.jar /app/cryptobench.jar
+COPY --from=build /workspace/runner-package /app/runner-package
 COPY docker/entrypoint.sh /usr/local/bin/cryptobench-entrypoint
 RUN groupadd -r app && useradd -r -g app app \
     && mkdir -p /app/var && chown -R app:app /app \
     && chmod 0755 /usr/local/bin/cryptobench-entrypoint
 ENV SERVER_ADDRESS=0.0.0.0
 ENV PORT=4173
+ENV CRYPTOBENCH_RUNNER_DOWNLOAD_DIR=/app/runner-package
 EXPOSE 4173
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=12 \
     CMD wget --spider --quiet http://127.0.0.1:4173/actuator/health || exit 1

@@ -22,6 +22,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Build and smoke-test portable Runner
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python scripts/build-runner-package.py --output-dir target/runner-package
+          $manifest = Get-Content target/runner-package/runner-package-manifest.json | ConvertFrom-Json
+          Expand-Archive (Join-Path target/runner-package $manifest.filename) target/runner-smoke
+          & target/runner-smoke/CryptoBench-Runner/cryptobench-runner.cmd version
       - name: Test missing and incorrect Java, download verification and portable paths
         run: node tests/bootstrap.mjs
       - uses: actions/upload-artifact@v4

@@ -21,6 +21,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        CRYPTOBENCH_SOURCE_COMMIT: "${CRYPTOBENCH_SOURCE_COMMIT:-unknown}"
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -43,6 +45,7 @@ services:
       CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL: "${CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL:-100}"
       CRYPTOBENCH_V4_SUITE_ROOT: /app/private/v4-suite
       CRYPTOBENCH_V4_PYTHON: python3
+      CRYPTOBENCH_RUNNER_DOWNLOAD_DIR: /app/runner-package
       CRYPTOBENCH_DOCKER_ENABLED: "false"
     volumes:
       - app-var:/app/var

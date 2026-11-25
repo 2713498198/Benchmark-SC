@@ -7,6 +7,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.sandbox
+      args:
+        CRYPTOBENCH_SOURCE_COMMIT: "${CRYPTOBENCH_SOURCE_COMMIT:-unknown}"
     environment:
       # Inherit loopback publishing, demo policy and persistent H2 from compose.yaml.
       CRYPTOBENCH_DOCKER_ENABLED: "true"

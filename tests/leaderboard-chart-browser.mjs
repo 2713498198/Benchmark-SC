@@ -16,7 +16,7 @@ const checks=[],errors=[];
 const check=(name,result)=>{assert.ok(result,name);checks.push(name);};
 page.on('pageerror',error=>errors.push(error.message));
 let publicReports=[];
-const demoCommon={datasetId:'cryptobench-sc-v4',version:'4.1.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',total:100,published:true,demo:true};
+const demoCommon={datasetId:'cryptobench-sc-v4',version:'4.2.0',budget:'standard',scope:'full',kind:'evaluation',source:'local',total:100,published:true,demo:true};
 const demoReports=[
  {...demoCommon,id:'rank-cipher-pilot',agent:'CipherPilot',model:'Model A',passed:92,score:91.7,cost:2.84,time:38.6,averageTimeSeconds:38.6,totalTimeSeconds:4632},
  {...demoCommon,id:'rank-sbox-sage',agent:'S-box Sage',model:'Model B',passed:88,score:88.3,cost:3.16,time:42.1,averageTimeSeconds:42.1,totalTimeSeconds:5052},
@@ -33,9 +33,16 @@ await page.addInitScript(()=>{
   disconnect(){if(this.chartActive){window.activeChartObservers--;this.chartActive=false;}return super.disconnect();}
  };
 });
+function demoRoute(route='/leaderboard'){
+ const [path,query='']=route.split('?'),params=new URLSearchParams(query);
+ if(!params.has('type'))params.set('type','demo');
+ if(params.get('type')==='demo'&&!params.has('budget'))params.set('budget','standard');
+ return path+'?'+params.toString();
+}
 async function go(route='/leaderboard'){
- await page.goto(base+'/#'+route);await page.reload();await page.waitForLoadState('networkidle');
- await page.waitForFunction(route=>document.querySelector('#main')?.dataset.route===route,route);
+ const normalized=demoRoute(route);
+ await page.goto(base+'/#'+normalized);await page.reload();await page.waitForLoadState('networkidle');
+ await page.waitForFunction(route=>document.querySelector('#main')?.dataset.route===route,normalized);
 }
 async function view(name){await page.locator('[data-rank-view="'+name+'"]').click();}
 async function settle(){await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));}
@@ -93,13 +100,23 @@ try{
  check('Table sort does not change frontier',JSON.stringify(before)===JSON.stringify(await page.locator('[data-chart-point]').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-label')))));
  const download=page.waitForEvent('download');await page.locator('[data-export-rank]').click();
  const csv=await readFile(await (await download).path(),'utf8');
- check('CSV preserves filtered records, local sources and schema',csv.includes('pass_rate')&&csv.includes('S-box Sage')&&csv.includes('RoundKey')&&csv.includes('CipherPilot')&&!csv.includes('"cloud"'));
+ check('CSV preserves filtered records, local sources and schema',
+  csv.includes('official_baseline')&&csv.includes('vcr')&&csv.includes('full_acc')&&
+  csv.includes('vpr')&&csv.includes('process')&&csv.includes('S-box Sage')&&
+  csv.includes('RoundKey')&&csv.includes('CipherPilot')&&!csv.includes('"cloud"'));
  await view('ranking');await page.locator('[data-compare]').nth(0).check();await page.locator('[data-compare]').nth(1).check();await page.locator('[data-open-compare]').click();
  check('Comparison works after returning to ranking',await page.locator('#modal').isVisible());await page.locator('[data-close-modal]').click();
  await page.locator('[data-expand]').first().click();check('Record evidence expands',await page.locator('.leaderboard-details').isVisible());
  await view('analysis');await page.locator('[data-rank="budget"]').selectOption('extended');
  check('Empty filters remove points and show empty state',await page.locator('[data-chart-point]').count()===0&&await page.locator('.rank-chart-empty').isVisible());await shot('empty-1440');
- await page.locator('[data-reset-rank]').click();check('Reset restores cost chart',await page.locator('[data-chart-point]').count()===4);
+ await page.locator('[data-reset-rank]').click();
+ check('Reset restores the official ranking with inline charts',
+  await page.locator('tbody tr[data-rank-record]').count()===24&&
+  await page.locator('[data-official-bar-chart] .official-bar-group').count()===24&&
+  await page.locator('[data-official-category-chart]').count()===4);
+ await page.locator('[data-rank="type"]').selectOption('demo');
+ await view('analysis');
+ check('Demo analysis can be restored after reset',await page.locator('[data-chart-point]').count()===4);
  await page.locator('.rank-chart-foot summary').click();check('Reading guidance opens',await page.locator('#rank-chart-help').isVisible());
  await page.locator('a[href="#/datasets"]').first().click();await page.waitForFunction(()=>document.querySelector('#main').dataset.route==='/datasets');check('Route change disposes chart observer',await page.evaluate(()=>window.activeChartObservers===0));
 
@@ -122,7 +139,7 @@ try{
  check('Reduced motion retains fully rendered chart',await page.locator('[data-chart-point]').count()===5&&await page.locator('canvas').evaluate(c=>c.width>0));
  const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  const mobile=await touch.newPage();await mobile.route('**/api/bootstrap',route=>route.fulfill({json:{user:null,reports:[],connections:[],customDatasets:[],publicReports:demoReports}}));
- await mobile.goto(base+'/#/leaderboard');await mobile.waitForLoadState('networkidle');await mobile.locator('[data-rank-view="analysis"]').click();await mobile.locator('[data-chart-point]').first().tap();
+ await mobile.goto(base+'/#'+demoRoute('/leaderboard'));await mobile.waitForLoadState('networkidle');await mobile.locator('[data-rank-view="analysis"]').click();await mobile.locator('[data-chart-point]').first().tap();
  check('Touch tap opens chart details',await mobile.locator('.rank-chart-tooltip').isVisible());await mobile.locator('.rank-chart').screenshot({path:resolve(out,'touch-tooltip-390.png')});await touch.close();
  check('No browser errors',errors.length===0);
  await writeFile(resolve(out,'chart-browser-results.json'),JSON.stringify({passed:checks.length,checks,errors},null,2));

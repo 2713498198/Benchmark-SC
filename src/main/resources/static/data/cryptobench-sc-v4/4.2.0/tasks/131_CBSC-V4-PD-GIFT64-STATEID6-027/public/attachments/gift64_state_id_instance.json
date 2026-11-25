@@ -1,0 +1,52 @@
+{
+  "schema_version": "gift64_state_id_instance_v1",
+  "cipher": "GIFT-64 round core with the 128-bit key schedule",
+  "block_size_bits": 64,
+  "master_key_size_bits": 128,
+  "rounds": 6,
+  "input_difference_hex": "0000000000000600",
+  "output_difference_hex": "0000004020000110",
+  "state_convention": {
+    "bit_order": "state bit i is hexadecimal bit i; bit 0 is the least significant bit",
+    "nibble_order": "S-box j acts on bits 4*j..4*j+3 and bit 4*j is the nibble LSB",
+    "round_boundary": "x[0] is immediately before round-0 AddRoundKey; x[r+1] is immediately after round-r P-layer; x[6] is the compared output boundary",
+    "difference": "XOR difference"
+  },
+  "sbox": [1, 10, 4, 12, 6, 15, 3, 9, 2, 13, 11, 7, 5, 0, 8, 14],
+  "p_layer": {
+    "semantics": "an S-box output bit at source position i is moved to destination P[i]",
+    "P": [
+      0, 17, 34, 51, 48, 1, 18, 35, 32, 49, 2, 19, 16, 33, 50, 3,
+      4, 21, 38, 55, 52, 5, 22, 39, 36, 53, 6, 23, 20, 37, 54, 7,
+      8, 25, 42, 59, 56, 9, 26, 43, 40, 57, 10, 27, 24, 41, 58, 11,
+      12, 29, 46, 63, 60, 13, 30, 47, 44, 61, 14, 31, 28, 45, 62, 15
+    ]
+  },
+  "round_function": {
+    "formula": "x[r+1] = P(SubCells(AddRoundKeyAndConstant(x[r], K[r], RC[r])))",
+    "round_constants": [1, 3, 7, 15, 31, 62],
+    "constant_rule": "for RC[r] bits j=0..5, XOR bit j into state position 4*j+3; XOR constant 1 into state bit 63",
+    "round_key_rule": "write W0 bits 0..15, in order, to state positions whose indices modulo 4 are 0 or 1 among positions 0..31; write W1 bits 0..15 analogously to positions 32..63; XOR these 32 bits into the state",
+    "fixed_constants_note": "round constants cancel in ordinary XOR-difference propagation but remain part of the concrete two-state executions"
+  },
+  "key_schedule": {
+    "initial_words": "split the 128-bit master key into W0,...,W7, where Wi contains master-key bits 16*i..16*i+15 and word bit 0 is its LSB",
+    "round_key": "round r uses the current W0 || W1 under round_key_rule",
+    "update": [
+      "W0' = W2",
+      "W1' = W3",
+      "W2' = W4",
+      "W3' = W5",
+      "W4' = W6",
+      "W5' = W7",
+      "W6'[j] = W0[(j+12) mod 16] for j=0..15",
+      "W7'[j] = W1[(j+2) mod 16] for j=0..15"
+    ]
+  },
+  "two_queries": {
+    "ordinary_difference_model": "each SubCells transition need only have nonzero DDT count; round keys are omitted because XOR differences cancel",
+    "shared_master_key_state_model": "there must exist plaintext p and one master key k such that E_k^6(p) xor E_k^6(p xor input_difference) equals output_difference",
+    "single_key_impossible_definition": "the fixed boundary is impossible when the shared-master-key state query is UNSAT"
+  },
+  "ddt_definition": "DDT[a][b] is the number of x in 0..15 such that S(x) xor S(x xor a) = b"
+}

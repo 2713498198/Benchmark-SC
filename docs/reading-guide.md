@@ -18,8 +18,8 @@
 | 内容 | 当前实现 | 主要位置 |
 | --- | --- | --- |
 | 账号、会话、连接元数据、报告与自定义测评集 | 已有业务接口和数据库持久化 | `J/auth/`、`connection/`、`report/`、`dataset/` |
-| CryptoBench-SC V4.1 公开题库 | 170 道题的浏览、筛选、75 个公开附件和 ZIP 下载 | `S/data/cryptobench-sc-v4/`、`ResourcesPage.js` |
-| Agent 执行与评分 | 真实调度与服务端评分已接入；Docker 来源提供隔离执行，V4.1 已绑定目录与验证器 | `J/execution/`、`S/js/vue/ArenaPage.js` |
+| CryptoBench-SC V4.2 公开题库 | 170 道题的浏览、筛选、75 个公开附件和 ZIP 下载 | `S/data/cryptobench-sc-v4/4.2.0/`、`ResourcesPage.js` |
+| Agent 执行与评分 | 真实调度与服务端评分已接入；Docker 来源提供隔离执行，V4.2 已绑定发布版 judge | `J/execution/`、`S/js/vue/ArenaPage.js` |
 
 阅读目标：能说清“网站保存了什么数据”“哪些数据来自题库”“页面上的成绩如何产生”。
 
@@ -133,7 +133,7 @@ S/index.html
 
 当前前端没有 `.vue` 单文件组件，也没有必须运行的 Vite 开发服务。组件的逻辑和 `template` 字符串写在 `.js` 中；路由由 `app.js` 解析 URL 的 `#` 部分并选择页面。
 
-阅读 `ArenaPage.js` 时，重点找 `checkConnection()`、`begin()` 和 `refreshRun()`：连接检查调用 Agent 的 `/health` 与 `/capabilities`，`begin()` 创建服务端运行，页面轮询状态和日志，成绩由服务端验证器产生。CryptoBench-SC V4.1 已标记 `executionReady: true`，可创建运行；未配置工作区验证器套件时，相关 65 道题按未通过处理。
+阅读 `ArenaPage.js` 时，重点找 `checkConnection()`、`begin()` 和 `refreshRun()`：连接检查调用 Agent 的 `/health` 与 `/capabilities`，`begin()` 创建服务端运行，页面轮询状态和日志，成绩由服务端验证器产生。CryptoBench-SC V4.2 已标记 `executionReady: true`，可创建运行；未配置私有 judge 套件时全部题目按未通过处理。
 
 公开题库的数据流建议这样读：
 

@@ -36,8 +36,10 @@ public class V4ValidatorRunner {
     }
 
     public boolean available() {
-        return properties.enabled()
-                && Files.isRegularFile(Path.of(properties.suiteRoot(), "scripts", "run_task_validator.py"));
+        if (!properties.enabled()) return false;
+        Path scripts = Path.of(properties.suiteRoot(), "scripts");
+        return Files.isRegularFile(scripts.resolve("grade_submission.py"))
+                || Files.isRegularFile(scripts.resolve("run_task_validator.py"));
     }
 
     public ObjectNode evaluate(String taskId, JsonNode response) {
@@ -54,9 +56,10 @@ public class V4ValidatorRunner {
             return result;
         }
 
-        Path runDir = null;
+        Path workspaceRoot = null;
         try {
-            runDir = Files.createTempDirectory("cryptobench-v4-run-");
+            workspaceRoot = Files.createTempDirectory("cryptobench-v4-run-");
+            Path runDir = Files.createDirectories(workspaceRoot.resolve("run"));
             Path workspace = Files.createDirectories(runDir.resolve("workspace"));
             JsonNode artifact = response != null && response.isObject() && response.has("artifact")
                     ? response.get("artifact") : response;
@@ -66,11 +69,16 @@ public class V4ValidatorRunner {
             writeEvidence(runDir, response != null && response.isObject()
                     ? response.get("evidence") : null);
 
-            Path out = runDir.resolve("validator_report.json");
+            Path suiteRoot = Path.of(properties.suiteRoot());
+            Path gradeEntry = suiteRoot.resolve("scripts").resolve("grade_submission.py");
+            boolean releaseJudge = Files.isRegularFile(gradeEntry);
+            Path out = workspaceRoot.resolve("validator_report.json");
+            String entry = releaseJudge
+                    ? gradeEntry.toString()
+                    : suiteRoot.resolve("scripts").resolve("run_task_validator.py").toString();
             List<String> command = new ArrayList<>(List.of(
-                    properties.pythonOrDefault(),
-                    Path.of(properties.suiteRoot(), "scripts", "run_task_validator.py").toString(),
-                    "--suite-root", Path.of(properties.suiteRoot()).toString(),
+                    properties.pythonOrDefault(), "-B", entry,
+                    "--suite-root", suiteRoot.toString(),
                     "--task-id", taskId,
                     "--run-dir", runDir.toString(),
                     "--out", out.toString()));
@@ -86,19 +94,37 @@ public class V4ValidatorRunner {
             }
             int exit = process.exitValue();
             JsonNode report = Files.exists(out) ? mapper.readTree(Files.readString(out, StandardCharsets.UTF_8)) : null;
-            if (report == null || exit != 0) {
+            if (report == null || (exit != 0 && !"validator_error".equals(report.path("status").asText("")))) {
                 result.put("status", "failed");
                 result.put("passed", false);
                 result.put("score", 0);
                 result.put("reason", "工作区验证器执行失败");
                 return result;
             }
-            String status = report.path("status").asText("failed");
-            boolean passed = "passed".equals(status);
-            result.put("status", passed ? "passed" : "failed");
+            double finalScore = report.path("final_score").asDouble(0.0);
+            String releaseStatus = report.path("release_check_status").asText("");
+            boolean passed = releaseStatus.isBlank()
+                    ? finalScore >= 0.9999
+                    : "passed".equals(releaseStatus);
+            String reportedStatus = report.path("status").asText("");
+            String status = "validator_error".equals(reportedStatus)
+                    ? "validator_error" : passed ? "passed" : "failed";
+            result.put("status", status);
             result.put("passed", passed);
-            result.put("score", passed ? report.path("final_score").asDouble(1.0) : 0);
-            if (!passed) result.put("reason", "提交未通过该题工作区验证器");
+            result.put("score", finalScore);
+            if (report.has("completion_status")) {
+                result.put("completionStatus", report.path("completion_status").asText());
+            }
+            if (report.has("completion_metric_eligible")) {
+                result.put("completionMetricEligible", report.path("completion_metric_eligible").asBoolean());
+            }
+            if (!releaseStatus.isBlank()) {
+                result.put("releaseCheckStatus", releaseStatus);
+                result.put("releaseCheckScope", report.path("release_check_scope").asText(""));
+            }
+            if (!passed) result.put("reason", "validator_error".equals(status)
+                    ? "工作区验证器执行失败"
+                    : "提交未通过该题工作区验证器");
             return result;
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
@@ -115,7 +141,7 @@ public class V4ValidatorRunner {
             result.put("reason", "工作区验证器执行异常");
             return result;
         } finally {
-            deleteRecursively(runDir);
+            deleteRecursively(workspaceRoot);
         }
     }
 

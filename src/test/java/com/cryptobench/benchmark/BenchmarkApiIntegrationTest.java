@@ -2,6 +2,7 @@ package com.cryptobench.benchmark;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.Cookie;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 每个 Client 独立维护 Cookie，模拟不同浏览器账号，使用随机 ID 避免测试间数据冲突。
  */
 @SpringBootTest(properties = {"benchmark.mail.mode=outbox", "benchmark.mail.outbox=target/test-mail/benchmark-api.jsonl",
-        "benchmark.mail.worker-enabled=false", "benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="})
+        "benchmark.mail.worker-enabled=false", "benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "benchmark.runner-package.directory=target/test-missing-runner-${random.uuid}"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class BenchmarkApiIntegrationTest {
@@ -44,10 +46,10 @@ class BenchmarkApiIntegrationTest {
         assertThat(client.send("GET", "/vendor/vue/vue.esm-browser.prod.js", null).getResponse().getStatus()).isEqualTo(200);
         assertThat(client.send("GET", "/data/cryptobench-sc-v4/catalog.json", null).getResponse().getStatus()).isEqualTo(404);
         assertThat(client.send("GET", "/data/cryptobench-sc-v4/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(404);
-        JsonNode current = client.json(client.send("GET", "/data/cryptobench-sc-v4/4.1.0/catalog.json", null));
-        assertThat(current.path("dataset").path("version").asText()).isEqualTo("4.1.0");
+        JsonNode current = client.json(client.send("GET", "/data/cryptobench-sc-v4/4.2.0/catalog.json", null));
+        assertThat(current.path("dataset").path("version").asText()).isEqualTo("4.2.0");
         assertThat(current.path("tasks").size()).isEqualTo(170);
-        assertThat(client.send("GET", "/data/cryptobench-sc-v4/4.1.0/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.send("GET", "/data/cryptobench-sc-v4/4.2.0/public-tasks.zip", null).getResponse().getStatus()).isEqualTo(200);
         for (String path : new String[]{"/.env", "/pom.xml", "/data/runtime/db.json", "/var/data/cryptobench.mv.db",
                 "/scripts/import_cryptobench.py", "/db/migration/V1__create_benchmark_schema.sql"}) {
             assertThat(client.send("GET", path, null).getResponse().getStatus()).isGreaterThanOrEqualTo(400);
@@ -224,6 +226,43 @@ class BenchmarkApiIntegrationTest {
         assertThat(mvc.perform(MockMvcRequestBuilders.post("/api/auth/register")
                 .contentType("application/json").content("x".repeat(5_000_001)))
                 .andReturn().getResponse().getStatus()).isEqualTo(413);
+    }
+
+    @Test
+    void runnerPackageDownloadRequiresLoginAndFailsClosedWithoutArtifact() throws Exception {
+        Client anonymous = new Client();
+        assertThat(anonymous.send("GET", "/api/runners/package", null).getResponse().getStatus()).isEqualTo(401);
+        assertThat(anonymous.send("GET", "/api/runners/download", null).getResponse().getStatus()).isEqualTo(401);
+        Client researcher = registeredClient();
+        assertThat(researcher.send("GET", "/api/runners/package", null).getResponse().getStatus())
+                .isEqualTo(503);
+        assertThat(researcher.send("GET", "/api/runners/download", null).getResponse().getStatus())
+                .isEqualTo(503);
+    }
+
+    @Test
+    void revokedRunnerDisappearsFromTheOwnersList() throws Exception {
+        Client client = registeredClient();
+        JsonNode pairing = client.json(client.send("POST", "/api/runners/pair", null));
+        ObjectNode agents = mapper.createObjectNode();
+        agents.putArray("profiles").addObject()
+                .put("name", "Revoked Runner")
+                .put("model", "mock-model")
+                .put("adapter", "http");
+        MvcResult registration = client.send("POST", "/api/runner/register", Map.of(
+                "pairingCode", pairing.path("pairingCode").asText(),
+                "displayName", "Revoked Runner",
+                "runnerVersion", "1.1.0",
+                "agents", agents));
+        assertThat(registration.getResponse().getStatus()).isEqualTo(201);
+        String id = client.json(registration).path("id").asText();
+        assertThat(client.json(client.send("GET", "/api/runners", null))).hasSize(1);
+
+        assertThat(client.send("DELETE", "/api/runners/" + id, null).getResponse().getStatus()).isEqualTo(200);
+        assertThat(client.json(client.send("GET", "/api/runners", null))).isEmpty();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM benchmark_runners WHERE id=? AND revoked_at IS NOT NULL",
+                Long.class, id)).isEqualTo(1);
     }
 
     /**

@@ -2,6 +2,18 @@
 
 Runner 在用户本机主动连接网站，不需要把本地 Agent 端口暴露到公网。长 Token、Agent 访问凭证和 Docker 配置只保存在本机 Runner 配置文件中；网站只保存 Runner Token 的哈希和公开能力信息。
 
+## 便携包用户
+
+从网站“本地 Runner”页面下载 Windows x64 便携包并解压。包内已经包含 Node.js，在解压后的 `CryptoBench-Runner` 目录执行：
+
+```powershell
+.\cryptobench-runner.cmd version
+.\cryptobench-runner.cmd pair --url <网站地址> --token <配对码> --agent-url http://127.0.0.1:8000 --model mock-model
+.\cryptobench-runner.cmd run
+```
+
+详细步骤见压缩包内 `README.md`。以下命令面向克隆完整仓库的开发者。
+
 Runner 支持两种 Agent 接入方式：
 
 - `http`：Agent 在本机监听 `/health`、`/capabilities` 和 `/analyze`。

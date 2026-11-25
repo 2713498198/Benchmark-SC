@@ -26,7 +26,7 @@ const server = http.createServer(async (request, response) => {
     return send(response, 200, {status: 'ok', version: 'mock-agent-1.0.0'});
   }
   if (request.method === 'GET' && request.url === '/capabilities') {
-    return send(response, 200, {protocolVersion: '1.0', agentVersion: 'mock-agent-1.0.0', models: ['GPT-4.1', 'Claude Sonnet 4', 'DeepSeek V3', 'Qwen3', 'Gemini 2.5 Pro', 'research-local-model', 'mock-model'], tools: ['python'], datasets: [{id: 'mini-spn', version: '1.0.0'}, {id: 'custom-spn', version: '1.0.0'}, {id: 'custom-spn', version: '2.0.0'}]});
+    return send(response, 200, {protocolVersion: '1.0', agentVersion: 'mock-agent-1.0.0', models: ['GPT-4.1', 'Claude Sonnet 4', 'DeepSeek V3', 'Qwen3', 'Gemini 2.5 Pro', 'research-local-model', 'mock-model'], tools: ['python'], datasets: [{id: 'cryptobench-sc-v4', version: '4.2.0'}, {id: 'mini-spn', version: '1.0.0'}, {id: 'custom-spn', version: '1.0.0'}, {id: 'custom-spn', version: '2.0.0'}]});
   }
   if (request.method === 'POST' && request.url === '/analyze') {
     let body = '';

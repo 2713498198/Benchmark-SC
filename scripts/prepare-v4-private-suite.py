@@ -1,9 +1,8 @@
 """Stage the server-private part of a CryptoBench-SC V4 release for scoring.
 
-Copies only what the V4ValidatorRunner needs onto the server. Public question
-text is not copied, but public attachment bytes required by validators are
-included because they are already part of the public task input. The staged
-directory is the value of CRYPTOBENCH_V4_SUITE_ROOT.
+For the 20261125-auto1 release judge, the complete maintainer package is the
+runbook and is copied as-is. Legacy source releases continue through the
+selective 4.1 private-material path below.
 
 Usage:
     python scripts/prepare-v4-private-suite.py <release-root> <target-dir>
@@ -107,12 +106,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path, help="release root with manifest.json and tasks/")
     parser.add_argument("target", type=Path, help="server-private suite directory")
-    parser.add_argument("--version", default="4.1.0", help="V4 dataset version")
+    parser.add_argument("--version", default="4.2.0", help="V4 dataset version")
     args = parser.parse_args()
     source = args.source.resolve()
     target = args.target.resolve()
     if target == source or target.is_relative_to(source):
         raise SystemExit("target must be outside the source release")
+
+    if (source / "scripts" / "grade_submission.py").is_file():
+        shutil.copytree(source, target, dirs_exist_ok=True)
+        validators = list((target / "tasks").glob("*/oracle/validator.py"))
+        if len(validators) != 67:
+            raise SystemExit(f"staged validator count is {len(validators)}, expected 67")
+        print(f"Staged 20261125-auto1 release judge into {target}")
+        return
 
     tasks_root = source / "tasks"
     scripts_root = source / "scripts"

@@ -8,12 +8,14 @@
 复制并修改配置后先运行：
 
 ```powershell
-node runner/src/cli.mjs pair `
+.\cryptobench-runner.cmd pair `
   --url http://127.0.0.1:4173 `
   --token <配对码> `
-  --agent-config runner/agent.json
-node runner/src/cli.mjs doctor
-node runner/src/cli.mjs run
+  --agent-config .\agent.json
+.\cryptobench-runner.cmd doctor
+.\cryptobench-runner.cmd run
 ```
+
+上面的命令适用于解压后的 `CryptoBench-Runner` 目录。克隆完整仓库的开发者应回到项目根目录，使用 `node runner/src/cli.mjs` 并把配置路径改为 `runner/agent.json`。
 
 配置中的 `command` 和 `args` 只在本机保存。可执行文件如果没有非交互参数，需要根据其官方文档填写；不要使用需要人工点击的交互模式。

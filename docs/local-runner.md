@@ -2,34 +2,61 @@
 
 本地 Runner 运行在用户自己的电脑上。网站只通过 Runner 发起的 HTTPS/HTTP 出站请求下发任务，因此用户不需要开放本地 Agent 端口，也不需要把 Docker socket 暴露给网站。
 
+## 安装
+
+登录网站后进入“本地 Runner”页面，先下载 Windows x64 便携包并解压。压缩包已经包含 Node.js，不需要安装 Node.js，也不需要克隆项目源码。
+
+在解压后的 `CryptoBench-Runner` 目录打开 PowerShell，后续配对和运行都使用 `cryptobench-runner.cmd`。
+
 ## 工作流程
 
-1. 登录网站的“本地 Runner”页面，生成十分钟有效的一次性配对码。
-2. 在项目根目录执行页面给出的 `node runner/src/cli.mjs pair` 命令。
-3. Runner 将长 Token 的哈希注册到网站，明文 Token 只写入用户目录的配置文件。
-4. 执行 `node runner/src/cli.mjs run`，Runner 主动轮询任务。
-5. Runner 在本机调用 Agent 的 `POST /analyze`、启动命令 Adapter，或按配置启动临时 Docker Agent。
-6. Runner 回传脱敏后的 Agent 结果；网站使用服务端隐藏验证器计算成绩和报告。
+1. 登录网站并下载、解压 Runner 便携包。
+2. 启动或配置本机 Agent。
+3. 在“本地 Runner”页面生成十分钟有效的一次性配对码。
+4. 在 `CryptoBench-Runner` 目录执行页面给出的配对命令。
+5. Runner 将长 Token 的哈希注册到网站，明文 Token 只写入用户目录的配置文件。
+6. 执行 `cryptobench-runner.cmd run`，Runner 主动轮询任务。
+7. Runner 在本机调用 Agent 后回传脱敏结果；网站使用服务端隐藏验证器评分。
 
 ## 配对和运行
+
+```powershell
+.\cryptobench-runner.cmd pair --url https://benchmark.example.com --token <配对码> --agent-url http://127.0.0.1:8000 --model mock-model
+.\cryptobench-runner.cmd doctor
+.\cryptobench-runner.cmd run
+```
+
+查看便携包及其内置 Node 版本：
+
+```powershell
+.\cryptobench-runner.cmd version
+```
+
+Runner 的本机配置默认位于 `%USERPROFILE%\\.cryptobench\\runner.json`。不要把这个文件提交到 Git。Agent 访问凭证只保存在该文件或当前进程内存中，网站报告不会保存这些凭证。
+
+## 源码运行
+
+已经克隆项目并安装 Node.js 20+ 的开发者可以直接使用以下源码命令；Runner 页面只为便携包用户生成 `cryptobench-runner.cmd` 命令。
 
 ```powershell
 node runner/src/cli.mjs pair --url http://127.0.0.1:4173 --token <配对码> --agent-url http://127.0.0.1:8000 --model mock-model
 node runner/src/cli.mjs run
 ```
 
-Docker Agent：
+本地生成便携包：
 
 ```powershell
-node runner/src/cli.mjs pair --url http://127.0.0.1:4173 --token <配对码> --docker-image cryptobench-agent:local
+npm run build:runner-package
 ```
 
-Runner 的本机配置默认位于 `%USERPROFILE%\\.cryptobench\\runner.json`。不要把这个文件提交到 Git。Agent 访问凭证只保存在该文件或当前进程内存中，网站报告不会保存这些凭证。
+产物位于 `target/runner-package/`。源码启动默认使用该目录；Docker 镜像在构建阶段自动生成并打包。
 
 ## 协议
 
 Runner API 使用短期任务租约和幂等回传：
 
+- `GET /api/runners/package`：登录后读取便携包版本、平台、Node 版本、大小和 SHA-256。
+- `GET /api/runners/download`：登录后下载 Windows x64 ZIP。
 - `POST /api/runner/register`：消费一次性配对码并领取 Runner Token。
 - `GET /api/runner/jobs/next`：领取一个任务；无任务时返回 `{ "job": null }`。
 - `POST /api/runner/heartbeat`：更新 Runner 在线状态和公开能力。
@@ -123,7 +150,7 @@ CryptoBench-SC V4 不再统一使用固定的 300 秒或 600 秒。服务端根�
 默认预算文件位于：
 
 ```text
-private/cryptobench-sc-v4/170-20261112/configs/budget_profiles.json
+private/v4-suite/configs/budget_profiles.json
 ```
 
 可以通过 `CRYPTOBENCH_V4_BUDGET_PROFILES` 指定其他路径。Mini-SPN 和自定义题库继续使用原来的 300/600 秒联调预算。

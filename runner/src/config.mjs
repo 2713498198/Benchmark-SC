@@ -8,7 +8,7 @@ export const configPath=process.env.CRYPTOBENCH_RUNNER_CONFIG||join(homedir(),'.
 // Load a local configuration or explain how to pair the Runner when none exists.
 export async function loadConfig(){
  try{return JSON.parse(await readFile(configPath,'utf8'));}
- catch(error){if(error.code==='ENOENT')throw new Error('Runner 尚未配对，请先执行 node runner/src/cli.mjs pair --url <网站地址> --token <配对码>');throw error;}
+ catch(error){if(error.code==='ENOENT')throw new Error('Runner 尚未配对，请先执行 pair --url <网站地址> --token <配对码>');throw error;}
 }
 
 // Write through a temporary file so an interrupted process cannot leave a half-written token.

@@ -1,0 +1,20 @@
+{
+  "schema_version": "present64_linear_spec_v1",
+  "primitive": "PRESENT-64 round core",
+  "word_size_bits": 64,
+  "rounds": 6,
+  "sbox_hex": ["c", "5", "6", "b", "9", "0", "a", "d", "3", "e", "f", "8", "4", "7", "1", "2"],
+  "lat_definition": "LAT[a][b] = sum over x in {0,...,15} of (-1)^(parity(a & x) xor parity(b & S(x)))",
+  "allowed_sbox_mask_transition": "A nibble-mask pair (a,b) is allowed if and only if LAT[a][b] != 0.",
+  "bit_numbering": "State-mask positions are numbered 0 through 63 from left to right in every 64-character binary string.",
+  "nibble_numbering": "Nibble i consists of positions 4*i, 4*i+1, 4*i+2, 4*i+3 in most-significant-bit to least-significant-bit order.",
+  "player_definition": "For 0 <= i < 63, P(i) = 16*i mod 63; P(63) = 63.",
+  "player_source_to_destination": [
+    0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51,
+    4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55,
+    8, 24, 40, 56, 9, 25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59,
+    12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63
+  ],
+  "round_definition": "Apply 16 parallel S-box mask transitions, then set next_state_mask[P(i)] = sbox_output_mask[i] for every bit position i.",
+  "key_addition_scope": "Round-key XOR changes the sign of a linear approximation but not whether its correlation is zero, so key addition is omitted from this fixed-mask trail-feasibility model."
+}

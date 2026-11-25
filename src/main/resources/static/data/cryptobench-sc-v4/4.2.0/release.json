@@ -1,0 +1,69 @@
+{
+  "schema": "cryptobench-v4-public-release-v2",
+  "datasetId": "cryptobench-sc-v4",
+  "version": "4.2.0",
+  "releaseRevision": "2026-11-25",
+  "upstreamRelease": "20261125-auto1",
+  "publicationStatus": "technical_ready",
+  "suiteId": "CBSC-V4-COMPREHENSIVE-BLOCK-CIPHER-170-20260805",
+  "sourceReleaseDate": "2026-11-25",
+  "publicSourceZipSha256": "6858d3ac8721aad066789ed70ef13fa1d44f4e0abeb1ef85fac354ca0de1fabe",
+  "judgeSourceZipSha256": "ea6656e416b4b7a8eb31fadc3988cea9c5b8beb9591aaa2d9a561cb267e15756",
+  "evaluatorVersion": "cryptobench-sc-v4-evaluator-1.1.0",
+  "taskCount": 170,
+  "publicFileCount": 245,
+  "attachmentCount": 75,
+  "changedTaskCount": 18,
+  "changedTasks": [
+    "023_CBSC-V2-NL-D11",
+    "047_CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+    "053_CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+    "054_CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+    "055_CBSC-V2-PS-2405-XOR3-INEQ-027",
+    "056_CBSC-V2-PS-2405-XOR4-DDT-028",
+    "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+    "108_CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+    "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+    "114_CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+    "121_CBSC-V4-PD-WARP-MP20-003",
+    "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+    "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+    "148_CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+    "149_CBSC-V4-PB-LEA128-RKID4-045",
+    "150_CBSC-V4-PD-TWINE15-NLPROJ-046",
+    "151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+    "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066"
+  ],
+  "publicCatalogSha256": "fadb521540f8fbaaeb63645b77d423ea209ccfd169943f3d0092cc733205118d",
+  "evaluationCoverage": {
+    "judgeGeneric": 103,
+    "judgeTaskSpecific": 67
+  },
+  "scoring": {
+    "taskResult": "release_check",
+    "overallMetric": "passed_tasks/total_tasks",
+    "partialScoresRetainedAsEvidence": true,
+    "completionMetricEligibleTasks": 166,
+    "answerOnlyTasks": [
+      "121_CBSC-V4-PD-WARP-MP20-003",
+      "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "149_CBSC-V4-PB-LEA128-RKID4-045"
+    ],
+    "automaticTasks": [
+      "023_CBSC-V2-NL-D11",
+      "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+      "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+      "121_CBSC-V4-PD-WARP-MP20-003",
+      "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "149_CBSC-V4-PB-LEA128-RKID4-045",
+      "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066"
+    ]
+  },
+  "rightsReview": {
+    "status": "attribution_recorded",
+    "document": "docs/v4-source-attribution.md",
+    "manifest": "data/cryptobench-sc-v4/4.2.0/attribution.json"
+  }
+}

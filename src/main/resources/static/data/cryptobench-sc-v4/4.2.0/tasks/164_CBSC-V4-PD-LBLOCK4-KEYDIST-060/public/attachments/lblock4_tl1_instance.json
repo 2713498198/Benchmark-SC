@@ -1,0 +1,36 @@
+{
+  "schema_version": "cbsc_lblock4_tl1_instance_v1",
+  "primitive": "LBlock four-round core",
+  "cell_size_bits": 4,
+  "state": "Two eight-nibble halves L^r[0..7] and R^r[0..7]. All entries are hexadecimal nibbles.",
+  "round_keys": "K^0,...,K^3 are arbitrary independent eight-nibble round keys. They are fixed when evaluating one conditional trail probability.",
+  "sboxes": [
+    [14, 9, 15, 0, 13, 4, 10, 11, 1, 2, 8, 3, 7, 6, 12, 5],
+    [4, 11, 14, 9, 15, 13, 0, 10, 7, 12, 5, 6, 2, 8, 1, 3],
+    [1, 14, 7, 12, 15, 13, 0, 6, 11, 5, 9, 3, 2, 4, 8, 10],
+    [7, 6, 8, 11, 0, 15, 3, 14, 9, 10, 12, 13, 5, 2, 4, 1],
+    [14, 5, 15, 0, 7, 2, 12, 13, 1, 8, 4, 9, 11, 10, 6, 3],
+    [2, 13, 11, 12, 15, 14, 0, 9, 7, 10, 6, 3, 1, 8, 4, 5],
+    [11, 9, 4, 14, 0, 15, 10, 13, 6, 12, 5, 7, 3, 8, 1, 2],
+    [13, 10, 15, 0, 14, 4, 9, 11, 2, 1, 8, 3, 7, 5, 12, 6]
+  ],
+  "round_definition": {
+    "sbox_input": "x^r_i = L^r_i xor K^r_i",
+    "sbox_output": "y^r_i = S_i(x^r_i)",
+    "permutation_output_to_input_index": [1, 3, 0, 2, 5, 7, 4, 6],
+    "next_left": "L^(r+1)_i = y^r_{pi[i]} xor R^r_{(i+6) mod 8}",
+    "next_right": "R^(r+1)_i = L^r_i"
+  },
+  "equivalent_first_lane_recurrence": "For r=0,1: x^(r+2)_i = S_{pi[i]}(x^(r+1)_{pi[i]}) xor x^r_{(i+6) mod 8} xor K^r_{(i+6) mod 8} xor K^(r+2)_i.",
+  "trail": [
+    {"round": 0, "delta_x": "00040000", "delta_y": "00020000"},
+    {"round": 1, "delta_x": "40400000", "delta_y": "40200000"},
+    {"round": 2, "delta_x": "04420000", "delta_y": "04650000"},
+    {"round": 3, "delta_x": "05060040", "delta_y": "06020040"}
+  ],
+  "hex_string_indexing": "The rightmost hexadecimal character is cell 0 and the leftmost character is cell 7. Thus 00040000 has delta_x[4]=4. Parse each listed string with list(reversed(hex_string)) when constructing arrays indexed 0..7.",
+  "trail_event": "For every r and i, require S_i(x^r_i) xor S_i(x^r_i xor delta_x^r_i) = delta_y^r_i. The listed difference rows satisfy the Feistel round linkage.",
+  "probability_space": "For a fixed tuple (K^0,K^1,K^2,K^3), x^0 and x^1 range independently and uniformly over all 16^16 nibble assignments. The recurrence determines x^2 and x^3. P_K is the exact fraction of these assignments satisfying the complete trail_event.",
+  "key_distribution": "The requested key fractions are over all uniformly distributed independent tuples (K^0,K^1,K^2,K^3). An equivalent quotient projection may be used instead of enumerating the full 2^128 key space.",
+  "markov_definition": "The local Markov estimate is the product, over all active cells, of DDT_i[delta_x][delta_y]/16. Its weight is -log2 of that product."
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "forkskinny64_fixed_integral_instance_v1",
+  "base_plaintext": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "base_tk1": [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+  "base_tk2": [1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14],
+  "base_tk3": [2, 7, 12, 1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13],
+  "varied_cells": [
+    {"array": "plaintext", "cell": 14, "values": "all integers 0..15"},
+    {"array": "tk1", "cell": 15, "values": "all integers 0..15"},
+    {"array": "tk2", "cell": 15, "values": "all integers 0..15"},
+    {"array": "tk3", "cell": 15, "values": "all integers 0..15"}
+  ],
+  "enumeration": "Cartesian product of the four value sets; every other cell remains at its base value",
+  "exact_input_count": 65536,
+  "aggregation": {
+    "cell_sum": "S_j is bitwise XOR of ciphertext cell j over all 65536 executions",
+    "combined_expression": "bitwise XOR of (ciphertext[3] XOR ciphertext[15]) over all 65536 executions"
+  }
+}

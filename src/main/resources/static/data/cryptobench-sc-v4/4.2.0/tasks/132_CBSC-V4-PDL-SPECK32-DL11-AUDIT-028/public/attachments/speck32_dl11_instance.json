@@ -1,0 +1,51 @@
+{
+  "schema_version": "speck32_dl11_audit_instance_v1",
+  "primitive": {
+    "name": "Speck32/64",
+    "word_size": 16,
+    "state_order": "(L, R)",
+    "round": "L_next = (ROR16(L, 7) + R mod 2^16) XOR round_key; R_next = ROL16(R, 2) XOR L_next",
+    "difference": "XOR difference; round-key XOR cancels in a fixed-key differential transition",
+    "bit_numbering": "Within each 16-bit word, bit 0 is the least significant bit. Hex pairs below are (L, R)."
+  },
+  "decomposition": {
+    "differential_rounds": 4,
+    "continuous_middle_rounds": 3,
+    "linear_rounds": 4,
+    "total_rounds": 11
+  },
+  "differential_trail": [
+    {"round": 0, "left_hex": "2a10", "right_hex": "0004"},
+    {"round": 1, "left_hex": "2050", "right_hex": "2040"},
+    {"round": 2, "left_hex": "8000", "right_hex": "0100"},
+    {"round": 3, "left_hex": "0000", "right_hex": "0400"},
+    {"round": 4, "left_hex": "0400", "right_hex": "1400"}
+  ],
+  "continuous_difference_semantics": {
+    "encoding": "For each difference bit, correlation value rho is +1 for bit 1 and -1 for bit 0.",
+    "xor": "xor_c(x, y) = -x*y",
+    "majority": "maj_c(x, y, z) = (x + y + z + x*y*z)/4",
+    "addition": "For bit i from LSB to MSB, c_0=-1, z_i=x_i*y_i*c_i, c_(i+1)=maj_c(x_i,y_i,c_i). Final carry is discarded.",
+    "rotation": "Correlation coordinates are rotated exactly as the corresponding 16-bit word.",
+    "speck_round": "A=ROR16(L,7); L_next=add_c(A,R); R_next=xor_c(ROL16(R,2),L_next).",
+    "middle_input": {"round": 4, "left_hex": "0400", "right_hex": "1400"},
+    "middle_output_round": 7,
+    "selected_by_linear_input_mask": {"left_hex": "0000", "right_hex": "0008"},
+    "middle_correlation_rule": "Multiply the absolute correlation values at all active positions of the round-7 linear input mask."
+  },
+  "linear_trail": [
+    {"round": 7, "left_hex": "0000", "right_hex": "0008"},
+    {"round": 8, "left_hex": "0020", "right_hex": "0020"},
+    {"round": 9, "left_hex": "0081", "right_hex": "4081"},
+    {"round": 10, "left_hex": "0c00", "right_hex": "0e01"},
+    {"round": 11, "left_hex": "3854", "right_hex": "3844"}
+  ],
+  "linear_correlation_definition": "For addition masks (a,b,c), C_add(a,b,c)=2^-32 * sum_{x,y in F_2^16} (-1)^(<a,x> XOR <b,y> XOR <c,(x+y mod 2^16)>). Account for the Speck rotations and XOR fork when deriving each round's addition masks.",
+  "combination": {
+    "differential_probability_symbol": "p",
+    "middle_correlation_absolute_symbol": "r",
+    "linear_trail_correlation_absolute_symbol": "q",
+    "theoretical_dl_correlation_absolute": "p * r * q^2",
+    "claim_to_audit": "2^-16.12"
+  }
+}

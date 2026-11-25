@@ -74,8 +74,14 @@ jobs:
       - name: Verify Runner task inputs and workspace artifacts
         run: npm run test:runner-command
 
+      - name: Verify portable Runner package contract
+        run: npm run test:runner-package
+
       - name: Verify report timing, categories, leaderboard and exports
         run: npm run test:report-metrics
+
+      - name: Validate CryptoBench-SC V4.2 public and private release contract
+        run: npm run validate:v4-release
 
       - name: Validate private evaluator catalog contract
         run: npm run validate:evaluator

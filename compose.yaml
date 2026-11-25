@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        CRYPTOBENCH_SOURCE_COMMIT: "${CRYPTOBENCH_SOURCE_COMMIT:-unknown}"
     ports:
       - "127.0.0.1:${HOST_PORT:-4173}:4173"
     environment:
@@ -10,11 +12,16 @@ services:
       SERVER_ADDRESS: 0.0.0.0
       PORT: 4173
       DB_URL: "jdbc:h2:file:/app/var/data/cryptobench;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE"
+      DB_USERNAME: sa
+      DB_PASSWORD: ""
       CRYPTOBENCH_DOCKER_ENABLED: "false"
+      CRYPTOBENCH_RUNNER_DOWNLOAD_DIR: /app/runner-package
       CRYPTOBENCH_INSTANCE_ID: "${CRYPTOBENCH_INSTANCE_ID:-${COMPOSE_PROJECT_NAME:-cryptobench-compose}}"
       CRYPTOBENCH_GATEWAY_ENABLED: "${CRYPTOBENCH_GATEWAY_ENABLED:-false}"
       CRYPTOBENCH_GATEWAY_IMAGE: "${CRYPTOBENCH_GATEWAY_IMAGE:-cryptobench-model-gateway:local}"
       CRYPTOBENCH_GATEWAY_PROVIDERS: "${CRYPTOBENCH_GATEWAY_PROVIDERS:-[]}"
+      CRYPTOBENCH_V4_SUITE_ROOT: /app/private/v4-suite
+      CRYPTOBENCH_V4_PYTHON: python3
       PASSWORD_RESET_DELIVERY_URL: "${PASSWORD_RESET_DELIVERY_URL:-}"
       PASSWORD_RESET_OUTBOX: "${PASSWORD_RESET_OUTBOX:-/app/var/mail/outbox.jsonl}"
       CRYPTOBENCH_MAIL_MODE: "${CRYPTOBENCH_MAIL_MODE:-auto}"
@@ -28,6 +35,7 @@ services:
       CRYPTOBENCH_SMTP_SSL: "${CRYPTOBENCH_SMTP_SSL:-false}"
     volumes:
       - ${CRYPTOBENCH_DATA_DIR:-./var}:/app/var
+      - "${CRYPTOBENCH_V4_SUITE_HOST_DIR:-./private/v4-suite}:/app/private/v4-suite:ro"
     healthcheck:
       test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:4173/actuator/health"]
       interval: 10s

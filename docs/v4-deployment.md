@@ -1,13 +1,16 @@
-# CryptoBench-SC V4.1 部署与 agent 协议
+# CryptoBench-SC V4.2 部署与 agent 协议
 
 ## 服务端私有套件
 
-`workspace-validator` 题目（106–170）需要把学长包里的私有部分部署到服务器非静态目录。
-用下面的脚本只拷贝验证器所需的 private 材料，绝不拷贝公开题干和附件：
+V4.2 的全部 170 道题统一通过发布版 judge 评分。公开题面、附件、隐藏 Oracle 和验证器必须先由导入器校验并拆分：
 
 ```powershell
-python scripts/prepare-v4-private-suite.py <release-root> <private-suite-dir>
+python scripts/import-v4-release.py `
+  --public-zip <CryptoBench-public.zip> `
+  --judge-zip <CryptoBench-judge.zip>
 ```
+
+导入器会生成 `cryptobench-sc-v4@4.2.0` 公开目录和 `private/v4-suite` 私有评分目录。部署到其他服务器时只能复制 `private/v4-suite` 到非静态私有目录，不能把该目录放入 `src/main/resources/static` 或镜像公开下载路径。
 
 然后配置：
 
@@ -24,7 +27,8 @@ benchmark:
 
 生产 Compose 默认把宿主机 `CRYPTOBENCH_V4_SUITE_HOST_DIR`（默认
 `./private/v4-suite`）只读挂载到 `/app/private/v4-suite`，并把
-`CRYPTOBENCH_V4_SUITE_ROOT` 设为该目录。运行时镜像已经安装 Python 3。
+`CRYPTOBENCH_V4_SUITE_ROOT` 设为该目录。运行时镜像安装了 Python 3 和
+`python-sat==1.9.dev25`；第 165 题使用该版本中的 CaDiCaL 后端。
 
 ## agent 工作区产物回传
 
@@ -59,7 +63,7 @@ witness 并给过程证据分：
   "files": [
     {
       "path": "attachments/input.json",
-      "url": "data/cryptobench-sc-v4/4.1.0/tasks/.../public/attachments/input.json",
+      "url": "data/cryptobench-sc-v4/4.2.0/tasks/.../public/attachments/input.json",
       "encoding": "base64",
       "bytes": 123,
       "sha256": "...",
@@ -75,9 +79,12 @@ Runner 的 CLI Adapter 会先校验并写入 `attachments/`，任务结束后回
 
 ## 打分覆盖
 
-当前私有目录 `evaluation/cryptobench-sc-v4/4.1.0/tasks.json` 的 170 题分布：
+当前私有目录 `evaluation/cryptobench-sc-v4/4.2.0/tasks.json` 的 170 题分布：
 
-- `numeric` / `string` / `boolean`：65 题，确定性声明式规则。
-- `fields`：39 题，多字段确定性规则，agent 按 `input.answerFormat` 返回结构化 JSON。
-- `workspace-validator`：65 题，经上游逐题 Python 验证器打分。
-- `dynamic`：0 题。
+- 共享 judge 路由：103 题，使用 `grade_submission.py` 和 `score_run_v3.py`。
+- 专用验证器路由：67 题，使用 `validation_routes.json` 指定的实现。
+- 自动检查题：023、057、110、121、129、130、149、170。
+- 121、129、130、149 只验证固定实例记录，标记为不进入完成率分母。
+
+运行服务端只执行受信任的 judge 代码和验证器，不执行 Agent 提交的代码。无法启动 Python、
+缺少私有套件或验证器依赖时会记录为失败，不会退化为前端猜测分数。

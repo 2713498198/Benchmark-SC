@@ -1,0 +1,55 @@
+{
+  "schema_version": "qarmav2_integral_cost_instance_v1",
+  "primitive": "QARMAv2-64-128",
+  "attacked_rounds": 13,
+  "integral_distinguisher_rounds": 9,
+  "appended_key_recovery_rounds": 4,
+  "shared_outer_guess_bits": 64,
+  "balanced_filter_bits_per_structure": 4,
+  "structure_data_log2": 44,
+  "s_range": [1, 16],
+  "partial_sum_paths": {
+    "X0_cell_5": [
+      {"step": 1, "factor_log2": [4, 40, 0]},
+      {"step": 2, "factor_log2": [4, 36, 4]},
+      {"step": 3, "factor_log2": [4, 32, 8]},
+      {"step": 4, "factor_log2": [0, 28, 12]},
+      {"step": 5, "factor_log2": [4, 28, 12]},
+      {"step": 6, "factor_log2": [4, 28, 16]},
+      {"step": 7, "factor_log2": [4, 24, 20]},
+      {"step": 8, "factor_log2": [0, 20, 24]},
+      {"step": 9, "factor_log2": [4, 16, 24]},
+      {"step": 10, "factor_log2": [4, 16, 28]},
+      {"step": 11, "factor_log2": [4, 12, 32]},
+      {"step": 12, "factor_log2": [0, 8, 36]},
+      {"step": 13, "factor_log2": [0, 4, 36]}
+    ],
+    "X0_cell_15": [
+      {"step": 1, "factor_log2": [4, 40, 0]},
+      {"step": 2, "factor_log2": [4, 40, 4]},
+      {"step": 3, "factor_log2": [4, 36, 8]},
+      {"step": 4, "factor_log2": [0, 32, 12]},
+      {"step": 5, "factor_log2": [4, 28, 12]},
+      {"step": 6, "factor_log2": [4, 28, 16]},
+      {"step": 7, "factor_log2": [4, 24, 20]},
+      {"step": 8, "factor_log2": [0, 20, 24]},
+      {"step": 9, "factor_log2": [4, 16, 24]},
+      {"step": 10, "factor_log2": [4, 16, 28]},
+      {"step": 11, "factor_log2": [4, 12, 32]},
+      {"step": 12, "factor_log2": [0, 8, 36]},
+      {"step": 13, "factor_log2": [0, 4, 36]}
+    ]
+  },
+  "unit_conversions": {
+    "RF_in_ENC": "1/13",
+    "MA_in_RF": "1/16"
+  },
+  "total_time_formula": "T(s) = 2^64 * (s*2^44*RF + s*P5*MA + s*P15*MA + 2^(64-4s)*ENC)",
+  "parenthesis_scope": "The outer factor 2^64 multiplies all four terms inside the parentheses.",
+  "security_time_bound": {
+    "comparison": "strictly_less_than",
+    "log2_ENC": 112
+  },
+  "data_complexity": "s*2^44 chosen plaintexts",
+  "memory_complexity": "s*2^44 stored ciphertext records"
+}

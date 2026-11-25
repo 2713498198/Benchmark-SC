@@ -56,7 +56,9 @@ public class RunnerRepository {
     }
 
     public List<Runner> findByOwner(String ownerId) {
-        return database.query("SELECT * FROM benchmark_runners WHERE owner_id=? ORDER BY created_at,id", this::runner, ownerId);
+        return database.query(
+                "SELECT * FROM benchmark_runners WHERE owner_id=? AND revoked_at IS NULL ORDER BY created_at,id",
+                this::runner, ownerId);
     }
 
     public boolean revoke(String id, String ownerId, long now) {

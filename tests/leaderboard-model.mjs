@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {leaderboardModel,leaderboardCsvRows,displayScore,rankingEligible,trustLabel} from '../src/main/resources/static/js/leaderboard-model.js';
 import {chartModel,chartAxes} from '../src/main/resources/static/js/leaderboard-chart.js';
 import {executionSourceOptions,executionSourceLabel} from '../src/main/resources/static/js/execution-sources.js';
+import {paperLeaderboardRows,paperBenchmark} from '../src/main/resources/static/js/paper-leaderboard.js';
 const rankings=[{source:'local'},{source:'local'},{source:'local'},{source:'local'},{source:'local'}];
 
 const filters={dataset:'set',version:'1',budget:'standard',source:'all',type:'demo',sort:'score'};
@@ -49,8 +50,36 @@ for(const [key,id] of [['local','local-source'],['cloud','cloud-source'],['unrep
 assert.equal(declared[2].source,null,'Missing execution sources are never rewritten as local');
 assert.deepEqual(leaderboardCsvRows(actual.visible).map(r=>r[0]),['demo',false]);
 assert.deepEqual(leaderboardCsvRows(data.visible).slice(1).map(r=>r[0]),[true,true,true,true]);
-assert.equal(leaderboardCsvRows(data.visible)[0].length,18);
+assert.equal(leaderboardCsvRows(data.visible)[0].length,27);
 assert.equal(JSON.stringify([builtins,publicRows,own]),snapshot,'Source records remain untouched');
+const paperFilters={dataset:'cryptobench-sc-v4',version:'4.2.0',budget:'official',source:'all',type:'official',sort:'score'};
+const paper=leaderboardModel(paperLeaderboardRows,publicRows,own,paperFilters);
+assert.equal(paperLeaderboardRows.length,24);
+assert.equal(paperBenchmark.combinationCount,24);
+assert.deepEqual(paperBenchmark.metricMeans,{vcr:30.8,fullAcc:37.3,vpr:49.8,process:68});
+assert.equal(paper.cohort.length,24);
+assert.equal(paper.cohort[0].record.model,'Claude Opus 5.5');
+assert.equal(paper.cohort[0].record.score,37.1);
+assert.equal(paper.cohort[1].record.score,36.5);
+assert.equal(paper.cohort[0].record.passed,63);
+assert.equal(paper.cohort[0].record.fullAcc,42.9);
+assert.equal(paper.cohort[0].record.vpr,72.9);
+assert.equal(paper.cohort[0].record.process,85.3);
+assert.equal(paper.cohort[0].record.categories.reduce((sum,row)=>sum+row.passed,0),paper.cohort[0].record.passed);
+assert.ok(paper.cohort.every(row=>row.record.categories.length===4&&row.record.officialBaseline));
+for(const row of paperLeaderboardRows){
+ assert.equal(row.categories.reduce((sum,category)=>sum+category.passed,0),row.passed);
+ assert.equal(row.vcr,Number((row.passed/row.total*100).toFixed(1)));
+ for(const category of row.categories){
+  assert.equal(category.score,Number((category.passed/category.total*100).toFixed(1)));
+ }
+}
+assert.equal(trustLabel(paper.cohort[0].record),'正式版本');
+assert.equal(executionSourceLabel('official'),'正式版本');
+assert.deepEqual(executionSourceOptions(paperLeaderboardRows).map(option=>option.value),['all','official']);
+assert.deepEqual(leaderboardModel(paperLeaderboardRows,publicRows,own,{...paperFilters,sort:'fullAcc'}).visible[0].record.model,'Claude Opus 5.5');
+assert.equal(leaderboardCsvRows(paper.visible).length,25);
+assert.deepEqual(leaderboardCsvRows(paper.visible)[0].slice(10,14),['vcr','full_acc','vpr','process']);
 const points=chartModel(data.visible.map(e=>e.record)).points;
 assert.equal(chartAxes(points).yMin,0);assert.equal(chartAxes(points).yMax,100);
 assert.ok(chartAxes(points,'cost',true).yMin>0,'Zoom is explicit');

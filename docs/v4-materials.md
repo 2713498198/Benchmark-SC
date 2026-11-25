@@ -1,4 +1,7 @@
-# V4 正式材料接入
+# V4 正式材料接入（历史清单格式）
+
+> `cryptobench-sc-v4@4.2.0` 当前使用 `python scripts/import-v4-release.py --public-zip ... --judge-zip ...`
+> 同时导入 public 与 judge 发布包，并执行 `npm run validate:v4-release`。下面的通用材料清单格式仅用于其他自定义题库或历史材料。
 
 V4 的隐藏答案、oracle、参考复放和验证器不能放在 `src/main/resources/static/`，也不能放进公开任务 ZIP。材料交付后先放入仅服务端可读的私有目录，并准备一份清单。4.1.0 导入使用同样的清单格式，版本号必须改为 `4.1.0`：
 

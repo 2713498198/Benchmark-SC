@@ -25,14 +25,14 @@ class TaskInputServiceTest {
                 List.of(), List.of(), mapper.createObjectNode(), "", mapper.createObjectNode());
         ObjectNode request = mapper.createObjectNode();
 
-        new TaskInputService().attach("cryptobench-sc-v4", "4.1.0", task, request);
+        new TaskInputService().attach("cryptobench-sc-v4", "4.2.0", task, request);
 
         assertThat(request.path("files")).hasSize(1);
         var file = request.path("files").get(0);
         byte[] content = Base64.getDecoder().decode(file.path("content").asText());
         assertThat(file.path("path").asText()).isEqualTo("attachments/gift64_3diff_instance.json");
         assertThat(file.path("url").asText()).isEqualTo(
-                "data/cryptobench-sc-v4/4.1.0/" + path);
+                "data/cryptobench-sc-v4/4.2.0/" + path);
         assertThat(file.path("encoding").asText()).isEqualTo("base64");
         assertThat(file.path("bytes").asInt()).isEqualTo(content.length);
         assertThat(file.path("sha256").asText()).isEqualTo(
@@ -43,7 +43,7 @@ class TaskInputServiceTest {
     @Test
     void resolvesEveryPublishedV4Attachment() throws Exception {
         var catalog = mapper.readTree(getClass().getResourceAsStream(
-                "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"));
+                "/evaluation/cryptobench-sc-v4/4.2.0/tasks.json"));
         TaskInputService service = new TaskInputService();
         int count = 0;
         for (var taskNode : catalog.path("tasks")) {
@@ -53,7 +53,7 @@ class TaskInputServiceTest {
             TaskDefinition task = new TaskDefinition(taskNode.path("id").asText(), "question", "",
                     publicFiles, List.of(), List.of(), mapper.createObjectNode(), "", mapper.createObjectNode());
             ObjectNode request = mapper.createObjectNode();
-            service.attach("cryptobench-sc-v4", "4.1.0", task, request);
+            service.attach("cryptobench-sc-v4", "4.2.0", task, request);
             for (var file : request.path("files")) {
                 assertThat(file.path("path").asText()).doesNotStartWith("tasks/");
                 assertThat(file.path("content").asText()).isNotBlank();
@@ -61,6 +61,6 @@ class TaskInputServiceTest {
                 count++;
             }
         }
-        assertThat(count).isEqualTo(75);
+        assertThat(count).isEqualTo(245);
     }
 }
