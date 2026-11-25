@@ -107,6 +107,11 @@ node runner/src/cli.mjs run
 
 没有配置 `cwd` 时，Runner 会为每个任务创建独立临时目录，并在完成后清理，避免 Agent 修改 Runner 或网站源码。需要访问固定本地项目或工具配置时，应显式填写经过确认的工作目录。
 
+带附件或需要工作区验证的任务始终使用独立临时工作目录。Runner 会解码并校验
+`task.files`，把附件写入 `attachments/`；任务结束后回收代码、日志、JSON、CSV 等文本产物，
+作为 `artifact.files` 上传。Agent 可通过环境变量 `CRYPTOBENCH_WORKSPACE` 或提示词中的
+`{workspace}` 获取工作区路径。
+
 Windows 上可直接配置 `.exe`，也可通过 `node` 启动 JavaScript 入口。`.cmd` 和 `.bat` 包装器通过系统 `ComSpec` 运行；参数只能来自本机可信的 Agent 配置文件。
 
 ## V4 动态预算

@@ -1,7 +1,8 @@
 import {spawn} from 'node:child_process';
-import {access,mkdtemp,readFile,realpath,rm} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {access,mkdir,mkdtemp,readFile,readdir,realpath,rm,writeFile} from 'node:fs/promises';
 import {constants as fsConstants} from 'node:fs';
-import {basename,delimiter,extname,isAbsolute,join,resolve} from 'node:path';
+import {basename,dirname,delimiter,extname,isAbsolute,join,relative,resolve,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 
 const DEFAULT_TIMEOUT_SECONDS = 300;
@@ -9,6 +10,15 @@ const DEFAULT_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
 const MAX_EVIDENCE_EVENTS = 300;
 const MAX_EVIDENCE_TEXT = 8000;
 const MAX_EVIDENCE_BYTES = 512 * 1024;
+const MAX_ARTIFACT_FILE_BYTES = 1_500_000;
+const MAX_ARTIFACT_BYTES = 4_000_000;
+const ARTIFACT_SUFFIXES = new Set([
+  '.md', '.txt', '.json', '.jsonl', '.csv', '.log', '.py', '.sage',
+  '.c', '.cpp', '.h', '.rs', '.java', '.mzn', '.sh'
+]);
+const EXCLUDED_WORKSPACE_PARTS = new Set([
+  '.git', '.venv', 'venv', '__pycache__', 'node_modules', 'site-packages', '.agent_runtime'
+]);
 
 /**
  * Execute an installed Agent CLI and normalize its output for the Runner API.
@@ -16,21 +26,26 @@ const MAX_EVIDENCE_BYTES = 512 * 1024;
  */
 export async function runCommand(profile, request) {
   const config = normalizeProfile(profile, request);
-  const prompt = renderPrompt(config.promptTemplate, request, config);
-  const args = config.args.map(argument => renderTemplate(argument, {prompt, request, profile: config}));
-  const isolated = !config.cwd;
-  const workingDirectory = config.cwd || await mkdtemp(join(tmpdir(), 'cryptobench-agent-'));
+  const hasTaskFiles = Array.isArray(request?.task?.files) && request.task.files.length > 0;
+  const captureWorkspace = Boolean(request?.captureWorkspace) || hasTaskFiles;
+  const isolated = captureWorkspace || !config.cwd;
+  const workingDirectory = isolated ? await mkdtemp(join(tmpdir(), 'cryptobench-agent-')) : config.cwd;
   const started = Date.now();
   try {
+    if (hasTaskFiles) await materializeTaskInputs(request, workingDirectory);
+    const prompt = renderPrompt(config.promptTemplate, request, config, workingDirectory);
+    const args = config.args.map(argument => renderTemplate(argument, {prompt, request, profile: config, workspace: workingDirectory}));
     const result = await spawnAgent({...config, cwd: workingDirectory}, args, prompt, request);
     const parsed = parseOutput(result.stdout, config.output);
     const secrets = [...secretValues({...process.env, ...config.env}), ...argumentSecretValues(args)];
     const evidence = normalizeEvidence(parsed.events, result.stderr, config);
     const usage = normalizeUsage(parsed.usage, Date.now() - started);
+    const captured = captureWorkspace ? await collectWorkspaceArtifacts(workingDirectory) : [];
+    const artifact = mergeArtifactFiles(parsed.artifact, captured);
 
     return redact({
       status: 'completed',
-      artifact: parsed.artifact,
+      artifact,
       evidence,
       usage,
       elapsedMs: Date.now() - started,
@@ -40,6 +55,8 @@ export async function runCommand(profile, request) {
         argumentCount: config.args.length,
         outputFormat: config.output,
         isolatedWorkingDirectory: isolated,
+        deliveredInputFiles: Array.isArray(request?.task?.files) ? request.task.files.length : 0,
+        capturedOutputFiles: captured.length,
         agentVersion: config.version || 'unknown',
         model: config.model || request.model || 'unknown'
       }
@@ -185,7 +202,8 @@ function spawnAgent(config, args, prompt, request) {
         ...config.env,
         CRYPTOBENCH_RUN_ID: String(request.runId || ''),
         CRYPTOBENCH_TASK_ID: String(request.taskId || ''),
-        CRYPTOBENCH_ATTEMPT: String(request.attempt || 1)
+        CRYPTOBENCH_ATTEMPT: String(request.attempt || 1),
+        CRYPTOBENCH_WORKSPACE: config.cwd
       },
       shell: false,
       windowsHide: true,
@@ -419,21 +437,146 @@ function normalizeEvidence(events, stderr, config) {
   return evidence;
 }
 
-function renderPrompt(template, request, profile) {
-  return renderTemplate(template, {prompt: '', request, profile, task: request.task});
+async function materializeTaskInputs(request, workspace) {
+  const files = request?.task?.files;
+  if (!Array.isArray(files) || files.length === 0) return;
+  for (const input of files) {
+    if (!input || typeof input !== 'object') throw adapterError('invalid_task_input', '任务附件格式无效');
+    const relativePath = safeWorkspacePath(workspace, input.path);
+    const encoding = String(input.encoding || '').toLowerCase();
+    if (encoding !== 'base64' || typeof input.content !== 'string') {
+      throw adapterError('invalid_task_input', `任务附件编码不受支持：${input.path || '(missing)'}`);
+    }
+    let content;
+    try {
+      content = Buffer.from(input.content, 'base64');
+    } catch {
+      throw adapterError('invalid_task_input', `任务附件 Base64 无效：${input.path}`);
+    }
+    if (Number.isFinite(Number(input.bytes)) && content.length !== Number(input.bytes)) {
+      throw adapterError('invalid_task_input', `任务附件长度不一致：${input.path}`);
+    }
+    if (typeof input.sha256 === 'string' && input.sha256
+        && createHash('sha256').update(content).digest('hex') !== input.sha256.toLowerCase()) {
+      throw adapterError('invalid_task_input', `任务附件校验失败：${input.path}`);
+    }
+    const target = resolve(workspace, relativePath);
+    await mkdir(dirname(target), {recursive: true});
+    await writeFile(target, content);
+  }
+}
+
+async function collectWorkspaceArtifacts(workspace) {
+  const files = [];
+  let total = 0;
+
+  async function walk(directory, depth = 0) {
+    if (depth > 12) return;
+    let entries;
+    try {
+      entries = await readdir(directory, {withFileTypes: true});
+    } catch {
+      return;
+    }
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) continue;
+      const full = join(directory, entry.name);
+      const relativePath = relative(workspace, full).replace(/\\/g, '/');
+      const parts = relativePath.split('/');
+      if (parts.some(part => EXCLUDED_WORKSPACE_PARTS.has(part))) continue;
+      if (parts[0] === 'attachments' || relativePath === 'final_answer.md') continue;
+      if (entry.isDirectory()) {
+        await walk(full, depth + 1);
+        continue;
+      }
+      if (!entry.isFile() || !ARTIFACT_SUFFIXES.has(extname(entry.name).toLowerCase())) continue;
+      let content;
+      try {
+        content = await readFile(full);
+      } catch {
+        continue;
+      }
+      if (!content.length || content.length > MAX_ARTIFACT_FILE_BYTES || total + content.length > MAX_ARTIFACT_BYTES) continue;
+      const text = content.toString('utf8');
+      if (text.includes('\0')) continue;
+      total += content.length;
+      files.push({path: relativePath, content: text});
+    }
+  }
+
+  await walk(workspace);
+  return files;
+}
+
+function mergeArtifactFiles(artifact, captured) {
+  const result = artifact && typeof artifact === 'object' && !Array.isArray(artifact)
+    ? {...artifact}
+    : {answer: String(artifact || '')};
+  const files = Array.isArray(result.files) ? result.files.filter(item => item && typeof item === 'object') : [];
+  const seen = new Set(files.map(item => String(item.path || '')).filter(Boolean));
+  for (const item of captured) {
+    if (!seen.has(item.path)) {
+      files.push(item);
+      seen.add(item.path);
+    }
+  }
+  if (files.length) result.files = files;
+  return result;
+}
+
+function safeWorkspacePath(workspace, value) {
+  if (typeof value !== 'string' || !value.trim() || isAbsolute(value)) {
+    throw adapterError('invalid_task_input', '任务附件路径无效');
+  }
+  const normalized = value.replace(/\\/g, '/');
+  if (normalized.split('/').some(part => part === '..')) {
+    throw adapterError('invalid_task_input', `任务附件路径越界：${value}`);
+  }
+  const target = resolve(workspace, normalized);
+  const root = resolve(workspace);
+  if (target !== root && !target.startsWith(root.endsWith(sep) ? root : root + sep)) {
+    throw adapterError('invalid_task_input', `任务附件路径越界：${value}`);
+  }
+  return normalized;
+}
+
+function renderPrompt(template, request, profile, workspace) {
+  return renderTemplate(template, {prompt: '', request, profile, task: request.task, workspace});
 }
 
 function renderTemplate(template, context) {
+  const promptTask = taskForPrompt(context.request?.task);
+  const promptRequest = context.request ? {...context.request, task: promptTask} : {};
   const replacements = {
     prompt: context.prompt ?? '',
     runId: String(context.request?.runId || ''),
     taskId: String(context.request?.taskId || ''),
     model: String(context.profile?.model || context.request?.model || ''),
     attempt: String(context.request?.attempt || 1),
-    taskJson: JSON.stringify(context.request?.task || {}, null, 2),
-    requestJson: JSON.stringify(context.request || {}, null, 2)
+    taskJson: JSON.stringify(promptTask, null, 2),
+    requestJson: JSON.stringify(promptRequest, null, 2),
+    workspace: String(context.workspace || ''),
+    files: JSON.stringify(inputMetadata(context.request?.task?.files), null, 2)
   };
-  return String(template).replace(/\{(prompt|runId|taskId|model|attempt|taskJson|requestJson)\}/g, (_, key) => replacements[key]);
+  return String(template).replace(/\{(prompt|runId|taskId|model|attempt|taskJson|requestJson|workspace|files)\}/g, (_, key) => replacements[key]);
+}
+
+function taskForPrompt(task) {
+  if (!task || typeof task !== 'object') return {};
+  return {
+    ...task,
+    ...(Array.isArray(task.files) ? {files: inputMetadata(task.files)} : {})
+  };
+}
+
+function inputMetadata(files) {
+  if (!Array.isArray(files)) return [];
+  return files.map(file => {
+    if (!file || typeof file !== 'object') return {};
+    const {content, ...metadata} = file;
+    return metadata;
+  });
 }
 
 function defaultPromptTemplate() {
@@ -446,11 +589,15 @@ function defaultPromptTemplate() {
     '任务内容：',
     '{taskJson}',
     '',
+    '工作区：{workspace}',
+    '题目附件已解码到工作区的 attachments/ 目录；如果任务不需要附件，该目录不存在。',
+    '',
     '要求：',
     '1. 最终答案必须直接回答题目，不要只描述方法。',
-    '2. 保留关键推导、工具调用、文件或版本观察，作为可核验证据。',
-    '3. 如果结论依赖假设，请明确写出假设。',
-    '4. 如果无法确定答案，请说明缺失的证据，不要猜测。'
+    '2. 将可复核的代码、日志和结构化结果保存在当前工作区，服务端会回收文本产物。',
+    '3. 保留关键推导、工具调用、文件或版本观察，作为可核验证据。',
+    '4. 如果结论依赖假设，请明确写出假设。',
+    '5. 如果无法确定答案，请说明缺失的证据，不要猜测。'
   ].join('\n');
 }
 

@@ -17,7 +17,8 @@ LABEL org.opencontainers.image.title="CryptoBench" \
 # The Compose healthcheck uses wget. Install only this small runtime utility
 # and remove the package index so the application image stays self-contained.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget \
+    && apt-get install -y --no-install-recommends wget python3 python3-pip \
+    && python3 -m pip install --no-cache-dir --disable-pip-version-check python-sat==1.8.dev24 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /workspace/target/cryptobench-1.1.0.jar /app/cryptobench.jar

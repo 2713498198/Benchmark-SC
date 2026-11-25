@@ -32,6 +32,9 @@ assert.equal(app.environment.SPRING_PROFILES_ACTIVE, 'prod');
 assert.equal(app.environment.CRYPTOBENCH_RUN_MAX_ACTIVE_PER_USER, '2');
 assert.equal(app.environment.CRYPTOBENCH_RUN_MAX_CREATED_PER_DAY_PER_USER, '10');
 assert.equal(app.environment.CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL, '100');
+assert.equal(app.environment.CRYPTOBENCH_V4_SUITE_ROOT, '/app/private/v4-suite');
+assert.equal(app.environment.CRYPTOBENCH_V4_PYTHON, 'python3');
+assert.ok(app.volumes.some(volume => volume.target === '/app/private/v4-suite' && volume.read_only === true));
 
 const missing = await run('docker', [
   'compose', '--env-file', 'target/missing-prod.env', '-f', 'compose.prod.yaml', 'config'

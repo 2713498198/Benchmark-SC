@@ -41,9 +41,12 @@ services:
       CRYPTOBENCH_RUN_MAX_ACTIVE_PER_USER: "${CRYPTOBENCH_RUN_MAX_ACTIVE_PER_USER:-2}"
       CRYPTOBENCH_RUN_MAX_CREATED_PER_DAY_PER_USER: "${CRYPTOBENCH_RUN_MAX_CREATED_PER_DAY_PER_USER:-10}"
       CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL: "${CRYPTOBENCH_RUN_MAX_ACTIVE_GLOBAL:-100}"
+      CRYPTOBENCH_V4_SUITE_ROOT: /app/private/v4-suite
+      CRYPTOBENCH_V4_PYTHON: python3
       CRYPTOBENCH_DOCKER_ENABLED: "false"
     volumes:
       - app-var:/app/var
+      - "${CRYPTOBENCH_V4_SUITE_HOST_DIR:-./private/v4-suite}:/app/private/v4-suite:ro"
     depends_on:
       mysql:
         condition: service_healthy

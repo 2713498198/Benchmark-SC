@@ -19,7 +19,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * 在 JSON 反序列化前限制 API 请求体大小，优先于其他过滤器执行。
- * 同时检查声明长度和实际读取长度，最大允许 5,000,000 字节。
+ * 同时检查声明长度和实际读取长度。普通 API 最大 5,000,000 字节，Runner
+ * 结果允许 8,000,000 字节以容纳工作区代码和日志。
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -37,7 +38,10 @@ public class RequestSizeFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
-        int maxBytes = request.getRequestURI().startsWith("/api/datasets/custom") ? 2_000_000 : MAX_BYTES;
+        String uri = request.getRequestURI();
+        int maxBytes = uri.startsWith("/api/datasets/custom") ? 2_000_000
+                : uri.startsWith("/api/runner/jobs/") && uri.endsWith("/result") ? 8_000_000
+                : MAX_BYTES;
         if (request.getContentLengthLong() > maxBytes) {
             response.sendError(413);
             return;

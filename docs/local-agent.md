@@ -64,6 +64,23 @@ Content-Type: application/json
 `requiredTools` 与 `requiredCapabilities` 也会在同一阶段检查。Agent 省略这些可选字段时，服务端
 保持对旧协议的兼容，但不会把客户端传入的成绩当作验证结果。
 
+如果公开任务带附件，`/analyze` 请求的 `task.files` 会包含文件字节：
+
+```json
+{
+  "path": "attachments/input.json",
+  "url": "data/cryptobench-sc-v4/4.1.0/tasks/.../public/attachments/input.json",
+  "encoding": "base64",
+  "bytes": 123,
+  "sha256": "...",
+  "mediaType": "application/json",
+  "content": "..."
+}
+```
+
+Agent 应把文件写入自己的工作区。工作区验证题需要返回完整的 `artifact.files` 和
+`evidence`，服务端不会执行 Agent 提交的代码，只把它们交给受信任的评分器。
+
 ### 创建运行
 
 ```http

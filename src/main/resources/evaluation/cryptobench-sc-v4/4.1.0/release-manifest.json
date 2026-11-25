@@ -1,0 +1,1973 @@
+{
+  "schema": "cryptobench-v4-private-release-v1",
+  "datasetId": "cryptobench-sc-v4",
+  "version": "4.1.0",
+  "releaseRevision": "2026-11-25",
+  "evaluatorVersion": "cryptobench-sc-v4-evaluator-1.0.1",
+  "publicationStatus": "technical_ready",
+  "sourceManifestSha256": "fcdafe32359ee2c7973976736098fd428ba4422111de3d45dc822452b83c3648",
+  "publicCatalogSha256": "10074e8ddbfa7e15ec84b0d18a0c63920be41c6460cc3d5b4dc9f1a8fedb7a57",
+  "publicReleaseSha256": "ca99b20ff93a3bb85ec0b9d0803a5ea44ba1455726519d13357bbabf58660f90",
+  "publicZipSha256": "6728b236d09f43214976d55b9e29a7f662e7b8e23512560a03e4757674af3bb7",
+  "privateCatalogSha256": "62b71f0bb385ac06b9e3feacf8d05a6426c7fe8edc47ed7f25b3cbbdcf75e882",
+  "taskCount": 170,
+  "ruleCounts": {
+    "boolean": 1,
+    "fields": 39,
+    "numeric": 33,
+    "piecewise": 1,
+    "string": 31,
+    "workspace-validator": 65
+  },
+  "validatorCount": 65,
+  "attachmentCount": 75,
+  "publicFileCount": 245,
+  "rightsReview": {
+    "status": "attribution_recorded",
+    "document": "docs/v4-source-attribution.md",
+    "manifest": "data/cryptobench-sc-v4/4.1.0/attribution.json"
+  },
+  "tasks": [
+    {
+      "id": "001_CBSC-V2-NL-A01",
+      "questionNumber": 1,
+      "sourceTaskId": "CBSC-V2-NL-A01",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "8d9649a384be73ff67c755066a5cb1100d5f0b5836dc2d611808b277ad155c03",
+      "expectedAnswerSha256": "b7a56873cd771f2c446d369b649430b65a756ba278ff97ec81bb6f55b2e73569"
+    },
+    {
+      "id": "002_CBSC-V2-NL-A02",
+      "questionNumber": 2,
+      "sourceTaskId": "CBSC-V2-NL-A02",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "5cfcbf439484aa15bbfcea327371b86985164bd9c3b8efcaf15013c82c1bbf68",
+      "expectedAnswerSha256": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b"
+    },
+    {
+      "id": "003_CBSC-V2-NL-A03",
+      "questionNumber": 3,
+      "sourceTaskId": "CBSC-V2-NL-A03",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "f9c15b071e7932ab1899331e24ccc888d98ce9ab7cafa6f639134713d8ec741c",
+      "expectedAnswerSha256": "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5"
+    },
+    {
+      "id": "004_CBSC-V2-NL-A04",
+      "questionNumber": 4,
+      "sourceTaskId": "CBSC-V2-NL-A04",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "29f694dab68035b9e39be06fb55a4c6ae8c1596a9f76d6818cea87a736c357cb",
+      "expectedAnswerSha256": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b"
+    },
+    {
+      "id": "005_CBSC-V2-NL-A05",
+      "questionNumber": 5,
+      "sourceTaskId": "CBSC-V2-NL-A05",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "1120d64cef65a0c9cf1367babca645a6ccffa673389f503344debe9efb7bc678",
+      "expectedAnswerSha256": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b"
+    },
+    {
+      "id": "006_CBSC-V2-NL-A06",
+      "questionNumber": 6,
+      "sourceTaskId": "CBSC-V2-NL-A06",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "44c797593600e610a2b0ed5e86db3722609d66a0f4e226f22afea13ab4fb9edb",
+      "expectedAnswerSha256": "9400f1b21cb527d7fa3d3eabba93557a18ebe7a2ca4e471cfe5e4c5b4ca7f767"
+    },
+    {
+      "id": "007_CBSC-V2-NL-A07",
+      "questionNumber": 7,
+      "sourceTaskId": "CBSC-V2-NL-A07",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "47bfe5bc6e11f8923bdf1aa636cd34514e82898a83b3ee550934f9cd259fceb4",
+      "expectedAnswerSha256": "4ec9599fc203d176a301536c2e091a19bc852759b255bd6818810a42c5fed14a"
+    },
+    {
+      "id": "008_CBSC-V2-NL-A08",
+      "questionNumber": 8,
+      "sourceTaskId": "CBSC-V2-NL-A08",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "3fc517a4ab7e8e195706810ae0f063e8caae5099298b55ff5e8740e76f7d50b5",
+      "expectedAnswerSha256": "c2356069e9d1e79ca924378153cfbbfb4d4416b1f99d41a2940bfdb66c5319db"
+    },
+    {
+      "id": "009_CBSC-V2-NL-A09",
+      "questionNumber": 9,
+      "sourceTaskId": "CBSC-V2-NL-A09",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "914674bc5c0d97c5fcfb624fb925930611241091d4e9ddfdccb8d936bf511501",
+      "expectedAnswerSha256": "c2356069e9d1e79ca924378153cfbbfb4d4416b1f99d41a2940bfdb66c5319db"
+    },
+    {
+      "id": "010_CBSC-V2-NL-A10",
+      "questionNumber": 10,
+      "sourceTaskId": "CBSC-V2-NL-A10",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "256a050cef48259e3b2ac4539a76c28483b9d68972dbbb1118b65018e5ed847c",
+      "expectedAnswerSha256": "c2356069e9d1e79ca924378153cfbbfb4d4416b1f99d41a2940bfdb66c5319db"
+    },
+    {
+      "id": "011_CBSC-V2-NL-A11",
+      "questionNumber": 11,
+      "sourceTaskId": "CBSC-V2-NL-A11",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "60473a946f71073c9edb78ec6a00bc41d714b7b72d53fa4367c91b2e6e9279ff",
+      "expectedAnswerSha256": "c2356069e9d1e79ca924378153cfbbfb4d4416b1f99d41a2940bfdb66c5319db"
+    },
+    {
+      "id": "012_CBSC-V2-NL-A12",
+      "questionNumber": 12,
+      "sourceTaskId": "CBSC-V2-NL-A12",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "2865a55444960007166426c3daa8ba95b46b86fc582ce05b4533f4641a095411",
+      "expectedAnswerSha256": "4ec9599fc203d176a301536c2e091a19bc852759b255bd6818810a42c5fed14a"
+    },
+    {
+      "id": "013_CBSC-V2-NL-D01",
+      "questionNumber": 13,
+      "sourceTaskId": "CBSC-V2-NL-D01",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "f986c69a81239138c7d3cabe9bbeb486f92b51627d9f5065dc3df8fe01011aba",
+      "expectedAnswerSha256": "048ecd46bf156f84a019c6051ef481cac62f770f9c26f0e71a2e969c3b7c56fc"
+    },
+    {
+      "id": "014_CBSC-V2-NL-D02",
+      "questionNumber": 14,
+      "sourceTaskId": "CBSC-V2-NL-D02",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "40915ad24fd7096a13e48f9bf5313cbc4371ecd293b24e8758e3ff5fb272ee3c",
+      "expectedAnswerSha256": "584db5107517ca39d95242ca2ca85d3ac8e35bace5aaedbb00716a1f13502ee9"
+    },
+    {
+      "id": "015_CBSC-V2-NL-D03",
+      "questionNumber": 15,
+      "sourceTaskId": "CBSC-V2-NL-D03",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "a3dd58accfef09b4e51ce39780f0e30cc0068a5297ff1510e820635030573ff2",
+      "expectedAnswerSha256": "57d397f2a0bf022fdc9caf845f7d2b627e9dea901268c2b1ab8e75bd5bf6bffb"
+    },
+    {
+      "id": "016_CBSC-V2-NL-D04",
+      "questionNumber": 16,
+      "sourceTaskId": "CBSC-V2-NL-D04",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "facaa687082bec5cf03ef13b4e897a36efa29f862ff899a9368bdc8a3655c693",
+      "expectedAnswerSha256": "a9c40cf3008b6b7d3a9d0a0d5a0417a71c8ad5d5a4e84fea9904f30cc1020126"
+    },
+    {
+      "id": "017_CBSC-V2-NL-D05",
+      "questionNumber": 17,
+      "sourceTaskId": "CBSC-V2-NL-D05",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "c7057b5fcb566410d3f0debc5e420bee1a37dc63764f0cadf5fa26c793cec0e7",
+      "expectedAnswerSha256": "d8405f8802a3d24060b403f2ad99a124df25c56a8f1b2ee732912cab6ce7461d"
+    },
+    {
+      "id": "018_CBSC-V2-NL-D06",
+      "questionNumber": 18,
+      "sourceTaskId": "CBSC-V2-NL-D06",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "a33936a44f6e5a5bcd8d82638b71a4985b35bc02acae236d9b75420c46abce10",
+      "expectedAnswerSha256": "7bfd3177c85641433688215a6f895678dc8bc679699165e4b34eebf7ed40bd5a"
+    },
+    {
+      "id": "019_CBSC-V2-NL-D07",
+      "questionNumber": 19,
+      "sourceTaskId": "CBSC-V2-NL-D07",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "b71d2bdbb1cbc02ad9fa6bcab3f4bba3ac62adadb01930c8a57c58aeafab2ce6",
+      "expectedAnswerSha256": "92b8e0a92b179c6b35ca95e4fb89d64ab74ee7dcf5810ead45068b4734760286"
+    },
+    {
+      "id": "020_CBSC-V2-NL-D08",
+      "questionNumber": 20,
+      "sourceTaskId": "CBSC-V2-NL-D08",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "e22895474df667abe10dde18dc0af346f463a423034c40dc93a24f139c7f8ccf",
+      "expectedAnswerSha256": "a9c40cf3008b6b7d3a9d0a0d5a0417a71c8ad5d5a4e84fea9904f30cc1020126"
+    },
+    {
+      "id": "021_CBSC-V2-NL-D09",
+      "questionNumber": 21,
+      "sourceTaskId": "CBSC-V2-NL-D09",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "1eaccef9c54017244caf5e10a257daf0295ac1233e51d6096a377647ed250f0b",
+      "expectedAnswerSha256": "584fa79539ea7ab60911de4a9a69b2b4efc7279e9b3478fe1d218e85494c08b8"
+    },
+    {
+      "id": "022_CBSC-V2-NL-D10",
+      "questionNumber": 22,
+      "sourceTaskId": "CBSC-V2-NL-D10",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "f01188aaffbfb3c9a98f5581c1e9f0659eb42c789f11c5a91c2e3b094b0a5b45",
+      "expectedAnswerSha256": "c483a42c4bdf31287a3d5df46d0601f27556749189e17fbbc9c341ae443644c0"
+    },
+    {
+      "id": "023_CBSC-V2-NL-D11",
+      "questionNumber": 23,
+      "sourceTaskId": "CBSC-V2-NL-D11",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "1b3ef14dc567de7cc8b82963de945591c0f688515c0b3ad8556eea7be9fb5aa9",
+      "expectedAnswerSha256": "e26eda425c323c789fc68350b83c9e403ddab361b28cc1fc9ada838602e2088f"
+    },
+    {
+      "id": "024_CBSC-V2-NL-L01",
+      "questionNumber": 24,
+      "sourceTaskId": "CBSC-V2-NL-L01",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "6b91e2b5c00dfd62aecc6848a3f83ebf783079bb07a2f244c47fca000ea7ab49",
+      "expectedAnswerSha256": "c549a0c8d84bbe53f1fb89f4ffcf859a039475d6df49310a09bacd17043acd7d"
+    },
+    {
+      "id": "025_CBSC-V2-NL-L02",
+      "questionNumber": 25,
+      "sourceTaskId": "CBSC-V2-NL-L02",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "e5788a9137de3f8ce0c96be8d2d77de3a882b25c36ec15cd119838ce68f860fe",
+      "expectedAnswerSha256": "03a3a972a9d603a4ac1159a631c1876cbf51e897fcb2fabd60ed97dbfb4526ed"
+    },
+    {
+      "id": "026_CBSC-V2-NL-L03",
+      "questionNumber": 26,
+      "sourceTaskId": "CBSC-V2-NL-L03",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "f54079b5a00605e955d77bbef5949fc832b9347abc70b9fcf5455839f4d9f5fe",
+      "expectedAnswerSha256": "fce8a0a30920197cbe89fcbdb0ec84997d911eb2993cb13e217f2f02a05f6776"
+    },
+    {
+      "id": "027_CBSC-V2-NL-L04",
+      "questionNumber": 27,
+      "sourceTaskId": "CBSC-V2-NL-L04",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "a9618f2bca5be6f7b7a3812b0a73b7b5a882f10c42c26194b2a2bfb4f540c29f",
+      "expectedAnswerSha256": "03a3a972a9d603a4ac1159a631c1876cbf51e897fcb2fabd60ed97dbfb4526ed"
+    },
+    {
+      "id": "028_CBSC-V2-NL-L05",
+      "questionNumber": 28,
+      "sourceTaskId": "CBSC-V2-NL-L05",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "ff1cd8f78183ddb2858ff92b6b75ede5b76446e5220ad5278df519696edceffb",
+      "expectedAnswerSha256": "ec23ca754e5fc01e53ffc587eeecafb7cb867046d78a4a0138c5025279e4767c"
+    },
+    {
+      "id": "029_CBSC-V2-NL-L06",
+      "questionNumber": 29,
+      "sourceTaskId": "CBSC-V2-NL-L06",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "b7e1417ff7870df5b10462b87a85ad9eb4b4c9f9dc650e038463d884addc7ec5",
+      "expectedAnswerSha256": "03a3a972a9d603a4ac1159a631c1876cbf51e897fcb2fabd60ed97dbfb4526ed"
+    },
+    {
+      "id": "030_CBSC-V2-NL-L07",
+      "questionNumber": 30,
+      "sourceTaskId": "CBSC-V2-NL-L07",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "6cf70925e7d61c3cb9c62bc5ba72ae57a529d17a71d9f8b807eb3a13747cf6da",
+      "expectedAnswerSha256": "41c5fa4c86d1e329a566821039a165a60cd7cf45eebc12433b70b61bb483cd07"
+    },
+    {
+      "id": "031_CBSC-V2-NL-L08",
+      "questionNumber": 31,
+      "sourceTaskId": "CBSC-V2-NL-L08",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "19934f499ddeab8d3b37c4294af6ae1c0a9451d105c05e6ec5eb10f4045be207",
+      "expectedAnswerSha256": "e0a4450aaba3ed2c8232dad28255910ae5b367e2aa5457c0905b2322f7654646"
+    },
+    {
+      "id": "032_CBSC-V2-NL-L09",
+      "questionNumber": 32,
+      "sourceTaskId": "CBSC-V2-NL-L09",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "2bf6ebed4aecead85e6319417c0c64829c21f2e30f6d0a22e2d8217fb2134f2d",
+      "expectedAnswerSha256": "d151509028a8ffce0eba0ae5859d274e9356a14a9b47cce1e494fd9c5a802d39"
+    },
+    {
+      "id": "033_CBSC-V2-NL-X01",
+      "questionNumber": 33,
+      "sourceTaskId": "CBSC-V2-NL-X01",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "63ac2c558607124aa227b64aadbcd6cccbe6d42dd19ab407881673867561a69b",
+      "expectedAnswerSha256": "ec23ca754e5fc01e53ffc587eeecafb7cb867046d78a4a0138c5025279e4767c"
+    },
+    {
+      "id": "034_CBSC-V2-NL-X02",
+      "questionNumber": 34,
+      "sourceTaskId": "CBSC-V2-NL-X02",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "08e870552e87768bd938af09232713ca8f7776052c61cc48ed8bbf06b6ecb047",
+      "expectedAnswerSha256": "96fb20d1ade5bdfd0137d5435fe345472b49cdd406bd1a6cfb686619919eadb7"
+    },
+    {
+      "id": "035_CBSC-V2-NL-X03",
+      "questionNumber": 35,
+      "sourceTaskId": "CBSC-V2-NL-X03",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "f1538c5c1df2058126f3075b769327f7daef34b0e1afd1a23c59bf4ebb69adb9",
+      "expectedAnswerSha256": "03a3a972a9d603a4ac1159a631c1876cbf51e897fcb2fabd60ed97dbfb4526ed"
+    },
+    {
+      "id": "036_CBSC-V2-NL-X04",
+      "questionNumber": 36,
+      "sourceTaskId": "CBSC-V2-NL-X04",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "7438988c44a72a7608cea148a178c6ede9a290a29f4c1e47c9d65eece1b72e0d",
+      "expectedAnswerSha256": "fda8160fdbd3d5458f2d27a2c3c2f02cf228bdee527e17c7892c1819e5bb38f1"
+    },
+    {
+      "id": "037_CBSC-V2-PS-2013-DESL-8RK-009",
+      "questionNumber": 37,
+      "sourceTaskId": "CBSC-V2-PS-2013-DESL-8RK-009",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "6a2221eb79ef12ca03aa81f19edb53ab072bb7354a37833100dafa0ebb2526de",
+      "expectedAnswerSha256": "6dbaf59ba4b05c8f538eddf4446cbfa0d21522fbe4b6f4c4b02e9b6b30697100"
+    },
+    {
+      "id": "038_CBSC-V2-PS-2013-LBLOCK-13FACT-005",
+      "questionNumber": 38,
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-13FACT-005",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "8385d892e2f069eaf0f61cb5bd41754d432be5f737b05a7695fe338a4619ef11",
+      "expectedAnswerSha256": "caaf4dc8828acd70423d126f0393307bdd0ae382533cb62260f680fa4e52c8bc"
+    },
+    {
+      "id": "039_CBSC-V2-PS-2013-LBLOCK-14CHAR-008",
+      "questionNumber": 39,
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-14CHAR-008",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "6505a7513d1914c946584e8df1bdf8532a4781eb3ff99ae5b45a498dba3278ac",
+      "expectedAnswerSha256": "986d8b09d69484b0a163dc5a3e61fbf6c2f08a11fc012626dba3aaaee6ac09bf"
+    },
+    {
+      "id": "040_CBSC-V2-PS-2013-LBLOCK-FULL-004",
+      "questionNumber": 40,
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-FULL-004",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "338c69c23163e77fba3f8651e3c1e49a93bc6c93d81b32fcbb4fda7bd2209b5b",
+      "expectedAnswerSha256": "5c140482a92fb21c57ab17e4d3b56c3f16354c6bf5d07acafe0013b269163de4"
+    },
+    {
+      "id": "041_CBSC-V2-PS-2013-LBLOCK-TABLE5-010",
+      "questionNumber": 41,
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-TABLE5-010",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "7d69e9995c7a247b8ec9d6d1c9c571d078d71527c5a83d31443d0f1d8160f4d2",
+      "expectedAnswerSha256": "bb6c8d1d8e87db0ff79ef52d8a4bc6166fb7620ab2c158f82d0cb1d3126ffa06"
+    },
+    {
+      "id": "042_CBSC-V2-PS-2013-PRESENT128-7RK-007",
+      "questionNumber": 42,
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT128-7RK-007",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "f2cfb8d5b3ab4507fa56a9dbc9a870919158e97f97a8fc7b49e9442d7e8cdb3b",
+      "expectedAnswerSha256": "7f7969d6572ea9831bb451ed48e7e05c02b059d2a157151e33bf90d8fb52ab17"
+    },
+    {
+      "id": "043_CBSC-V2-PS-2013-PRESENT80-12ACTIVE-002",
+      "questionNumber": 43,
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT80-12ACTIVE-002",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "e1264dd25a8635056c1f0abdf3f3b63565097a334f109a505cd89977e63d29ae",
+      "expectedAnswerSha256": "ccbdc1b6b4da2f445ce20f04e2defd816a120b40e52ca823b4cc9df4e1509847"
+    },
+    {
+      "id": "044_CBSC-V2-PS-2013-PRESENT80-7CUTS-003",
+      "questionNumber": 44,
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT80-7CUTS-003",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "055aef9e9d78bc565b599d7f4264be9cc1155908a8cdb5230b068dc03f5169c8",
+      "expectedAnswerSha256": "816d5d5eb331abb68d7f705c0c5bd5c3ae15a76bc2229cf307cb7235bf20c7a5"
+    },
+    {
+      "id": "045_CBSC-V2-PS-2013-PRESENT80-RK24-001",
+      "questionNumber": 45,
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT80-RK24-001",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "71a058b309256a6641dace96080a92cd480c796b651421e55761f9f5a6971ccd",
+      "expectedAnswerSha256": "938616f7193437446279fc2850739b8e3421e3671c85a9369297403b639422e3"
+    },
+    {
+      "id": "046_CBSC-V2-PS-2013-SIMON48-15DIFF-006",
+      "questionNumber": 46,
+      "sourceTaskId": "CBSC-V2-PS-2013-SIMON48-15DIFF-006",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "22a0a0e448fd0483fa2f39dca5151a5afb552544bd2c621350432d6419e009c1",
+      "expectedAnswerSha256": "1159a02971ef92e6bc8f85fb448e9dd5f1d0d8496f19606ee59c10c5c48fc0d0"
+    },
+    {
+      "id": "047_CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+      "questionNumber": 47,
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+      "submissionMode": "final_answer",
+      "ruleType": "piecewise",
+      "oracleSha256": "70bc5472b2ec615c3c983fa3ea33e337518e3651140f51a018bfded861ce4702",
+      "expectedAnswerSha256": "0a30fb8f7d13a5584a099f7b0f0fbfae30ec0e81e05946ed936098c741376541"
+    },
+    {
+      "id": "048_CBSC-V2-PS-2023-SPECK128-ALGB-011",
+      "questionNumber": 48,
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK128-ALGB-011",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "81fc20a9d54d3bf28d179e2b189287bafa0dacd9e3556e6dac66099f55b8034d",
+      "expectedAnswerSha256": "609a61dad369fc8f66a741a44ea67678f72d77ec2a91b69f2d654625a7b85a13"
+    },
+    {
+      "id": "049_CBSC-V2-PS-2023-SPECK32-ALGC3-013",
+      "questionNumber": 49,
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK32-ALGC3-013",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "492a49329d105aa1744266b9228d2a0d00016e93cadec2ac9ba730e651d7edd5",
+      "expectedAnswerSha256": "798d311c1031ca175d2b8c659686665ee58a6a20517b18844f623e88e8d4af83"
+    },
+    {
+      "id": "050_CBSC-V2-PS-2023-SPECK32-ALGC5-014",
+      "questionNumber": 50,
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK32-ALGC5-014",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "ee6f9e9fd45746a4f44dc3be055378ec402683dbbf0d44f098acb7585efd79cb",
+      "expectedAnswerSha256": "99e5f9e8da8016b6316eaab8af0fc79e29adda6d7a82700659d707dd7f1e6b5c"
+    },
+    {
+      "id": "051_CBSC-V2-PS-2023-SPECK48-FIXEDDIFF-015",
+      "questionNumber": 51,
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK48-FIXEDDIFF-015",
+      "submissionMode": "final_answer",
+      "ruleType": "string",
+      "oracleSha256": "07fef187d5be36f67ede54e7e0376c6fca5a41a945bb0d83eb359f1769338d5f",
+      "expectedAnswerSha256": "ee6f28b5288d69adc1db2673ded964938600456c0ed3d188e5612ac189b70cb2"
+    },
+    {
+      "id": "052_CBSC-V2-PS-2405-GIFT64-FIDCOUNT-024",
+      "questionNumber": 52,
+      "sourceTaskId": "CBSC-V2-PS-2405-GIFT64-FIDCOUNT-024",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "6ca6534481a1cc4b43cc476de748773bc36b510f177a57b5eed43c3415426ad2",
+      "expectedAnswerSha256": "26bd16b18c90e2f4880eb78e25e55e4421acc8653a7b445a891230dea4f266b0"
+    },
+    {
+      "id": "053_CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+      "questionNumber": 53,
+      "sourceTaskId": "CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "1c181a9cab7d81c41907ccd9e8d76735350d660317a791b80e5481c8769db694",
+      "expectedAnswerSha256": "f93fabcd5b777c102a4e81109227bbbdac42d40b1500a25a0f429a975973ccf0"
+    },
+    {
+      "id": "054_CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+      "questionNumber": 54,
+      "sourceTaskId": "CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "75ba862eaf20e82b5aa40bc9caea1f68e4f55c9a5b73fdcc4e10754a382e58ae",
+      "expectedAnswerSha256": "47526e60386176ba8fd12af8b58fb2faf9f4d12645edc66729651b0e2ebc8a14"
+    },
+    {
+      "id": "055_CBSC-V2-PS-2405-XOR3-INEQ-027",
+      "questionNumber": 55,
+      "sourceTaskId": "CBSC-V2-PS-2405-XOR3-INEQ-027",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "0815e3073b7af0681fb4b51ed3af05ac795b3176c32cce85f9f296fa3247e72e",
+      "expectedAnswerSha256": "099ed1ec0ebeae676a32f3baaacca9ee71224199191e630cb702700513d1a0d5"
+    },
+    {
+      "id": "056_CBSC-V2-PS-2405-XOR4-DDT-028",
+      "questionNumber": 56,
+      "sourceTaskId": "CBSC-V2-PS-2405-XOR4-DDT-028",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "14ba1e61ecfd8fa2b62d50ac67b523624e9b77e9a7d475bdb140cc3bb22e2b12",
+      "expectedAnswerSha256": "eaf92880545c238bd263e528a2deb2bb1cff08a8b184d3e1961520bc0c5f6b17"
+    },
+    {
+      "id": "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+      "questionNumber": 57,
+      "sourceTaskId": "CBSC-V2-PS-2408-DL-TRANSFORM-022",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "4756219a6ee63a0c8680fb7cdad169f35516e72717c346a7209d5dfe7a3c6a21",
+      "expectedAnswerSha256": "247efe181591811e9bf1b5d07d67f3a225a576c7aceeb0ea64a8b1d3b3e59511"
+    },
+    {
+      "id": "058_CBSC-V2-PS-2408-SIMECK32-TABLE7-023",
+      "questionNumber": 58,
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMECK32-TABLE7-023",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "e59e05d1066451265819708708193013f1eee9d7d69f025f76fe4a53bdaeba2a",
+      "expectedAnswerSha256": "3fb025cec73216babe232a51bfb4d78a72bb1d2ef1473aa3384f7ed1f2ef8989"
+    },
+    {
+      "id": "059_CBSC-V2-PS-2408-SIMON-FAMILY-021",
+      "questionNumber": 59,
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMON-FAMILY-021",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "e1fb2061bbb8120cd9152ef3a092a8019c3b4f31e900db3d4a13bfa9ac44390b",
+      "expectedAnswerSha256": "ebdc0bf75f2538882adc3625a730471e497e568b75929eb9b6aef98084bac5b5"
+    },
+    {
+      "id": "060_CBSC-V2-PS-2408-SIMON32-13DL-019",
+      "questionNumber": 60,
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMON32-13DL-019",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "d4358f9168a47b6bcd399215e6fd2a04b96ef9bcd8c5ef695aea363541b53946",
+      "expectedAnswerSha256": "df88e6fbe86f17a5d2943e8682bd7dfb95bdb9f0fa423c8b6b890b8a7739d47f"
+    },
+    {
+      "id": "061_CBSC-V2-PS-2408-SIMON32-14ORDER-020",
+      "questionNumber": 61,
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMON32-14ORDER-020",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "bbdfadb33f28b628d59d5d61ec9951ad88f55435454c003a0eafa3b2a4270c9b",
+      "expectedAnswerSha256": "d4c9dfeab4df9d283118343042ecac63ca5a004a1bbb659d9ba0ac13dcd0a138"
+    },
+    {
+      "id": "062_CBSC-V2-HARD-GIFT64-DIFF-KR-001",
+      "questionNumber": 62,
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-DIFF-KR-001",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "77bc46b733ad77d1a34b1350f6614c032a2438641d668b506c05535843766d94",
+      "expectedAnswerSha256": "cf2b1c41d642e30cab562d98c958b67209115b9460cad51ad591f132fb264771"
+    },
+    {
+      "id": "063_CBSC-V2-HARD-GIFT64-FAMILY-FID-003",
+      "questionNumber": 63,
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-FAMILY-FID-003",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "86ea082260d8e22a0690934901efff84e197dbb6e14abdb4fca52a073118a3b9",
+      "expectedAnswerSha256": "4fc8eabbac18a8839e75f9777114df58abcaa3a95146b8175ca345436faf8bfe"
+    },
+    {
+      "id": "064_CBSC-V2-HARD-GIFT64-FUZZY-ID-001",
+      "questionNumber": 64,
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-FUZZY-ID-001",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "f6ccd3468e1f511372d38d102ae248db4b1ed02aa08d0c6a0ee97e7eb2940071",
+      "expectedAnswerSha256": "ff88178e86bd2bc8f34410f6d8d4792a2cc7a9f71c4b91808a9457b9fb0a622c"
+    },
+    {
+      "id": "065_CBSC-V2-HARD-GIFT64-HIDDEN-FID-002",
+      "questionNumber": 65,
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-HIDDEN-FID-002",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "4b93656f1c2594676b29d002cea8065c9d80ac18135e53a7a9b78810caf584d1",
+      "expectedAnswerSha256": "f0ba2d869048813ddeb1901456f9be2d4f0be10a8ab79cd3df07710be6ad33e0"
+    },
+    {
+      "id": "066_CBSC-V2-HARD-PRESENT64-BDPT-CODEVERIFY-031",
+      "questionNumber": 66,
+      "sourceTaskId": "CBSC-V2-HARD-PRESENT64-BDPT-CODEVERIFY-031",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "25696d26bdebba02ee119bcb844c97b63f53fd76a66e8462a6a8e331615ea398",
+      "expectedAnswerSha256": "e4c9ddddd21ce1a1139fcbd62847a66306acc457e5fdde282e42a797cc325e81"
+    },
+    {
+      "id": "067_CBSC-V2-HARD-SIMON32-DL-SEARCH-002",
+      "questionNumber": 67,
+      "sourceTaskId": "CBSC-V2-HARD-SIMON32-DL-SEARCH-002",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "c61784bc98d813bfb7884229e0f7a2e6cd9214fbd2690307c81bd78a9580e210",
+      "expectedAnswerSha256": "ea6e38675a5a782b91562cd861ce8bc3ef4705116966fcd77e606ed9c4ea41b8"
+    },
+    {
+      "id": "068_CBSC-V2-HARD-SIMON32-DL-TRANSFORM-001",
+      "questionNumber": 68,
+      "sourceTaskId": "CBSC-V2-HARD-SIMON32-DL-TRANSFORM-001",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "f74f8b2ad9a613681f16e53ac3538296b0ce3adf04ddf89ae5cda112c73977b5",
+      "expectedAnswerSha256": "50fa363eb164ee46669a7a4ab25aed894df322cbd70019c93994c1e0ec81f3af"
+    },
+    {
+      "id": "069_CBSC-V2-HARD-SKINNY64-FID-016",
+      "questionNumber": 69,
+      "sourceTaskId": "CBSC-V2-HARD-SKINNY64-FID-016",
+      "submissionMode": "final_answer",
+      "ruleType": "boolean",
+      "oracleSha256": "a8efedb20a868f95b071ac3399bd12ccd907b132a2b6487cc82a3b76e4086bc1",
+      "expectedAnswerSha256": "60a33e6cf5151f2d52eddae9685cfa270426aa89d8dbc7dfb854606f1d1a40fe"
+    },
+    {
+      "id": "070_CBSC-V2-HARD-SPECK128-FIXEDIO-015",
+      "questionNumber": 70,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-FIXEDIO-015",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "58a93810198bfdb5785eb47488263fac1f9c4455a463b245d56dec81292caf47",
+      "expectedAnswerSha256": "aeb2824d0f0c662eabd28b384c54bc1fd165b20e1064a5635f7b571f0fe58f89"
+    },
+    {
+      "id": "071_CBSC-V2-HARD-SPECK128-FREEOPT-010",
+      "questionNumber": 71,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-FREEOPT-010",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "59ee3831f8fbe3ec0467b6c6766248e07d23acc78779eee6a2c3f43655a2266f",
+      "expectedAnswerSha256": "f30bbbf5c3ee80017272b5c274dc6975f1c573efc21dc650b8688e2d0e2b9f83"
+    },
+    {
+      "id": "072_CBSC-V2-HARD-SPECK128-LBPROOF-013",
+      "questionNumber": 72,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-LBPROOF-013",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "17841634dd1e61aac37cb6c28e861874b7e22e86d3be939ed948e743d6bd2a16",
+      "expectedAnswerSha256": "96b8cfdc108a20ceada50c75c44f2b9daa5cae1f6c6d83682375ab73982809b9"
+    },
+    {
+      "id": "073_CBSC-V2-HARD-SPECK128-LBPROOF-019",
+      "questionNumber": 73,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-LBPROOF-019",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "594077f43fed48e214de6fba1de240073863e9971573963863d4abbbf703e5ec",
+      "expectedAnswerSha256": "96b8cfdc108a20ceada50c75c44f2b9daa5cae1f6c6d83682375ab73982809b9"
+    },
+    {
+      "id": "074_CBSC-V2-HARD-SPECK32-FIXEDIO-004",
+      "questionNumber": 74,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-FIXEDIO-004",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "124ad2d4812b460ba9ba2e104575a7036efdbb43dbc51559201706a81d317d05",
+      "expectedAnswerSha256": "d6280ef07ffa494cf43f1d5d6b95bb209148fae349ad05cd3b114cbc3dbe930c"
+    },
+    {
+      "id": "075_CBSC-V2-HARD-SPECK32-FREEOPT-005",
+      "questionNumber": 75,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-FREEOPT-005",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "f39ccf7100b458693466f418007aeb2853ac6e4cdeab5d3549c7ee484f6d2917",
+      "expectedAnswerSha256": "26c9a96ce053a14dd88a71a4830c9cbed7e1fed7e3f3f8a0b0b6a58f3f0f02e6"
+    },
+    {
+      "id": "076_CBSC-V2-HARD-SPECK32-LBPROOF-006",
+      "questionNumber": 76,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-LBPROOF-006",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "f455fe1e2fe5848aff9d5f547915df9c8106fa71471dcaf2eff00c93584a183b",
+      "expectedAnswerSha256": "26c9a96ce053a14dd88a71a4830c9cbed7e1fed7e3f3f8a0b0b6a58f3f0f02e6"
+    },
+    {
+      "id": "077_CBSC-V2-HARD-SPECK32-VTDP-CODEVERIFY-ZH-032",
+      "questionNumber": 77,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-VTDP-CODEVERIFY-ZH-032",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "e23e29bc39918a881f08f9203643f15c370af3b424479e91b6c5a7459711ba94",
+      "expectedAnswerSha256": "90764f574f55c0a487091f33019c6d591e268b8ff282523873a1d5336a38f374"
+    },
+    {
+      "id": "078_CBSC-V2-HARD-SPECK48-LBPROOF-007",
+      "questionNumber": 78,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK48-LBPROOF-007",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "d94f0d059760ef498e3fe516892e20a44e75c3e5e77e35cb762429d966f54c09",
+      "expectedAnswerSha256": "94e634ac63620eab982ebd55f5f8862038782070d9f2e7f3c252b2f4c48d3193"
+    },
+    {
+      "id": "079_CBSC-V2-HARD-SPECK48-LBPROOF-014",
+      "questionNumber": 79,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK48-LBPROOF-014",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "16b7f209b86a813150beadca233838141cd94f2ede31662a94d2e9cae6bad38e",
+      "expectedAnswerSha256": "94e634ac63620eab982ebd55f5f8862038782070d9f2e7f3c252b2f4c48d3193"
+    },
+    {
+      "id": "080_CBSC-V2-HARD-SPECK48-LBPROOF-021",
+      "questionNumber": 80,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK48-LBPROOF-021",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "2bee2c0bdab0f4c80f5ab56aac84d5b98309ae220155152715863685e7b113f3",
+      "expectedAnswerSha256": "94e634ac63620eab982ebd55f5f8862038782070d9f2e7f3c252b2f4c48d3193"
+    },
+    {
+      "id": "081_CBSC-V2-HARD-SPECK64-FIXEDIO-017",
+      "questionNumber": 81,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-FIXEDIO-017",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "16b80bd870e9c044574a40d25ea6f89484b16aaab595e48df7c4ff6fbd6fcdc5",
+      "expectedAnswerSha256": "05e300642513b2f6310d670684b338726f6afed3c72c84f1425756c07793747a"
+    },
+    {
+      "id": "082_CBSC-V2-HARD-SPECK64-FREEOPT-008",
+      "questionNumber": 82,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-FREEOPT-008",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "693c5b19ba5cf1cec1643ce5f531b28a015a16ad5b55d45c7bce0729b76fba99",
+      "expectedAnswerSha256": "40b2ddd4fee0a4778f262e809498e83d2b3345e6e104a2b2faa879e3f3be5884"
+    },
+    {
+      "id": "083_CBSC-V2-HARD-SPECK64-LBPROOF-011",
+      "questionNumber": 83,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-LBPROOF-011",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "0dc723bdfb55fcaaee59e995c5f61217e7b593e4c7a7274307ed3d87836a46dc",
+      "expectedAnswerSha256": "05e300642513b2f6310d670684b338726f6afed3c72c84f1425756c07793747a"
+    },
+    {
+      "id": "084_CBSC-V2-HARD-SPECK64-LBPROOF-018",
+      "questionNumber": 84,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-LBPROOF-018",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "b40ccc9b78985b56aa209cdbf93047c0322d6478a5003e3cabffc368c4983954",
+      "expectedAnswerSha256": "05e300642513b2f6310d670684b338726f6afed3c72c84f1425756c07793747a"
+    },
+    {
+      "id": "085_CBSC-V2-HARD-SPECK96-FREEOPT-009",
+      "questionNumber": 85,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK96-FREEOPT-009",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "b5882926eb38d825a3f35b9fdb887e61984ea0d1854142b067f8784c9688b6ad",
+      "expectedAnswerSha256": "64f5147f817f7ff8a79430bedb6d21160849837fa00e145d3ea47e51d0508d3b"
+    },
+    {
+      "id": "086_CBSC-V2-HARD-SPECK96-LBPROOF-012",
+      "questionNumber": 86,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK96-LBPROOF-012",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "2ee6df50f9b3b9384b843efdc11761b7619ad6f816f6711d7fee9433934cbd40",
+      "expectedAnswerSha256": "c455af0db9fd47d4a27d73d3b0425cf888820e7f8b997ceaaba2c361dd8c2556"
+    },
+    {
+      "id": "087_CBSC-V2-HARD-SPECK96-LBPROOF-020",
+      "questionNumber": 87,
+      "sourceTaskId": "CBSC-V2-HARD-SPECK96-LBPROOF-020",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "1a30855a761fc185dd33b0172bf1f3f809e076b0f8f3789c62111bf4d3b31ebe",
+      "expectedAnswerSha256": "c455af0db9fd47d4a27d73d3b0425cf888820e7f8b997ceaaba2c361dd8c2556"
+    },
+    {
+      "id": "088_CBSC-V2-STRICT-SPECK128-20DP-ID9R01-009",
+      "questionNumber": 88,
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK128-20DP-ID9R01-009",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "ec98d388651a6899dc6e6413b0e7388e286d69e05d8c51ffaf5d37c93bda3efd",
+      "expectedAnswerSha256": "8f9245731395ef356e7af8ea59f8237eef49d2b892623d96c404f15ac72582d6"
+    },
+    {
+      "id": "089_CBSC-V2-STRICT-SPECK128-LB19-016",
+      "questionNumber": 89,
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK128-LB19-016",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "d5783c98df9d3f0228d76d8943672d69b91134a5a581e38cee84b3cdcad6110d",
+      "expectedAnswerSha256": "96b8cfdc108a20ceada50c75c44f2b9daa5cae1f6c6d83682375ab73982809b9"
+    },
+    {
+      "id": "090_CBSC-V2-STRICT-SPECK48-LB11-013",
+      "questionNumber": 90,
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK48-LB11-013",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "0191c776eb7739b562a6e582e512cae4badee4708658d5d98a39ed69e3efdeae",
+      "expectedAnswerSha256": "94e634ac63620eab982ebd55f5f8862038782070d9f2e7f3c252b2f4c48d3193"
+    },
+    {
+      "id": "091_CBSC-V2-STRICT-SPECK64-LB15-014",
+      "questionNumber": 91,
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK64-LB15-014",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "54163b25ce5e2eb078a7574068ae87a7f29cbc631ae59c0a8401df1185904fdf",
+      "expectedAnswerSha256": "05e300642513b2f6310d670684b338726f6afed3c72c84f1425756c07793747a"
+    },
+    {
+      "id": "092_CBSC-V2-STRICT-SPECK96-LB16-015",
+      "questionNumber": 92,
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK96-LB16-015",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "db4956f52759a45f2f7104d185ea2a4e2382ec4dbb6357a9c4de2e7a96fcf952",
+      "expectedAnswerSha256": "c455af0db9fd47d4a27d73d3b0425cf888820e7f8b997ceaaba2c361dd8c2556"
+    },
+    {
+      "id": "093_CBSC-V3-NA-GIFT128-3R-AID-EXC-007",
+      "questionNumber": 93,
+      "sourceTaskId": "CBSC-V3-NA-GIFT128-3R-AID-EXC-007",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "dd0ae82bbcbd844c92eb12f16167fda0e04f5d48ff98167667a75eddbd6f7397",
+      "expectedAnswerSha256": "2123f8a7f8a02cd5fd087caa07ebab92c0b5d5765230ab9db8b01f78d6217269"
+    },
+    {
+      "id": "094_CBSC-V3-NA-GIFT64-2R-TID-006",
+      "questionNumber": 94,
+      "sourceTaskId": "CBSC-V3-NA-GIFT64-2R-TID-006",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "0251c0aa2fab17c84a75a5f40e79f02ebed8b591b4d37a003b8d22e6efcf1d9b",
+      "expectedAnswerSha256": "e01d1abf902fa61a6cccf37e5c5f00b187ca0efc1bf3c8a3c82f2444ca5f05bd"
+    },
+    {
+      "id": "095_CBSC-V3-NA-GIFT64-LNC-RIGHTKEY-040",
+      "questionNumber": 95,
+      "sourceTaskId": "CBSC-V3-NA-GIFT64-LNC-RIGHTKEY-040",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "7466129f70d7e517afc89cf2150fd0d3f758bcc609f00540bb6fae8c8abcf88e",
+      "expectedAnswerSha256": "7f412bd5d705622ae4382e36a6ee97bc3e523e8f90d7cf689d0b61b159b527cd"
+    },
+    {
+      "id": "096_CBSC-V3-NA-GIFT64-TRAIL-REPLAY-031",
+      "questionNumber": 96,
+      "sourceTaskId": "CBSC-V3-NA-GIFT64-TRAIL-REPLAY-031",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "bc18d9a9f9188f3bc94a7b9d5d0006d9263ad12bcc6bb7ecdf55e52c943b0af3",
+      "expectedAnswerSha256": "07ac4ac4221c091ab4527378a075fd6d133bf45b99648ca10637b8d3a323e93c"
+    },
+    {
+      "id": "097_CBSC-V3-NA-IBD-PRESENT80-6R-001",
+      "questionNumber": 97,
+      "sourceTaskId": "CBSC-V3-NA-IBD-PRESENT80-6R-001",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "ea1464b6dc99eaf41d15e5fd0d054c78a5bb6bf954f7806888cc697eed78cddd",
+      "expectedAnswerSha256": "e832ad3b5feeefa11022d1a22cd57dd807364450b9ebed9371519fa12a0b1ad6"
+    },
+    {
+      "id": "098_CBSC-V3-NA-INVARIANT-P0-WEAKKEY-038",
+      "questionNumber": 98,
+      "sourceTaskId": "CBSC-V3-NA-INVARIANT-P0-WEAKKEY-038",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "70dcedd12d556eab75be2b164a320d2fd76121629f4c691b86c9b5d01e3cf4ef",
+      "expectedAnswerSha256": "5b63026c6cc0c78f5fd57c912dda80cd438d2a77eeeb8326ee10a410dd53828e"
+    },
+    {
+      "id": "099_CBSC-V3-NA-LBLOCK-KS-CONTRADICTION-004",
+      "questionNumber": 99,
+      "sourceTaskId": "CBSC-V3-NA-LBLOCK-KS-CONTRADICTION-004",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "3531924c85bc7e5c110616ee5067a0456e1a77a9d8e185cb8a70d1b015a69fa6",
+      "expectedAnswerSha256": "303235bcad44b8deef93c6df1904732ddd5c04846e3aabd63f6b78106cc34cbc"
+    },
+    {
+      "id": "100_CBSC-V3-NA-LBLOCK-KS-DERIVE-005",
+      "questionNumber": 100,
+      "sourceTaskId": "CBSC-V3-NA-LBLOCK-KS-DERIVE-005",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "e48a597303f4051e1425d368f7994741ba32a5e405fc59e155d95b674ee41d1b",
+      "expectedAnswerSha256": "6c55efe1ede67563fee09dc711bdc1ce6c7b24a4e00dd356ff61b5d312c75c13"
+    },
+    {
+      "id": "101_CBSC-V3-NA-LBLOCK-KS-TABLE-009",
+      "questionNumber": 101,
+      "sourceTaskId": "CBSC-V3-NA-LBLOCK-KS-TABLE-009",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "a2fcbe489e60ec78f08d3114849186a3439413bafdd0b9c9ab417a85db8f67f8",
+      "expectedAnswerSha256": "385f275b6293f42eec68cb355bd0ebcaed010422c6b9da20cc14a6a0ec0999d8"
+    },
+    {
+      "id": "102_CBSC-V3-NA-MIDORI64-INVARIANT-PARITY-010",
+      "questionNumber": 102,
+      "sourceTaskId": "CBSC-V3-NA-MIDORI64-INVARIANT-PARITY-010",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "72b4380420e7d0e5f880b20514178648de3aae4af70dd191fe84fa75edad80d8",
+      "expectedAnswerSha256": "2a132d2d67a87fa3012b5d2c8649105ea9eb875bd839e33916c03bbed8212aee"
+    },
+    {
+      "id": "103_CBSC-V3-NA-RKIBD-SPECK64128-9R-002",
+      "questionNumber": 103,
+      "sourceTaskId": "CBSC-V3-NA-RKIBD-SPECK64128-9R-002",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "e7937e0f2fbef6c01a8c458a6641d73cbbb8e76d641b974edf99e506fea01446",
+      "expectedAnswerSha256": "d49a206df9a3b02d5a9b397f1cd402fab48d6913a1356865a3485b9946ee57a9"
+    },
+    {
+      "id": "104_CBSC-V3-NA-SIMON64-ID-COMPLEXITY-008",
+      "questionNumber": 104,
+      "sourceTaskId": "CBSC-V3-NA-SIMON64-ID-COMPLEXITY-008",
+      "submissionMode": "final_answer",
+      "ruleType": "fields",
+      "oracleSha256": "223b841d03e0f3e260e197d11076f752a3939091292af9d2a6e74f4d14ef63af",
+      "expectedAnswerSha256": "700c9225bb502c8e9db68fa86357b2c9c22b44b28f7493482b5c3dd54d8abd60"
+    },
+    {
+      "id": "105_CBSC-V3-NA-SKINNY128-DP14-003",
+      "questionNumber": 105,
+      "sourceTaskId": "CBSC-V3-NA-SKINNY128-DP14-003",
+      "submissionMode": "final_answer",
+      "ruleType": "numeric",
+      "oracleSha256": "5f95b8a7c883698d23628c6241ff073bc83560e94f29b8d784b93be04db73ccf",
+      "expectedAnswerSha256": "d3acbe38f54bc433ba97450e2dde554b24d0c93d56c2a85b9e130037e04b80f2"
+    },
+    {
+      "id": "106_CBSC-V4-PB-GIFT64-3DIFF-ZERO-016",
+      "questionNumber": 106,
+      "sourceTaskId": "CBSC-V4-PB-GIFT64-3DIFF-ZERO-016",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "60f1bf810b5efa297aafed0c1a95a57baec71b798b0ac1fba0a71a84741651eb",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/106_CBSC-V4-PB-GIFT64-3DIFF-ZERO-016/oracle/validator.py",
+        "sha256": "41bc5f11af72ac443c2d482408a97c04712e957379617fd74be4d0fa53dfe56d",
+        "tests": []
+      }
+    },
+    {
+      "id": "107_CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022",
+      "questionNumber": 107,
+      "sourceTaskId": "CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "3c67396e7b2ddc16288af7397f42558813030650dee7ef9e8598ecfe5f9e1005",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/107_CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022/oracle/validator.py",
+        "sha256": "b25cc969d11aea3b51f9eac3b9bcad2315ff4d26c63a3e876b661a71e8102281",
+        "tests": []
+      }
+    },
+    {
+      "id": "108_CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+      "questionNumber": 108,
+      "sourceTaskId": "CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "7b47ac6e85f5c6f1e7e757609189f8402ce0fa0018581d2517b543bf91a17249",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/108_CBSC-V4-PB-SKINNY64-TK3-MID5-008/oracle/validator.py",
+        "sha256": "77eae004a70862edd8f50a1ff31dd6bbad00ec1bac6a214ccdb8083aaf8928e4",
+        "tests": []
+      }
+    },
+    {
+      "id": "109_CBSC-V4-PB-WARP-MID10-FBCT-009",
+      "questionNumber": 109,
+      "sourceTaskId": "CBSC-V4-PB-WARP-MID10-FBCT-009",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "c629ed4dfb40ef158e3f7f44c06ed5a855636596d71b4d706746c022e8d22bd4",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/109_CBSC-V4-PB-WARP-MID10-FBCT-009/oracle/validator.py",
+        "sha256": "1cf10aae9883f5d4808dedf189666040d34a33a24d6c44106265eebdcf371550",
+        "tests": []
+      }
+    },
+    {
+      "id": "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+      "questionNumber": 110,
+      "sourceTaskId": "CBSC-V4-PD-AES128-KEYPROJ2-010",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "61ab90ca7618d6ebbd7ee6d41994b35b22bd15e6a2b46beeedfbc84d339c9c7d",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/110_CBSC-V4-PD-AES128-KEYPROJ2-010/oracle/validator.py",
+        "sha256": "495e0f3942727905f1182d8a3ab997e6675ecd4a53f443201e74489f92b31a8d",
+        "tests": []
+      }
+    },
+    {
+      "id": "111_CBSC-V4-PD-ARX-RXCONST-020",
+      "questionNumber": 111,
+      "sourceTaskId": "CBSC-V4-PD-ARX-RXCONST-020",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "0db8c5ac1446b334afad8d53689feaa70ce8a03a1fcc6ff3423187e8286b32ab",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/111_CBSC-V4-PD-ARX-RXCONST-020/oracle/validator.py",
+        "sha256": "594204f3f684c07a08cfd57388e03dd48614a3fbdbac8351e02f3f430b874b68",
+        "tests": []
+      }
+    },
+    {
+      "id": "112_CBSC-V4-PD-GIFT128-INVALID18-004",
+      "questionNumber": 112,
+      "sourceTaskId": "CBSC-V4-PD-GIFT128-INVALID18-004",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "aa7148a19b80f27bda810a984a062c5eda30f71dedfb25fe5947798af65e643f",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/112_CBSC-V4-PD-GIFT128-INVALID18-004/oracle/validator.py",
+        "sha256": "806a66fcd3b2c05de4c55b24379a0422e2d004dc6177960097dbe0ff5caabc12",
+        "tests": []
+      }
+    },
+    {
+      "id": "113_CBSC-V4-PD-GIFT64-SK12-DEPEND-015",
+      "questionNumber": 113,
+      "sourceTaskId": "CBSC-V4-PD-GIFT64-SK12-DEPEND-015",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "7827b3bce296deae7cef1479be04f04f8963a02ca5bedd7b7ad16a9680c2d110",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/113_CBSC-V4-PD-GIFT64-SK12-DEPEND-015/oracle/validator.py",
+        "sha256": "9a3f1ea6d210b38f70e288c7a7811637ad760427185f6d20dc54e74f9e4b07b0",
+        "tests": []
+      }
+    },
+    {
+      "id": "114_CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+      "questionNumber": 114,
+      "sourceTaskId": "CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "6a96dccdfdb8e053a83b0a1e5ce92185a89073dc9122b6d67696765fc57d13c6",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/114_CBSC-V4-PD-MIDORI64-AFFINEKEY5-005/oracle/validator.py",
+        "sha256": "3b45758654a6c17b7a9da66cea05460a1adb9a6c71e9427d90f81ff105ccf861",
+        "tests": []
+      }
+    },
+    {
+      "id": "115_CBSC-V4-PD-RECT64-QDT14-017",
+      "questionNumber": 115,
+      "sourceTaskId": "CBSC-V4-PD-RECT64-QDT14-017",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "89fb158f99bb28678541ff0e899658d54145926b29680516107500f78d4e8608",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/115_CBSC-V4-PD-RECT64-QDT14-017/oracle/validator.py",
+        "sha256": "820ae6ab61f77f976ae00a857081fc5cfb95e5e29477e10fca446a9d94c257ac",
+        "tests": []
+      }
+    },
+    {
+      "id": "116_CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023",
+      "questionNumber": 116,
+      "sourceTaskId": "CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "ec0efdc4d046e1857ec4bb99934a8200bbfb10a37d2ce708110a0e785cccebf3",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/116_CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023/oracle/validator.py",
+        "sha256": "d745b8a59b3918c67aa40253a6d096a1986d4e10bca94635d19e37ec189765eb",
+        "tests": []
+      }
+    },
+    {
+      "id": "117_CBSC-V4-PD-SKINNY64-R3-KEYDIST-019",
+      "questionNumber": 117,
+      "sourceTaskId": "CBSC-V4-PD-SKINNY64-R3-KEYDIST-019",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "5f482356c552661387cb9e5e0f42994f300bcca60619f76ad6d14dfb7ea14029",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/117_CBSC-V4-PD-SKINNY64-R3-KEYDIST-019/oracle/validator.py",
+        "sha256": "bb88d4e76e675c2bd0a70a8f5531f1823149f210cb088c186a048ec467e829b4",
+        "tests": []
+      }
+    },
+    {
+      "id": "118_CBSC-V4-PD-SKINNY64-TK1-INVALID10-013",
+      "questionNumber": 118,
+      "sourceTaskId": "CBSC-V4-PD-SKINNY64-TK1-INVALID10-013",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "28902aa64eebf754db29125c4600e5c58439b0bdddc20be6ca54c95f40f9d0a8",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/118_CBSC-V4-PD-SKINNY64-TK1-INVALID10-013/oracle/validator.py",
+        "sha256": "d5c003202aa840f02c087a252bdb72cf4abdf05a4a3c8bdee08b92629fcddaee",
+        "tests": []
+      }
+    },
+    {
+      "id": "119_CBSC-V4-PD-SPECK32-PROJKEY9-006",
+      "questionNumber": 119,
+      "sourceTaskId": "CBSC-V4-PD-SPECK32-PROJKEY9-006",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "73097ed962f38ac264e194017ea32b98729773f73d33db8194b552a311a33115",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/119_CBSC-V4-PD-SPECK32-PROJKEY9-006/oracle/validator.py",
+        "sha256": "a18936a40cb875f72ed9bdd32f948a906b7bc2f5a0ebc45243017c372ab85e94",
+        "tests": []
+      }
+    },
+    {
+      "id": "120_CBSC-V4-PD-SPEEDY192-JOINTZERO-021",
+      "questionNumber": 120,
+      "sourceTaskId": "CBSC-V4-PD-SPEEDY192-JOINTZERO-021",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "82cbef8dd12c417ddc7a6a7d5b8ac1a29c805143f7ae75eb6e52bffe7cf254e3",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/120_CBSC-V4-PD-SPEEDY192-JOINTZERO-021/oracle/validator.py",
+        "sha256": "1fc53ef00eab2d74d399aef01b4fac532d009a5cbabc34da6dee773d57aaa132",
+        "tests": []
+      }
+    },
+    {
+      "id": "121_CBSC-V4-PD-WARP-MP20-003",
+      "questionNumber": 121,
+      "sourceTaskId": "CBSC-V4-PD-WARP-MP20-003",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "c267cc41d99bb1cf036aaef66594e02a145c5a8c6e054c4e16b913797449d553",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/121_CBSC-V4-PD-WARP-MP20-003/oracle/validator.py",
+        "sha256": "61207017794894374de4407d264b796219acd602d9d81f947612ad8361145ab3",
+        "tests": []
+      }
+    },
+    {
+      "id": "122_CBSC-V4-PD-WARP-MP21-A-001",
+      "questionNumber": 122,
+      "sourceTaskId": "CBSC-V4-PD-WARP-MP21-A-001",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "0e424dd491510b104c1d39b2ac55b0ac6713a641969a56fa4c1fad9c2af35056",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/122_CBSC-V4-PD-WARP-MP21-A-001/oracle/validator.py",
+        "sha256": "61207017794894374de4407d264b796219acd602d9d81f947612ad8361145ab3",
+        "tests": []
+      }
+    },
+    {
+      "id": "123_CBSC-V4-PD-WARP-MP21-B-002",
+      "questionNumber": 123,
+      "sourceTaskId": "CBSC-V4-PD-WARP-MP21-B-002",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "dee0bb9734a55ac82e79f43b520e00410e9f29247d166e8341078758fddaeef2",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/123_CBSC-V4-PD-WARP-MP21-B-002/oracle/validator.py",
+        "sha256": "61207017794894374de4407d264b796219acd602d9d81f947612ad8361145ab3",
+        "tests": []
+      }
+    },
+    {
+      "id": "124_CBSC-V4-PDL-AES128-CORR4-014",
+      "questionNumber": 124,
+      "sourceTaskId": "CBSC-V4-PDL-AES128-CORR4-014",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "dc4e2f086b84308cfc163c74e1091798b7ee6d48776ed86475409800bfad1332",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/124_CBSC-V4-PDL-AES128-CORR4-014/oracle/validator.py",
+        "sha256": "4deed0474396069d0bfcad434e6458022c5d71c13517a231b4aa4feadcf92312",
+        "tests": []
+      }
+    },
+    {
+      "id": "125_CBSC-V4-PI-ALZETTE64-DEG4-018",
+      "questionNumber": 125,
+      "sourceTaskId": "CBSC-V4-PI-ALZETTE64-DEG4-018",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "2cba395b59bd7b786a2ddc16ba4fb8baad6a9222d7188c489790e194ad403ac8",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/125_CBSC-V4-PI-ALZETTE64-DEG4-018/oracle/validator.py",
+        "sha256": "3b0df2d7619ca543ad34a70a202c7e5da4a9ece4a10d75eb4ca0330ece7f18c2",
+        "tests": []
+      }
+    },
+    {
+      "id": "126_CBSC-V4-PL-MIDORI64-RANKONE-011",
+      "questionNumber": 126,
+      "sourceTaskId": "CBSC-V4-PL-MIDORI64-RANKONE-011",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "d4f76bc4ed12fbb966e3d5d194fc15d551a3375c42d7bfdc4d9787a17fecc0e0",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/126_CBSC-V4-PL-MIDORI64-RANKONE-011/oracle/validator.py",
+        "sha256": "ce35e01e3a693ff9189d4b2fd7c2a1895999eb59ac69bb9b37d31ae7a49316ba",
+        "tests": []
+      }
+    },
+    {
+      "id": "127_CBSC-V4-PL-PRESENT64-ZC6-007",
+      "questionNumber": 127,
+      "sourceTaskId": "CBSC-V4-PL-PRESENT64-ZC6-007",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "bdae1fd44d6ab87abdb4da33f0d38722e8aa3cbf90cca6041422cf591b7b5576",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/127_CBSC-V4-PL-PRESENT64-ZC6-007/oracle/validator.py",
+        "sha256": "2ec643adb9c367fe315107b90caaa522d3196dfdbfd26fc8708e045c37a5ac1d",
+        "tests": []
+      }
+    },
+    {
+      "id": "128_CBSC-V4-PI-BAKSHEESH-ID7-024",
+      "questionNumber": 128,
+      "sourceTaskId": "CBSC-V4-PI-BAKSHEESH-ID7-024",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "65f52b6043fb6f322e70c3352013fa843fc3445ca61d4c0bbf2932166bc1882a",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/128_CBSC-V4-PI-BAKSHEESH-ID7-024/oracle/validator.py",
+        "sha256": "510e417d75dcb6e3c4b48092ecdc5021ddecf431070f44b34add92e0660f7b52",
+        "tests": []
+      }
+    },
+    {
+      "id": "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "questionNumber": 129,
+      "sourceTaskId": "CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "2ea95750a6a14c24e1278b601811ccf330bc2ee610741de1a8024c6df2609cad",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/129_CBSC-V4-PD-BAKSHEESH-OPT12-025/oracle/validator.py",
+        "sha256": "81d025f9f81a8dfdc816ae50f94e6d9b642d8bca4f0ed58510bb6bec56d97b7b",
+        "tests": []
+      }
+    },
+    {
+      "id": "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "questionNumber": 130,
+      "sourceTaskId": "CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "c29bc1a8dc91a48fad7d04e520a3ce8f10dd1e22aef01705a3712ddeff63d6d0",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/130_CBSC-V4-PL-BAKSHEESH-KR20-026/oracle/validator.py",
+        "sha256": "2b74bb533cce0d9088709db05357d2329d039ca151469427db4591eed436054c",
+        "tests": []
+      }
+    },
+    {
+      "id": "131_CBSC-V4-PD-GIFT64-STATEID6-027",
+      "questionNumber": 131,
+      "sourceTaskId": "CBSC-V4-PD-GIFT64-STATEID6-027",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "c524556bd5c7cc69df2d1e4d4f61602163a5553317c18e69d04ce5b23b9e4eda",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/131_CBSC-V4-PD-GIFT64-STATEID6-027/oracle/validator.py",
+        "sha256": "1d0f2bc5cbf9a5e0e087d0fede389395372bc18d4a397e6f8cca0131c31b5c8b",
+        "tests": []
+      }
+    },
+    {
+      "id": "132_CBSC-V4-PDL-SPECK32-DL11-AUDIT-028",
+      "questionNumber": 132,
+      "sourceTaskId": "CBSC-V4-PDL-SPECK32-DL11-AUDIT-028",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "bc35544b69b43201bc00ef6cc20abb826d5cda39ab5ddb44faae9eb10eb54f10",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/132_CBSC-V4-PDL-SPECK32-DL11-AUDIT-028/oracle/validator.py",
+        "sha256": "ce1a733865fdb050b812b9151d8bb240fa5f8fb48228eaca39168def313c82ae",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "133_CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029",
+      "questionNumber": 133,
+      "sourceTaskId": "CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "f1ea98d960617bf394350ccb9459182f4f50f3ce21967f480b09299a0fb4ecf8",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/133_CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029/oracle/validator.py",
+        "sha256": "da67729851e6f6edbdea2e7fb863e9bf34e3ed5b490ce90eb0ec6789bda1da93",
+        "tests": [
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030",
+      "questionNumber": 134,
+      "sourceTaskId": "CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "d933da1f9b5188591fbe2796a2e77a36635827da49366b2086f5c0f4ba755806",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030/oracle/validator.py",
+        "sha256": "9c0a92b87dd7b043d5604b4fea0bd3e1048a5a80e134b913c0a5e7931bf6d58b",
+        "tests": [
+          "validator_selftest_input_only",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "135_CBSC-V4-PDL-WARP11-DETERMINISTIC-031",
+      "questionNumber": 135,
+      "sourceTaskId": "CBSC-V4-PDL-WARP11-DETERMINISTIC-031",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "f7479a60135d185aa7f52c66ddcbd0ae7fd5f9fe58e62be11e601832827ad5b8",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/135_CBSC-V4-PDL-WARP11-DETERMINISTIC-031/oracle/validator.py",
+        "sha256": "30aa6c337b44ee68ce55332806111cbd3213a8fa5763c68c049148993de64a83",
+        "tests": [
+          "validator_selftest_input_only",
+          "validator_selftest_positive",
+          "validator_selftest_sampling_only"
+        ]
+      }
+    },
+    {
+      "id": "136_CBSC-V4-PD-SPEEDY192-QD-B0-032",
+      "questionNumber": 136,
+      "sourceTaskId": "CBSC-V4-PD-SPEEDY192-QD-B0-032",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "67357613ed1b9ec346b2bbc273e19f9b12fb987546b358f70f268c68bdf31fb3",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/136_CBSC-V4-PD-SPEEDY192-QD-B0-032/oracle/validator.py",
+        "sha256": "964c13dae4d7125d2a72ee19edf9cddc3f52b8ecf2f68617ddcd3e33b340ac68",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_missing_trail",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_sign"
+        ]
+      }
+    },
+    {
+      "id": "137_CBSC-V4-PI-FORKSKINNY64-AGG14-033",
+      "questionNumber": 137,
+      "sourceTaskId": "CBSC-V4-PI-FORKSKINNY64-AGG14-033",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "8cf572f5c1b2a4f0f4b15ff31532e801e89a45a76fcecffa5242f91049484ff1",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/137_CBSC-V4-PI-FORKSKINNY64-AGG14-033/oracle/validator.py",
+        "sha256": "3924789e716811857c9633cb018433e1ff0fa1257ccc1e96c67395b4d92aed4b",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_individual",
+          "validator_selftest_wrong_vector"
+        ]
+      }
+    },
+    {
+      "id": "138_CBSC-V4-PI-QARMAV2-PS13-COST-034",
+      "questionNumber": 138,
+      "sourceTaskId": "CBSC-V4-PI-QARMAV2-PS13-COST-034",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "fa6e32354480d6062906368c6efe383270a8fd9bf8ef4a60871083545d645cc2",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/138_CBSC-V4-PI-QARMAV2-PS13-COST-034/oracle/validator.py",
+        "sha256": "358d63b0ce19077396a730aac1d73a08fb997262be160e3aede05b821e630986",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_optimum",
+          "validator_selftest_wrong_parenthesis"
+        ]
+      }
+    },
+    {
+      "id": "139_CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035",
+      "questionNumber": 139,
+      "sourceTaskId": "CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "06816a376673e9f0fc37c703925abf21e0c9f7c9354933e92c48869d02b6bdc3",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/139_CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035/oracle/validator.py",
+        "sha256": "96a33b57a61bb67b1e260f948c42fdb3b665044309d58a91cc98e22f916a5c09",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_keyspace"
+        ]
+      }
+    },
+    {
+      "id": "140_CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036",
+      "questionNumber": 140,
+      "sourceTaskId": "CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "649134f908e82c56ab51d7bbf7d7aef1b6f40e431f52aca9c3c3d4063b6912ec",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/140_CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036/oracle/validator.py",
+        "sha256": "056cd0bff58a0fecba32ef919cb73b293b01eba57b6fd6fc424fc16b57d7d101",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_strategy"
+        ]
+      }
+    },
+    {
+      "id": "141_CBSC-V4-PI-PRESENT-LTRAIL-AUDIT-037",
+      "questionNumber": 141,
+      "sourceTaskId": "CBSC-V4-PI-PRESENT-LTRAIL-AUDIT-037",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "76acea61d6c00e1a7ad3735892aafba8315211cf2030e97e7d6e6a2b11254f51",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/141_CBSC-V4-PI-PRESENT-LTRAIL-AUDIT-037/oracle/validator.py",
+        "sha256": "2eda78cdbd937aa8f6eda84273a1274b949f46b4160667c7342799e6fe31896b",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_rule"
+        ]
+      }
+    },
+    {
+      "id": "142_CBSC-V4-PDL-CA10-SBOX-AUDIT-038",
+      "questionNumber": 142,
+      "sourceTaskId": "CBSC-V4-PDL-CA10-SBOX-AUDIT-038",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "78eeb2389d9d2cd5da8a5438885d583f65cf65c6db11db550cd247c6c8147833",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/142_CBSC-V4-PDL-CA10-SBOX-AUDIT-038/oracle/validator.py",
+        "sha256": "5b1f80ac4a85ad44f92fabddb1adba67034b747fdd817c9ba996787f85f2132d",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_metrics"
+        ]
+      }
+    },
+    {
+      "id": "143_CBSC-V4-PI-MIDPSQUARE-DEGTAIL-039",
+      "questionNumber": 143,
+      "sourceTaskId": "CBSC-V4-PI-MIDPSQUARE-DEGTAIL-039",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "f36ebbda4ee945895b525f050626f853b7b7828d7f514fce385393514b53ea23",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/143_CBSC-V4-PI-MIDPSQUARE-DEGTAIL-039/oracle/validator.py",
+        "sha256": "447dc23f7967a3d8f1b4bbb6c00e973bc444722026baf401017f55ed9ec9fd80",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_boundary"
+        ]
+      }
+    },
+    {
+      "id": "144_CBSC-V4-PDL-SERPENT-DATF-BIAS-040",
+      "questionNumber": 144,
+      "sourceTaskId": "CBSC-V4-PDL-SERPENT-DATF-BIAS-040",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "c413f78f5bf395d7e7542e3c3f35ed11242a269366f4d8a8a8059fa0c0667d4a",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/144_CBSC-V4-PDL-SERPENT-DATF-BIAS-040/oracle/validator.py",
+        "sha256": "a79d3e9fca678415d57d02305801ed14906c47c6d2bdc6723111dc9017d9c95b",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong_sign"
+        ]
+      }
+    },
+    {
+      "id": "145_CBSC-V4-PD-LBLOCK-RKID16-041",
+      "questionNumber": 145,
+      "sourceTaskId": "CBSC-V4-PD-LBLOCK-RKID16-041",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "d8ae0f4e18194a7b604f2fd32faa26313516a8f436ab441f53c6f3db7b978c8e",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/145_CBSC-V4-PD-LBLOCK-RKID16-041/oracle/validator.py",
+        "sha256": "a6acf2d46dd0e7cb82f77e2e4b796eaeade57a9fd1bdc3715c6f1d90fb2d9f66",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong"
+        ]
+      }
+    },
+    {
+      "id": "146_CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042",
+      "questionNumber": 146,
+      "sourceTaskId": "CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "a1c60f35228ec922c7bdb82f637a686e0df1b9c3348aafdf5cb3bea3f0885ebb",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/146_CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042/oracle/validator.py",
+        "sha256": "5eb7a1094164b087faf957f1e17fd5e2fcc3725fb473152d0130815ad0ba530b",
+        "tests": [
+          "validator_selftest_final_only",
+          "validator_selftest_positive",
+          "validator_selftest_wrong"
+        ]
+      }
+    },
+    {
+      "id": "147_CBSC-V4-PI-SKINNY64-TK1-INT10-043",
+      "questionNumber": 147,
+      "sourceTaskId": "CBSC-V4-PI-SKINNY64-TK1-INT10-043",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "23bfcf2808025c47778cd7800d2c5c0d99955fc21e0bda1bbf8a24afbbeb8f8c",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/147_CBSC-V4-PI-SKINNY64-TK1-INT10-043/oracle/validator.py",
+        "sha256": "7f6040699aee2e069ee52114df0eb926c70b2f5596d4ec17e41f789136244141",
+        "tests": []
+      }
+    },
+    {
+      "id": "148_CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+      "questionNumber": 148,
+      "sourceTaskId": "CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "15ae6c9f3399bb71a373a2db60382cad270130fafd6db28786972be9b4290973",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/148_CBSC-V4-PB-CRAFT64-R7MATRIX-044/oracle/validator.py",
+        "sha256": "6eccf4d5e413b36e006afef30c9a520f186262882bc5c4451294c3723775ddf1",
+        "tests": []
+      }
+    },
+    {
+      "id": "149_CBSC-V4-PB-LEA128-RKID4-045",
+      "questionNumber": 149,
+      "sourceTaskId": "CBSC-V4-PB-LEA128-RKID4-045",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "8251e8f1e786f43dcb69c600a90299939239b61d5dfbdd2f7f5dd9e78d29edb9",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/149_CBSC-V4-PB-LEA128-RKID4-045/oracle/validator.py",
+        "sha256": "d08494832a30b4a9048c925a0ef7ebd222162c2740d7edc65446b7a73af1b8e1",
+        "tests": []
+      }
+    },
+    {
+      "id": "150_CBSC-V4-PD-TWINE15-NLPROJ-046",
+      "questionNumber": 150,
+      "sourceTaskId": "CBSC-V4-PD-TWINE15-NLPROJ-046",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "823368b50a2b9e45afac6c11dfbd75f7d741120fd0c40be814215e24edd6fa99",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/150_CBSC-V4-PD-TWINE15-NLPROJ-046/oracle/validator.py",
+        "sha256": "9e3575da24b506255e336c09c6f0a8ffd51a967c9bf6629dc137d1cec1ff0ea6",
+        "tests": []
+      }
+    },
+    {
+      "id": "151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+      "questionNumber": 151,
+      "sourceTaskId": "CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "52a833950b4772a94796d26d1a5da5c7c647f2d979cc71926c8e130ec5726411",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047/oracle/validator.py",
+        "sha256": "e6c1415c177e16a187c705988dc4aceeacac28d4bc85f0cbdcf6411ebb890566",
+        "tests": []
+      }
+    },
+    {
+      "id": "152_CBSC-V4-PI-GIFT64-DP9-AUDIT-048",
+      "questionNumber": 152,
+      "sourceTaskId": "CBSC-V4-PI-GIFT64-DP9-AUDIT-048",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "f82a08769c0b1e012a09e2d0ccee7e445d689f534ec6c66e26d8acf4e527db2c",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/152_CBSC-V4-PI-GIFT64-DP9-AUDIT-048/oracle/validator.py",
+        "sha256": "ba6375cfa8dcbf212aa38defb792769c96b50438d7074ca4f809a818d206ec2d",
+        "tests": []
+      }
+    },
+    {
+      "id": "153_CBSC-V4-PD-TWINE15-FIXEDIO-049",
+      "questionNumber": 153,
+      "sourceTaskId": "CBSC-V4-PD-TWINE15-FIXEDIO-049",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "8c1d9e3393e18ae100e1cf75f5bf022f6b8e9642b569dc0f473e659ff12fd57f",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/153_CBSC-V4-PD-TWINE15-FIXEDIO-049/oracle/validator.py",
+        "sha256": "17db1eef680b88673496e7d3d5598ef9c2428e27482d94fb52f8c5cbdfcdb514",
+        "tests": []
+      }
+    },
+    {
+      "id": "154_CBSC-V4-PI-SIMON32-UTDIV8-050",
+      "questionNumber": 154,
+      "sourceTaskId": "CBSC-V4-PI-SIMON32-UTDIV8-050",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "d7aa06186d4d63b0145ded99e9e787c9e16e17f99a9b21b01fdc8294eb4c977b",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/154_CBSC-V4-PI-SIMON32-UTDIV8-050/oracle/validator.py",
+        "sha256": "6c8031ec951f2291305101d96ece10981eccaab43423a084841f53b3ac292da2",
+        "tests": []
+      }
+    },
+    {
+      "id": "155_CBSC-V4-PI-PRESENT9-ATMRANK-051",
+      "questionNumber": 155,
+      "sourceTaskId": "CBSC-V4-PI-PRESENT9-ATMRANK-051",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "09e7c2be24f9a9313b506dfdebd443c46e421629b723bf8081ea7883eb72c9bc",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/155_CBSC-V4-PI-PRESENT9-ATMRANK-051/oracle/validator.py",
+        "sha256": "7cb0227055a928ce4756da16707c41edfbc7ce169067f5df546237c5778992d3",
+        "tests": []
+      }
+    },
+    {
+      "id": "156_CBSC-V4-PL-CRAFT16-WEAKKEY-052",
+      "questionNumber": 156,
+      "sourceTaskId": "CBSC-V4-PL-CRAFT16-WEAKKEY-052",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "d8eb16ad3aadd31a7c11fa3ff024b47d51f5146081246fa5da3a4be67695ec35",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/156_CBSC-V4-PL-CRAFT16-WEAKKEY-052/oracle/validator.py",
+        "sha256": "e67ac18f23ffa8862b6e2a249f53433f802b6c5649a6363106f78006a20f65da",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "157_CBSC-V4-PD-MODADD16-BCTPART-053",
+      "questionNumber": 157,
+      "sourceTaskId": "CBSC-V4-PD-MODADD16-BCTPART-053",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "b2b9acd1cb59f20ebe0c81539dfbe031db5fab062c75dec206792b28a74285b3",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/157_CBSC-V4-PD-MODADD16-BCTPART-053/oracle/validator.py",
+        "sha256": "6a515496d1fc2ced81ba52f4540017febffcc549294153d917da0b6d12c8e684",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "158_CBSC-V4-PL-GIFT4-LATCLOSURE-054",
+      "questionNumber": 158,
+      "sourceTaskId": "CBSC-V4-PL-GIFT4-LATCLOSURE-054",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "1988ea2018c6b513e373adc7ccd9ed079518a897a3406998421f54fd26f241c3",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/158_CBSC-V4-PL-GIFT4-LATCLOSURE-054/oracle/validator.py",
+        "sha256": "e8f241cb5378f0bca2ddf0cb007a41ecca3aad2a0f4bb104896e6bfc876887ba",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "159_CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055",
+      "questionNumber": 159,
+      "sourceTaskId": "CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "6e7cdccd62fac0f7f07bd1069dc0c46e3cbcee07ff5f8abb02ad0d8f44fcef7b",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/159_CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055/oracle/validator.py",
+        "sha256": "16f4bdad9bbda63720a0fde9e84beae8d803fc395717d0a4100422b1bf4b0d00",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "160_CBSC-V4-PI-KOALA257-DP56-CALLBACK-056",
+      "questionNumber": 160,
+      "sourceTaskId": "CBSC-V4-PI-KOALA257-DP56-CALLBACK-056",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "9b7ccc09321585edbccd295d095a4dd8bb806cd49b3bca247975073d25d285c1",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/160_CBSC-V4-PI-KOALA257-DP56-CALLBACK-056/oracle/validator.py",
+        "sha256": "7420c7db878bf1a8fc89c57ba4b62c2ca6937edca4188a4a92af4611a22ff37c",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "161_CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057",
+      "questionNumber": 161,
+      "sourceTaskId": "CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "381f0f4ea526e742aca23c7bda8dc5048d0c35e3e6ddb824774ad92e14fb11b9",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/161_CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057/oracle/validator.py",
+        "sha256": "589d6bfc07c00f27c6f438a94fac505252b93eae351a96ac18b998bf0b44c6b7",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "162_CBSC-V4-PD-KNOT256-QDTCANCEL10-058",
+      "questionNumber": 162,
+      "sourceTaskId": "CBSC-V4-PD-KNOT256-QDTCANCEL10-058",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "ce4dcee6acaf4428a6d5473194e653d9bbec228fe154d1cb436b8eb0f9e37754",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/162_CBSC-V4-PD-KNOT256-QDTCANCEL10-058/oracle/validator.py",
+        "sha256": "642100fe4f5d343686b0a42af378871f2370904da353b0d5b391a624aab06eb6",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "163_CBSC-V4-PD-PRESENT64-IBD6-059",
+      "questionNumber": 163,
+      "sourceTaskId": "CBSC-V4-PD-PRESENT64-IBD6-059",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "e9ca7c9eee16a3dac752a6f4732a3d3627b8a094f15a0a7141fdf8d45fdbce7c",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/163_CBSC-V4-PD-PRESENT64-IBD6-059/oracle/validator.py",
+        "sha256": "0710c196e04ec2ef71b727cc54d85fa7b671eeaadc0f07196b1756ed7d4cc9dc",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "164_CBSC-V4-PD-LBLOCK4-KEYDIST-060",
+      "questionNumber": 164,
+      "sourceTaskId": "CBSC-V4-PD-LBLOCK4-KEYDIST-060",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "ef4fc8776eb255ef35cbcefbcef25dd3206ff00191a0dcd8ba010443430d294a",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/164_CBSC-V4-PD-LBLOCK4-KEYDIST-060/oracle/validator.py",
+        "sha256": "0d1b3ad0324be3fa1a89d2060e6276057644129340be25f87d027d27615a5d6b",
+        "tests": [
+          "validator_selftest_negative",
+          "validator_selftest_positive"
+        ]
+      }
+    },
+    {
+      "id": "165_CBSC-V4-PI-LBLOCK17-DP-AUDIT-061",
+      "questionNumber": 165,
+      "sourceTaskId": "CBSC-V4-PI-LBLOCK17-DP-AUDIT-061",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "d932ddc6152d8137df94afeeb9d66ac6aab140d95aac6a9e1c32cb4199d2a5cf",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/165_CBSC-V4-PI-LBLOCK17-DP-AUDIT-061/oracle/validator.py",
+        "sha256": "2fb5f1813f473c81912f514304e24af8bf76b3ccc7d749daabc0d8b72fbd3a4f",
+        "tests": []
+      }
+    },
+    {
+      "id": "166_CBSC-V4-PD-PRESENT80-KR18-062",
+      "questionNumber": 166,
+      "sourceTaskId": "CBSC-V4-PD-PRESENT80-KR18-062",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "ce28fecd9964772de584eebaa96d793fe90a025c0030e983e42f98214c8ecfaf",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/166_CBSC-V4-PD-PRESENT80-KR18-062/oracle/validator.py",
+        "sha256": "ab18c81717a6d3c1ebf7e284a64b2cda808c46655c7cd0df32d6ab2bcfe948ce",
+        "tests": []
+      }
+    },
+    {
+      "id": "167_CBSC-V4-PI-INV-IR3-AUDIT-063",
+      "questionNumber": 167,
+      "sourceTaskId": "CBSC-V4-PI-INV-IR3-AUDIT-063",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "a66c7027a86cd0a1c23b8e6d9a6ede0ee417468246946579f3918cac4ead6e73",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/167_CBSC-V4-PI-INV-IR3-AUDIT-063/oracle/validator.py",
+        "sha256": "340cc4eca26b35c54c16c67d251304135df9c531a78f8690d53b90f0e9ff92ae",
+        "tests": []
+      }
+    },
+    {
+      "id": "168_CBSC-V4-PL-SIMON32-ZC11-AUDIT-064",
+      "questionNumber": 168,
+      "sourceTaskId": "CBSC-V4-PL-SIMON32-ZC11-AUDIT-064",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "2019536d3b0a710a24c5fe5599bceadceea3b0e409961de30d5b0995e561778b",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/168_CBSC-V4-PL-SIMON32-ZC11-AUDIT-064/oracle/validator.py",
+        "sha256": "fc3433b501e53f3f7b9ae9a424dcadd2ad5dba417f81c87b5710344a16c8a960",
+        "tests": []
+      }
+    },
+    {
+      "id": "169_CBSC-V4-PD-SPECK64-RKRX3-ID-065",
+      "questionNumber": 169,
+      "sourceTaskId": "CBSC-V4-PD-SPECK64-RKRX3-ID-065",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "c5255ca0d96c4004f8995e9898af3d0be41356c0c7f1eb503d7c4ed7e8ab83f6",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/169_CBSC-V4-PD-SPECK64-RKRX3-ID-065/oracle/validator.py",
+        "sha256": "62daca5c08978ffafaaae2070e88e7289b06334713b6f4546b6346c75937a37b",
+        "tests": []
+      }
+    },
+    {
+      "id": "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066",
+      "questionNumber": 170,
+      "sourceTaskId": "CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066",
+      "submissionMode": "workspace",
+      "ruleType": "workspace-validator",
+      "oracleSha256": "9e2913fcf483bd50f30da148f37fcfae248cbbab4595e51241929dfa6b0aff08",
+      "expectedAnswerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validator": {
+        "ref": "tasks/170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066/oracle/validator.py",
+        "sha256": "e9a0d18ccaa2a08695d8d8c2d01ad10da4c772a9e5f8d7926466918852408470",
+        "tests": []
+      }
+    }
+  ]
+}

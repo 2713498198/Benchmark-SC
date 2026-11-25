@@ -1,0 +1,1030 @@
+{
+  "schema": "cryptobench-v4-attribution-v1",
+  "datasetId": "cryptobench-sc-v4",
+  "version": "4.1.0",
+  "sourceUrl": "https://gitee.com/xiandianzidaxue/cryptobench-sc",
+  "sourceSuiteId": "CBSC-V4-COMPREHENSIVE-BLOCK-CIPHER-170-20260805",
+  "sourceReleaseDate": "2026-08-05",
+  "tasks": [
+    {
+      "taskId": "001_CBSC-V2-NL-A01",
+      "sourceTaskId": "CBSC-V2-NL-A01",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "002_CBSC-V2-NL-A02",
+      "sourceTaskId": "CBSC-V2-NL-A02",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "003_CBSC-V2-NL-A03",
+      "sourceTaskId": "CBSC-V2-NL-A03",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "004_CBSC-V2-NL-A04",
+      "sourceTaskId": "CBSC-V2-NL-A04",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "005_CBSC-V2-NL-A05",
+      "sourceTaskId": "CBSC-V2-NL-A05",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "006_CBSC-V2-NL-A06",
+      "sourceTaskId": "CBSC-V2-NL-A06",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "007_CBSC-V2-NL-A07",
+      "sourceTaskId": "CBSC-V2-NL-A07",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "008_CBSC-V2-NL-A08",
+      "sourceTaskId": "CBSC-V2-NL-A08",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "009_CBSC-V2-NL-A09",
+      "sourceTaskId": "CBSC-V2-NL-A09",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "010_CBSC-V2-NL-A10",
+      "sourceTaskId": "CBSC-V2-NL-A10",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "011_CBSC-V2-NL-A11",
+      "sourceTaskId": "CBSC-V2-NL-A11",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "012_CBSC-V2-NL-A12",
+      "sourceTaskId": "CBSC-V2-NL-A12",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "013_CBSC-V2-NL-D01",
+      "sourceTaskId": "CBSC-V2-NL-D01",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "014_CBSC-V2-NL-D02",
+      "sourceTaskId": "CBSC-V2-NL-D02",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "015_CBSC-V2-NL-D03",
+      "sourceTaskId": "CBSC-V2-NL-D03",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "016_CBSC-V2-NL-D04",
+      "sourceTaskId": "CBSC-V2-NL-D04",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "017_CBSC-V2-NL-D05",
+      "sourceTaskId": "CBSC-V2-NL-D05",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "018_CBSC-V2-NL-D06",
+      "sourceTaskId": "CBSC-V2-NL-D06",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "019_CBSC-V2-NL-D07",
+      "sourceTaskId": "CBSC-V2-NL-D07",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "020_CBSC-V2-NL-D08",
+      "sourceTaskId": "CBSC-V2-NL-D08",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "021_CBSC-V2-NL-D09",
+      "sourceTaskId": "CBSC-V2-NL-D09",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "022_CBSC-V2-NL-D10",
+      "sourceTaskId": "CBSC-V2-NL-D10",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "023_CBSC-V2-NL-D11",
+      "sourceTaskId": "CBSC-V2-NL-D11",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "024_CBSC-V2-NL-L01",
+      "sourceTaskId": "CBSC-V2-NL-L01",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "025_CBSC-V2-NL-L02",
+      "sourceTaskId": "CBSC-V2-NL-L02",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "026_CBSC-V2-NL-L03",
+      "sourceTaskId": "CBSC-V2-NL-L03",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "027_CBSC-V2-NL-L04",
+      "sourceTaskId": "CBSC-V2-NL-L04",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "028_CBSC-V2-NL-L05",
+      "sourceTaskId": "CBSC-V2-NL-L05",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "029_CBSC-V2-NL-L06",
+      "sourceTaskId": "CBSC-V2-NL-L06",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "030_CBSC-V2-NL-L07",
+      "sourceTaskId": "CBSC-V2-NL-L07",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "031_CBSC-V2-NL-L08",
+      "sourceTaskId": "CBSC-V2-NL-L08",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "032_CBSC-V2-NL-L09",
+      "sourceTaskId": "CBSC-V2-NL-L09",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "033_CBSC-V2-NL-X01",
+      "sourceTaskId": "CBSC-V2-NL-X01",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "034_CBSC-V2-NL-X02",
+      "sourceTaskId": "CBSC-V2-NL-X02",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "035_CBSC-V2-NL-X03",
+      "sourceTaskId": "CBSC-V2-NL-X03",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "036_CBSC-V2-NL-X04",
+      "sourceTaskId": "CBSC-V2-NL-X04",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "037_CBSC-V2-PS-2013-DESL-8RK-009",
+      "sourceTaskId": "CBSC-V2-PS-2013-DESL-8RK-009",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "038_CBSC-V2-PS-2013-LBLOCK-13FACT-005",
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-13FACT-005",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "039_CBSC-V2-PS-2013-LBLOCK-14CHAR-008",
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-14CHAR-008",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "040_CBSC-V2-PS-2013-LBLOCK-FULL-004",
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-FULL-004",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "041_CBSC-V2-PS-2013-LBLOCK-TABLE5-010",
+      "sourceTaskId": "CBSC-V2-PS-2013-LBLOCK-TABLE5-010",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "042_CBSC-V2-PS-2013-PRESENT128-7RK-007",
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT128-7RK-007",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "043_CBSC-V2-PS-2013-PRESENT80-12ACTIVE-002",
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT80-12ACTIVE-002",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "044_CBSC-V2-PS-2013-PRESENT80-7CUTS-003",
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT80-7CUTS-003",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "045_CBSC-V2-PS-2013-PRESENT80-RK24-001",
+      "sourceTaskId": "CBSC-V2-PS-2013-PRESENT80-RK24-001",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "046_CBSC-V2-PS-2013-SIMON48-15DIFF-006",
+      "sourceTaskId": "CBSC-V2-PS-2013-SIMON48-15DIFF-006",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "047_CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK-ALGB-CASES-012",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "048_CBSC-V2-PS-2023-SPECK128-ALGB-011",
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK128-ALGB-011",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "049_CBSC-V2-PS-2023-SPECK32-ALGC3-013",
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK32-ALGC3-013",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "050_CBSC-V2-PS-2023-SPECK32-ALGC5-014",
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK32-ALGC5-014",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "051_CBSC-V2-PS-2023-SPECK48-FIXEDDIFF-015",
+      "sourceTaskId": "CBSC-V2-PS-2023-SPECK48-FIXEDDIFF-015",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "052_CBSC-V2-PS-2405-GIFT64-FIDCOUNT-024",
+      "sourceTaskId": "CBSC-V2-PS-2405-GIFT64-FIDCOUNT-024",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "053_CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+      "sourceTaskId": "CBSC-V2-PS-2405-GIFT64-FIDROW3-025",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "054_CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+      "sourceTaskId": "CBSC-V2-PS-2405-GIFT64-FIDROW8-026",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "055_CBSC-V2-PS-2405-XOR3-INEQ-027",
+      "sourceTaskId": "CBSC-V2-PS-2405-XOR3-INEQ-027",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "056_CBSC-V2-PS-2405-XOR4-DDT-028",
+      "sourceTaskId": "CBSC-V2-PS-2405-XOR4-DDT-028",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "057_CBSC-V2-PS-2408-DL-TRANSFORM-022",
+      "sourceTaskId": "CBSC-V2-PS-2408-DL-TRANSFORM-022",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "058_CBSC-V2-PS-2408-SIMECK32-TABLE7-023",
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMECK32-TABLE7-023",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "059_CBSC-V2-PS-2408-SIMON-FAMILY-021",
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMON-FAMILY-021",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "060_CBSC-V2-PS-2408-SIMON32-13DL-019",
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMON32-13DL-019",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "061_CBSC-V2-PS-2408-SIMON32-14ORDER-020",
+      "sourceTaskId": "CBSC-V2-PS-2408-SIMON32-14ORDER-020",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "062_CBSC-V2-HARD-GIFT64-DIFF-KR-001",
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-DIFF-KR-001",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "063_CBSC-V2-HARD-GIFT64-FAMILY-FID-003",
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-FAMILY-FID-003",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "064_CBSC-V2-HARD-GIFT64-FUZZY-ID-001",
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-FUZZY-ID-001",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "065_CBSC-V2-HARD-GIFT64-HIDDEN-FID-002",
+      "sourceTaskId": "CBSC-V2-HARD-GIFT64-HIDDEN-FID-002",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "066_CBSC-V2-HARD-PRESENT64-BDPT-CODEVERIFY-031",
+      "sourceTaskId": "CBSC-V2-HARD-PRESENT64-BDPT-CODEVERIFY-031",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "067_CBSC-V2-HARD-SIMON32-DL-SEARCH-002",
+      "sourceTaskId": "CBSC-V2-HARD-SIMON32-DL-SEARCH-002",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "068_CBSC-V2-HARD-SIMON32-DL-TRANSFORM-001",
+      "sourceTaskId": "CBSC-V2-HARD-SIMON32-DL-TRANSFORM-001",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "069_CBSC-V2-HARD-SKINNY64-FID-016",
+      "sourceTaskId": "CBSC-V2-HARD-SKINNY64-FID-016",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "070_CBSC-V2-HARD-SPECK128-FIXEDIO-015",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-FIXEDIO-015",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "071_CBSC-V2-HARD-SPECK128-FREEOPT-010",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-FREEOPT-010",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "072_CBSC-V2-HARD-SPECK128-LBPROOF-013",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-LBPROOF-013",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "073_CBSC-V2-HARD-SPECK128-LBPROOF-019",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK128-LBPROOF-019",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "074_CBSC-V2-HARD-SPECK32-FIXEDIO-004",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-FIXEDIO-004",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "075_CBSC-V2-HARD-SPECK32-FREEOPT-005",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-FREEOPT-005",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "076_CBSC-V2-HARD-SPECK32-LBPROOF-006",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-LBPROOF-006",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "077_CBSC-V2-HARD-SPECK32-VTDP-CODEVERIFY-ZH-032",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK32-VTDP-CODEVERIFY-ZH-032",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "078_CBSC-V2-HARD-SPECK48-LBPROOF-007",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK48-LBPROOF-007",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "079_CBSC-V2-HARD-SPECK48-LBPROOF-014",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK48-LBPROOF-014",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "080_CBSC-V2-HARD-SPECK48-LBPROOF-021",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK48-LBPROOF-021",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "081_CBSC-V2-HARD-SPECK64-FIXEDIO-017",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-FIXEDIO-017",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "082_CBSC-V2-HARD-SPECK64-FREEOPT-008",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-FREEOPT-008",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "083_CBSC-V2-HARD-SPECK64-LBPROOF-011",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-LBPROOF-011",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "084_CBSC-V2-HARD-SPECK64-LBPROOF-018",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK64-LBPROOF-018",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "085_CBSC-V2-HARD-SPECK96-FREEOPT-009",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK96-FREEOPT-009",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "086_CBSC-V2-HARD-SPECK96-LBPROOF-012",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK96-LBPROOF-012",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "087_CBSC-V2-HARD-SPECK96-LBPROOF-020",
+      "sourceTaskId": "CBSC-V2-HARD-SPECK96-LBPROOF-020",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "088_CBSC-V2-STRICT-SPECK128-20DP-ID9R01-009",
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK128-20DP-ID9R01-009",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "089_CBSC-V2-STRICT-SPECK128-LB19-016",
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK128-LB19-016",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "090_CBSC-V2-STRICT-SPECK48-LB11-013",
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK48-LB11-013",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "091_CBSC-V2-STRICT-SPECK64-LB15-014",
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK64-LB15-014",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "092_CBSC-V2-STRICT-SPECK96-LB16-015",
+      "sourceTaskId": "CBSC-V2-STRICT-SPECK96-LB16-015",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "093_CBSC-V3-NA-GIFT128-3R-AID-EXC-007",
+      "sourceTaskId": "CBSC-V3-NA-GIFT128-3R-AID-EXC-007",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "094_CBSC-V3-NA-GIFT64-2R-TID-006",
+      "sourceTaskId": "CBSC-V3-NA-GIFT64-2R-TID-006",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "095_CBSC-V3-NA-GIFT64-LNC-RIGHTKEY-040",
+      "sourceTaskId": "CBSC-V3-NA-GIFT64-LNC-RIGHTKEY-040",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "096_CBSC-V3-NA-GIFT64-TRAIL-REPLAY-031",
+      "sourceTaskId": "CBSC-V3-NA-GIFT64-TRAIL-REPLAY-031",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "097_CBSC-V3-NA-IBD-PRESENT80-6R-001",
+      "sourceTaskId": "CBSC-V3-NA-IBD-PRESENT80-6R-001",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "098_CBSC-V3-NA-INVARIANT-P0-WEAKKEY-038",
+      "sourceTaskId": "CBSC-V3-NA-INVARIANT-P0-WEAKKEY-038",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "099_CBSC-V3-NA-LBLOCK-KS-CONTRADICTION-004",
+      "sourceTaskId": "CBSC-V3-NA-LBLOCK-KS-CONTRADICTION-004",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "100_CBSC-V3-NA-LBLOCK-KS-DERIVE-005",
+      "sourceTaskId": "CBSC-V3-NA-LBLOCK-KS-DERIVE-005",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "101_CBSC-V3-NA-LBLOCK-KS-TABLE-009",
+      "sourceTaskId": "CBSC-V3-NA-LBLOCK-KS-TABLE-009",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "102_CBSC-V3-NA-MIDORI64-INVARIANT-PARITY-010",
+      "sourceTaskId": "CBSC-V3-NA-MIDORI64-INVARIANT-PARITY-010",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "103_CBSC-V3-NA-RKIBD-SPECK64128-9R-002",
+      "sourceTaskId": "CBSC-V3-NA-RKIBD-SPECK64128-9R-002",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "104_CBSC-V3-NA-SIMON64-ID-COMPLEXITY-008",
+      "sourceTaskId": "CBSC-V3-NA-SIMON64-ID-COMPLEXITY-008",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "105_CBSC-V3-NA-SKINNY128-DP14-003",
+      "sourceTaskId": "CBSC-V3-NA-SKINNY128-DP14-003",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "106_CBSC-V4-PB-GIFT64-3DIFF-ZERO-016",
+      "sourceTaskId": "CBSC-V4-PB-GIFT64-3DIFF-ZERO-016",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "107_CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022",
+      "sourceTaskId": "CBSC-V4-PB-SKINNY64-R17-LOWERKEYDIST-022",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "108_CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+      "sourceTaskId": "CBSC-V4-PB-SKINNY64-TK3-MID5-008",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "109_CBSC-V4-PB-WARP-MID10-FBCT-009",
+      "sourceTaskId": "CBSC-V4-PB-WARP-MID10-FBCT-009",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "110_CBSC-V4-PD-AES128-KEYPROJ2-010",
+      "sourceTaskId": "CBSC-V4-PD-AES128-KEYPROJ2-010",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "111_CBSC-V4-PD-ARX-RXCONST-020",
+      "sourceTaskId": "CBSC-V4-PD-ARX-RXCONST-020",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "112_CBSC-V4-PD-GIFT128-INVALID18-004",
+      "sourceTaskId": "CBSC-V4-PD-GIFT128-INVALID18-004",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "113_CBSC-V4-PD-GIFT64-SK12-DEPEND-015",
+      "sourceTaskId": "CBSC-V4-PD-GIFT64-SK12-DEPEND-015",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "114_CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+      "sourceTaskId": "CBSC-V4-PD-MIDORI64-AFFINEKEY5-005",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "115_CBSC-V4-PD-RECT64-QDT14-017",
+      "sourceTaskId": "CBSC-V4-PD-RECT64-QDT14-017",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "116_CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023",
+      "sourceTaskId": "CBSC-V4-PD-SIMECK64-ID17-INDIRECT-023",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "117_CBSC-V4-PD-SKINNY64-R3-KEYDIST-019",
+      "sourceTaskId": "CBSC-V4-PD-SKINNY64-R3-KEYDIST-019",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "118_CBSC-V4-PD-SKINNY64-TK1-INVALID10-013",
+      "sourceTaskId": "CBSC-V4-PD-SKINNY64-TK1-INVALID10-013",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "119_CBSC-V4-PD-SPECK32-PROJKEY9-006",
+      "sourceTaskId": "CBSC-V4-PD-SPECK32-PROJKEY9-006",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "120_CBSC-V4-PD-SPEEDY192-JOINTZERO-021",
+      "sourceTaskId": "CBSC-V4-PD-SPEEDY192-JOINTZERO-021",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "121_CBSC-V4-PD-WARP-MP20-003",
+      "sourceTaskId": "CBSC-V4-PD-WARP-MP20-003",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "122_CBSC-V4-PD-WARP-MP21-A-001",
+      "sourceTaskId": "CBSC-V4-PD-WARP-MP21-A-001",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "123_CBSC-V4-PD-WARP-MP21-B-002",
+      "sourceTaskId": "CBSC-V4-PD-WARP-MP21-B-002",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "124_CBSC-V4-PDL-AES128-CORR4-014",
+      "sourceTaskId": "CBSC-V4-PDL-AES128-CORR4-014",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "125_CBSC-V4-PI-ALZETTE64-DEG4-018",
+      "sourceTaskId": "CBSC-V4-PI-ALZETTE64-DEG4-018",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "126_CBSC-V4-PL-MIDORI64-RANKONE-011",
+      "sourceTaskId": "CBSC-V4-PL-MIDORI64-RANKONE-011",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "127_CBSC-V4-PL-PRESENT64-ZC6-007",
+      "sourceTaskId": "CBSC-V4-PL-PRESENT64-ZC6-007",
+      "sourceSuite": "",
+      "sourcePaperId": ""
+    },
+    {
+      "taskId": "128_CBSC-V4-PI-BAKSHEESH-ID7-024",
+      "sourceTaskId": "CBSC-V4-PI-BAKSHEESH-ID7-024",
+      "sourceSuite": "",
+      "sourcePaperId": "XuChenFengXiangZeng-Inscrypt-2024-BAKSHEESH"
+    },
+    {
+      "taskId": "129_CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "sourceTaskId": "CBSC-V4-PD-BAKSHEESH-OPT12-025",
+      "sourceSuite": "",
+      "sourcePaperId": "XuChenFengXiangZeng-Inscrypt-2024-BAKSHEESH"
+    },
+    {
+      "taskId": "130_CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "sourceTaskId": "CBSC-V4-PL-BAKSHEESH-KR20-026",
+      "sourceSuite": "",
+      "sourcePaperId": "XuChenFengXiangZeng-Inscrypt-2024-BAKSHEESH"
+    },
+    {
+      "taskId": "131_CBSC-V4-PD-GIFT64-STATEID6-027",
+      "sourceTaskId": "CBSC-V4-PD-GIFT64-STATEID6-027",
+      "sourceSuite": "",
+      "sourcePaperId": "HuLiJiaoTianWang-ASIACRYPT-2020-StatePropagation"
+    },
+    {
+      "taskId": "132_CBSC-V4-PDL-SPECK32-DL11-AUDIT-028",
+      "sourceTaskId": "CBSC-V4-PDL-SPECK32-DL11-AUDIT-028",
+      "sourceSuite": "",
+      "sourcePaperId": "BelliniEtAl-CTRSA-2023-FullyAutomatedDL"
+    },
+    {
+      "taskId": "133_CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029",
+      "sourceTaskId": "CBSC-V4-PD-SKINNY128-DDTMODEL-AUDIT-029",
+      "sourceSuite": "",
+      "sourcePaperId": "LiSun-ToSC-2022-SuperBall"
+    },
+    {
+      "taskId": "134_CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030",
+      "sourceTaskId": "CBSC-V4-PB-WARP23-PARTIAL-AUDIT-030",
+      "sourceSuite": "",
+      "sourcePaperId": "LallemandMinierRouquette-ToSC-2022-WARPRectangle"
+    },
+    {
+      "taskId": "135_CBSC-V4-PDL-WARP11-DETERMINISTIC-031",
+      "sourceTaskId": "CBSC-V4-PDL-WARP11-DETERMINISTIC-031",
+      "sourceSuite": "",
+      "sourcePaperId": "HadipourDerbezEichlseder-CRYPTO-2024-DL"
+    },
+    {
+      "taskId": "136_CBSC-V4-PD-SPEEDY192-QD-B0-032",
+      "sourceTaskId": "CBSC-V4-PD-SPEEDY192-QD-B0-032",
+      "sourceSuite": "",
+      "sourcePaperId": "BeyneNeyt-ToSC-2025-ImprovedSPEEDY"
+    },
+    {
+      "taskId": "137_CBSC-V4-PI-FORKSKINNY64-AGG14-033",
+      "sourceTaskId": "CBSC-V4-PI-FORKSKINNY64-AGG14-033",
+      "sourceSuite": "",
+      "sourcePaperId": "HadipourEtAl-ToSC-2024-ZeroPlus"
+    },
+    {
+      "taskId": "138_CBSC-V4-PI-QARMAV2-PS13-COST-034",
+      "sourceTaskId": "CBSC-V4-PI-QARMAV2-PS13-COST-034",
+      "sourceSuite": "",
+      "sourcePaperId": "HadipourTodo-ToSC-2024-QARMAv2"
+    },
+    {
+      "taskId": "139_CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035",
+      "sourceTaskId": "CBSC-V4-PD-SKINNY64-TK2-KEYSPACE13-035",
+      "sourceSuite": "",
+      "sourcePaperId": "PeyrinTan-ToSC-2022-KeyDependencies"
+    },
+    {
+      "taskId": "140_CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036",
+      "sourceTaskId": "CBSC-V4-PD-SPECK32-MIF12-DYNCOUNT-036",
+      "sourceSuite": "",
+      "sourcePaperId": "BiryukovEtAl-ACNS-2023-MeetInFilter"
+    },
+    {
+      "taskId": "141_CBSC-V4-PI-PRESENT-LTRAIL-AUDIT-037",
+      "sourceTaskId": "CBSC-V4-PI-PRESENT-LTRAIL-AUDIT-037",
+      "sourceSuite": "",
+      "sourcePaperId": "ZhangLiuWang-ePrint-2022-ModelSetIntegral"
+    },
+    {
+      "taskId": "142_CBSC-V4-PDL-CA10-SBOX-AUDIT-038",
+      "sourceTaskId": "CBSC-V4-PDL-CA10-SBOX-AUDIT-038",
+      "sourceSuite": "",
+      "sourcePaperId": "PrevostMartin-ePrint-2025-CAFeistelSbox"
+    },
+    {
+      "taskId": "143_CBSC-V4-PI-MIDPSQUARE-DEGTAIL-039",
+      "sourceTaskId": "CBSC-V4-PI-MIDPSQUARE-DEGTAIL-039",
+      "sourceSuite": "",
+      "sourcePaperId": "BeyneVerbauwhede-ASIACRYPT-2025-IntegralCharacteristicP"
+    },
+    {
+      "taskId": "144_CBSC-V4-PDL-SERPENT-DATF-BIAS-040",
+      "sourceTaskId": "CBSC-V4-PDL-SERPENT-DATF-BIAS-040",
+      "sourceSuite": "",
+      "sourcePaperId": "CheTian-ASIACRYPT-2025-EnhancedDATF"
+    },
+    {
+      "taskId": "145_CBSC-V4-PD-LBLOCK-RKID16-041",
+      "sourceTaskId": "CBSC-V4-PD-LBLOCK-RKID16-041",
+      "sourceSuite": "",
+      "sourcePaperId": "BelliniEtAl-SAC-2025-ImpossibleAutomation"
+    },
+    {
+      "taskId": "146_CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042",
+      "sourceTaskId": "CBSC-V4-PD-SPEEDY192-SEGMENT-AUDIT-042",
+      "sourceSuite": "",
+      "sourcePaperId": "BouraEtAl-ASIACRYPT-2025-SPEEDYCaughtAtLast"
+    },
+    {
+      "taskId": "147_CBSC-V4-PI-SKINNY64-TK1-INT10-043",
+      "sourceTaskId": "CBSC-V4-PI-SKINNY64-TK1-INT10-043",
+      "sourceSuite": "",
+      "sourcePaperId": "HadipourSadeghiEichlseder-EUROCRYPT-2023-FindingImpossible"
+    },
+    {
+      "taskId": "148_CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+      "sourceTaskId": "CBSC-V4-PB-CRAFT64-R7MATRIX-044",
+      "sourceSuite": "",
+      "sourcePaperId": "HadipourBagheriSong-ToSC-2021-ImprovedRectangle"
+    },
+    {
+      "taskId": "149_CBSC-V4-PB-LEA128-RKID4-045",
+      "sourceTaskId": "CBSC-V4-PB-LEA128-RKID4-045",
+      "sourceSuite": "",
+      "sourcePaperId": "AzimiEtAl-ePrint-2022-ModularConstant"
+    },
+    {
+      "taskId": "150_CBSC-V4-PD-TWINE15-NLPROJ-046",
+      "sourceTaskId": "CBSC-V4-PD-TWINE15-NLPROJ-046",
+      "sourceSuite": "",
+      "sourcePaperId": "PeyrinTanZhangZhou-ToSC-2025-TrailEstimator"
+    },
+    {
+      "taskId": "151_CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+      "sourceTaskId": "CBSC-V4-PD-PRIDE-COR10-AUDIT-047",
+      "sourceSuite": "",
+      "sourcePaperId": "BeierleEtAl-CRYPTO-2023-PerfectSPN"
+    },
+    {
+      "taskId": "152_CBSC-V4-PI-GIFT64-DP9-AUDIT-048",
+      "sourceTaskId": "CBSC-V4-PI-GIFT64-DP9-AUDIT-048",
+      "sourceSuite": "",
+      "sourcePaperId": "EskandariEtAl-SAC-2018-Solvatore"
+    },
+    {
+      "taskId": "153_CBSC-V4-PD-TWINE15-FIXEDIO-049",
+      "sourceTaskId": "CBSC-V4-PD-TWINE15-FIXEDIO-049",
+      "sourceSuite": "",
+      "sourcePaperId": "ZhouZhangDingXiang-ToSC-2019-DivideConquerMILP"
+    },
+    {
+      "taskId": "154_CBSC-V4-PI-SIMON32-UTDIV8-050",
+      "sourceTaskId": "CBSC-V4-PI-SIMON32-UTDIV8-050",
+      "sourceSuite": "",
+      "sourcePaperId": "BeyneVerbauwhede-ASIACRYPT-2024-UltrametricIntegral"
+    },
+    {
+      "taskId": "155_CBSC-V4-PI-PRESENT9-ATMRANK-051",
+      "sourceTaskId": "CBSC-V4-PI-PRESENT9-ATMRANK-051",
+      "sourceSuite": "",
+      "sourcePaperId": "BeyneVerbauwhede-ToSC-2023-AlgebraicTransitionMatrices"
+    },
+    {
+      "taskId": "156_CBSC-V4-PL-CRAFT16-WEAKKEY-052",
+      "sourceTaskId": "CBSC-V4-PL-CRAFT16-WEAKKEY-052",
+      "sourceSuite": "",
+      "sourcePaperId": "BeierleEtAl-CRYPTO-2023-PerfectSPN"
+    },
+    {
+      "taskId": "157_CBSC-V4-PD-MODADD16-BCTPART-053",
+      "sourceTaskId": "CBSC-V4-PD-MODADD16-BCTPART-053",
+      "sourceSuite": "",
+      "sourcePaperId": "WangWangSun-ToSC-2023-ARXBoomerang"
+    },
+    {
+      "taskId": "158_CBSC-V4-PL-GIFT4-LATCLOSURE-054",
+      "sourceTaskId": "CBSC-V4-PL-GIFT4-LATCLOSURE-054",
+      "sourceSuite": "",
+      "sourcePaperId": "BilleTischhauser-CIC-2024-OptimalInequalityCandidates"
+    },
+    {
+      "taskId": "159_CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055",
+      "sourceTaskId": "CBSC-V4-PD-SKINNY128-IULBCT-ZERO-055",
+      "sourceSuite": "",
+      "sourcePaperId": "WangZhang-DCC-2026-ImpossibleCryptanalysis"
+    },
+    {
+      "taskId": "160_CBSC-V4-PI-KOALA257-DP56-CALLBACK-056",
+      "sourceTaskId": "CBSC-V4-PI-KOALA257-DP56-CALLBACK-056",
+      "sourceSuite": "",
+      "sourcePaperId": "AmiriEliasiEtAl-SAC-2024-Koala"
+    },
+    {
+      "taskId": "161_CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057",
+      "sourceTaskId": "CBSC-V4-PD-DEOXYS-TK3-INSTANTIATE-057",
+      "sourceSuite": "",
+      "sourcePaperId": "BariantLeurent-EUROCRYPT-2023-TruncatedBoomerang"
+    },
+    {
+      "taskId": "162_CBSC-V4-PD-KNOT256-QDTCANCEL10-058",
+      "sourceTaskId": "CBSC-V4-PD-KNOT256-QDTCANCEL10-058",
+      "sourceSuite": "",
+      "sourcePaperId": "BeyneRijmen-CRYPTO-2022-FixedKeyDifferential"
+    },
+    {
+      "taskId": "163_CBSC-V4-PD-PRESENT64-IBD6-059",
+      "sourceTaskId": "CBSC-V4-PD-PRESENT64-IBD6-059",
+      "sourceSuite": "",
+      "sourcePaperId": "HuEtAl-ePrint-2024-1008-IBD"
+    },
+    {
+      "taskId": "164_CBSC-V4-PD-LBLOCK4-KEYDIST-060",
+      "sourceTaskId": "CBSC-V4-PD-LBLOCK4-KEYDIST-060",
+      "sourceSuite": "",
+      "sourcePaperId": "PeyrinTanZhangZhou-ToSC-2025-TrailEstimator"
+    },
+    {
+      "taskId": "165_CBSC-V4-PI-LBLOCK17-DP-AUDIT-061",
+      "sourceTaskId": "CBSC-V4-PI-LBLOCK17-DP-AUDIT-061",
+      "sourceSuite": "",
+      "sourcePaperId": "EskandariEtAl-SAC-2018-Solvatore"
+    },
+    {
+      "taskId": "166_CBSC-V4-PD-PRESENT80-KR18-062",
+      "sourceTaskId": "CBSC-V4-PD-PRESENT80-KR18-062",
+      "sourceSuite": "",
+      "sourcePaperId": "BouraEtAl-EUROCRYPT-2024-KYRYDI"
+    },
+    {
+      "taskId": "167_CBSC-V4-PI-INV-IR3-AUDIT-063",
+      "sourceTaskId": "CBSC-V4-PI-INV-IR3-AUDIT-063",
+      "sourceSuite": "",
+      "sourcePaperId": "BeierleEtAl-CRYPTO-2025-ModAddIntegral"
+    },
+    {
+      "taskId": "168_CBSC-V4-PL-SIMON32-ZC11-AUDIT-064",
+      "sourceTaskId": "CBSC-V4-PL-SIMON32-ZC11-AUDIT-064",
+      "sourceSuite": "",
+      "sourcePaperId": "ChakrabortyHadipourNguyenEichlseder-ToSC-2024-CompleteID"
+    },
+    {
+      "taskId": "169_CBSC-V4-PD-SPECK64-RKRX3-ID-065",
+      "sourceTaskId": "CBSC-V4-PD-SPECK64-RKRX3-ID-065",
+      "sourceSuite": "",
+      "sourcePaperId": "BiryukovLambinUdovenko-ToSC-2025-RXProbability"
+    },
+    {
+      "taskId": "170_CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066",
+      "sourceTaskId": "CBSC-V4-PD-SCREAM-AFFINE-WEAKKEY-066",
+      "sourceSuite": "",
+      "sourcePaperId": "BaudrinEtAl-ToSC-2023-Commutative"
+    }
+  ]
+}

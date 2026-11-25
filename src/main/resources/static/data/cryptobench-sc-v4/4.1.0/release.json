@@ -1,0 +1,25 @@
+{
+  "schema": "cryptobench-v4-public-release-v1",
+  "datasetId": "cryptobench-sc-v4",
+  "version": "4.1.0",
+  "releaseRevision": "2026-11-25",
+  "publicationStatus": "technical_ready",
+  "suiteId": "CBSC-V4-COMPREHENSIVE-BLOCK-CIPHER-170-20260805",
+  "sourceReleaseDate": "2026-08-05",
+  "sourceManifestSha256": "fcdafe32359ee2c7973976736098fd428ba4422111de3d45dc822452b83c3648",
+  "evaluatorVersion": "cryptobench-sc-v4-evaluator-1.0.1",
+  "taskCount": 170,
+  "publicFileCount": 245,
+  "attachmentCount": 75,
+  "publicCatalogSha256": "10074e8ddbfa7e15ec84b0d18a0c63920be41c6460cc3d5b4dc9f1a8fedb7a57",
+  "publicContentSha256": "b92f6556a0e7176b231e7939922fc58f5debd1c9c34c522062dcd63372e6fa86",
+  "evaluationCoverage": {
+    "deterministic": 105,
+    "workspaceValidator": 65
+  },
+  "rightsReview": {
+    "status": "attribution_recorded",
+    "document": "docs/v4-source-attribution.md",
+    "manifest": "data/cryptobench-sc-v4/4.1.0/attribution.json"
+  }
+}

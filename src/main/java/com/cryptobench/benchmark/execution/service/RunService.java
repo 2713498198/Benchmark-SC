@@ -49,6 +49,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class RunService {
     private final RunRepository runs;
     private final TaskCatalogService catalog;
+    private final TaskInputService taskInputs;
     private final AgentHttpClient agent;
     private final ServerCostCalculator costs;
     private final DockerSandboxExecutor docker;
@@ -74,7 +75,8 @@ public class RunService {
             }, new ThreadPoolExecutor.AbortPolicy());
     private final ConcurrentHashMap<String, Future<?>> activeJobs = new ConcurrentHashMap<>();
 
-    public RunService(RunRepository runs, TaskCatalogService catalog, AgentHttpClient agent,
+    public RunService(RunRepository runs, TaskCatalogService catalog, TaskInputService taskInputs,
+                      AgentHttpClient agent,
                       ServerCostCalculator costs, ReportService reports,
                       com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker,
                       PlatformTransactionManager transactionManager,
@@ -83,6 +85,7 @@ public class RunService {
                       TaskBudgetService taskBudgets) {
         this.runs = runs;
         this.catalog = catalog;
+        this.taskInputs = taskInputs;
         this.agent = agent;
         this.costs = costs;
         this.reports = reports;
@@ -601,6 +604,8 @@ public class RunService {
                         ObjectNode publicTask = request.putObject("task");
                         publicTask.put("question", task.question()); publicTask.set("input", task.input());
                         publicTask.put("category", task.category()); publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
+                        taskInputs.attach(run.datasetId(), run.version(), task, publicTask);
+                        request.put("captureWorkspace", isWorkspaceTask(task));
                         TaskBudgetService.TaskBudget taskBudget = taskBudgets.resolve(
                                 run.datasetId(), run.version(), task.id(), run.budget());
                         int timeout = (int) taskBudget.timeoutSeconds();
@@ -751,6 +756,8 @@ public class RunService {
         ObjectNode publicTask = request.putObject("task"); publicTask.put("question", task.question());
         publicTask.set("input", task.input()); publicTask.put("category", task.category());
         publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
+        taskInputs.attach(run.datasetId(), run.version(), task, publicTask);
+        request.put("captureWorkspace", isWorkspaceTask(task));
         request.put("deadline", Instant.now().plusSeconds(taskBudget.timeoutSeconds()).toString());
         ObjectNode budget = request.putObject("budget");
         budget.put("timeoutSeconds", taskBudget.timeoutSeconds());
@@ -759,6 +766,10 @@ public class RunService {
         budget.put("budgetClass", taskBudget.budgetClass());
         budget.put("validationTimeoutSeconds", taskBudget.validationTimeoutSeconds());
         return request;
+    }
+
+    private static boolean isWorkspaceTask(TaskDefinition task) {
+        return "workspace-validator".equals(task.verification().path("type").asText());
     }
 
     private void finishRunnerRun(String id, long generation, Run run, List<TaskDefinition> tasks,

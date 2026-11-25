@@ -1,136 +1,171 @@
-"""Validate a staged CryptoBench-SC release before website import.
+"""Validate the complete CryptoBench-SC V4 release contract."""
 
-This is intentionally structural: it never reads hidden oracle values into the
-public catalog and reports validator coverage separately from package validity.
-"""
+from __future__ import annotations
+
 import argparse
+import hashlib
 import json
-import re
+import os
+from collections import Counter
 from pathlib import Path
 
 
-REGISTRY_SCHEMA = 'cryptobench-v4-validator-registry-v1'
-REGISTRY_TEST_FIELDS = ('positive_tests', 'negative_tests', 'boundary_tests')
+ROOT = Path(__file__).resolve().parents[1]
+PUBLIC = ROOT / "src/main/resources/static/data/cryptobench-sc-v4/4.1.0"
+PRIVATE = ROOT / "src/main/resources/evaluation/cryptobench-sc-v4/4.1.0"
 
 
-def _source_file(source: Path, relative: str, label: str) -> Path:
-    if not isinstance(relative, str) or not relative or Path(relative).is_absolute():
-        raise ValueError(f'{label} must be a relative path')
-    raw = source / relative
-    candidate = raw.resolve()
-    if raw.is_symlink() or not candidate.is_relative_to(source) or not candidate.is_file():
-        raise ValueError(f'{label} is missing or escapes the release root: {relative}')
-    return candidate
+def read_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def load_validator_registry(path: Path, source: Path, task_ids: set[str]) -> tuple[set[str], set[str]]:
-    registry = json.loads(path.read_text(encoding='utf-8-sig'))
-    if registry.get('schema') != REGISTRY_SCHEMA:
-        raise ValueError('Unsupported validator registry schema')
-    entries = registry.get('tasks')
-    if not isinstance(entries, list):
-        raise ValueError('Validator registry tasks must be an array')
-    seen: set[str] = set()
-    implementations: set[str] = set()
-    for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValueError('Validator registry entries must be objects')
-        task_id = entry.get('task_id')
-        if not isinstance(task_id, str) or task_id not in task_ids or task_id in seen:
-            raise ValueError('Validator registry has an unknown or duplicate task ID: ' + str(task_id))
-        seen.add(task_id)
-        reference = entry.get('validator_ref')
-        if not isinstance(reference, str) or not re.fullmatch(
-                r'[A-Za-z0-9_.\-/]+(?:#[A-Za-z_][A-Za-z0-9_]*)?', reference):
-            raise ValueError(f'{task_id}: invalid validator_ref')
-        implementation, _, _entrypoint = reference.partition('#')
-        _source_file(source, implementation, f'{task_id} validator_ref')
-        implementations.add(reference)
-        for field in REGISTRY_TEST_FIELDS:
-            tests = entry.get(field)
-            if not isinstance(tests, list) or not tests or not all(isinstance(item, str) for item in tests):
-                raise ValueError(f'{task_id}: {field} must contain at least one path')
-            for relative in tests:
-                _source_file(source, relative, f'{task_id} {field}')
-    missing = sorted(task_ids - seen)
-    extra = sorted(seen - task_ids)
-    if missing or extra or len(seen) != len(task_ids):
-        raise ValueError(f'Validator registry coverage mismatch: missing={missing}, extra={extra}')
-    return seen, implementations
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('source', type=Path, help='staged release directory')
-    parser.add_argument('--require-validators', action='store_true')
-    parser.add_argument('--validator-registry', type=Path,
-                        help='private registry allowing shared implementations with per-task tests')
-    parser.add_argument('--expected-task-count', type=int, default=170,
-                        help='expected task count (default: 170; useful for fixture tests)')
+def fail(message: str) -> None:
+    raise SystemExit("V4 release gate failed: " + message)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("source", nargs="?", type=Path,
+                        help="upstream release directory; defaults to CRYPTOBENCH_V4_RELEASE_ROOT")
+    parser.add_argument("--public-dir", type=Path, default=PUBLIC)
+    parser.add_argument("--private-dir", type=Path, default=PRIVATE)
+    parser.add_argument("--validator-report", type=Path,
+                        help="output from scripts/validate-v4-validators.py")
+    parser.add_argument("--require-validators", action="store_true",
+                        help="require a passing 65/65 validator contract report")
     args = parser.parse_args()
-    root = args.source.resolve()
-    manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8-sig'))
-    tasks = [path for path in (root / 'tasks').iterdir() if path.is_dir()]
-    task_ids = [task.name for task in tasks]
-    assert len(tasks) == manifest['task_count'] == args.expected_task_count
-    assert len(set(task_ids)) == len(task_ids)
-    numbers = []
-    validator_count = 0
-    validator_tasks = set()
-    public_attachment_count = 0
-    empty_public_attachment_paths = []
-    for task in tasks:
-        release = json.loads((task / 'release.json').read_text(encoding='utf-8'))
-        assert release['task_id'] == task.name
-        numbers.append(release['question_number'])
-        for relative in ('public/question.md', 'hidden/guardrail.json',
-                         'hidden/oracle.json', 'oracle/source_extracts.md',
-                         'docs/design_notes.md', 'release.json'):
-            assert (task / relative).is_file(), f'{task.name}: missing {relative}'
-        if (task / 'oracle/validator.py').is_file():
-            validator_count += 1
-            validator_tasks.add(task.name)
-        public = task / 'public'
-        for path in public.rglob('*'):
-            if path.is_file() and 'attachments' in path.relative_to(public).parts:
-                public_attachment_count += 1
-                if path.stat().st_size == 0:
-                    empty_public_attachment_paths.append(
-                        f'tasks/{task.name}/public/{path.relative_to(public).as_posix()}'
-                    )
-    assert sorted(numbers) == list(range(1, args.expected_task_count + 1))
-    missing = sorted(set(task_ids) - validator_tasks)
-    validator_mode = 'task-local'
-    implementation_count = validator_count
-    if args.validator_registry:
-        registry_tasks, implementations = load_validator_registry(
-            args.validator_registry.resolve(), root, set(task_ids))
-        validator_tasks = registry_tasks
-        validator_count = len(registry_tasks)
-        missing = sorted(set(task_ids) - validator_tasks)
-        validator_mode = 'registry'
-        implementation_count = len(implementations)
+    source_value = args.source or (
+        Path(os.environ["CRYPTOBENCH_V4_RELEASE_ROOT"])
+        if os.environ.get("CRYPTOBENCH_V4_RELEASE_ROOT") else None
+    )
+    if source_value is None:
+        fail("source is required; pass it or set CRYPTOBENCH_V4_RELEASE_ROOT")
+    source = source_value.resolve()
+    public = args.public_dir.resolve()
+    private = args.private_dir.resolve()
+    catalog_path = public / "catalog.json"
+    release_path = public / "release.json"
+    zip_path = public / "public-tasks.zip"
+    private_catalog_path = private / "tasks.json"
+    private_manifest_path = private / "release-manifest.json"
+    catalog = read_json(catalog_path)
+    public_release = read_json(release_path)
+    private_catalog = read_json(private_catalog_path)
+    private_manifest = read_json(private_manifest_path)
+    task_count = len(catalog["tasks"])
+    if task_count != 170:
+        fail(f"expected 170 public tasks, found {task_count}")
+    public_ids = {task["task_id"] for task in catalog["tasks"]}
+    private_tasks = private_catalog["tasks"]
+    private_ids = {task["id"] for task in private_tasks}
+    if public_ids != private_ids or len(public_ids) != 170:
+        fail("public and private task coverage differs")
+    if sorted(task["question_number"] for task in catalog["tasks"]) != list(range(1, 171)):
+        fail("question numbers are not contiguous")
+    if len({task["question"] for task in catalog["tasks"]}) != 170:
+        fail("duplicate public questions")
+    if any(not task["question"].strip() for task in catalog["tasks"]):
+        fail("blank public question")
+    attachment_count = 0
+    workspace_root = ROOT / "src/main/resources/static"
+    for task in catalog["tasks"]:
+        for file in task["files"]:
+            path = workspace_root / file["url"]
+            if not path.is_file():
+                fail(f"missing public file: {file['url']}")
+            content = path.read_bytes()
+            if len(content) != file["bytes"] or sha256(path) != file["sha256"]:
+                fail(f"public file hash mismatch: {file['url']}")
+            if "/attachments/" in file["url"].replace("\\", "/"):
+                attachment_count += 1
+                if not content:
+                    fail(f"empty public attachment: {file['url']}")
+    if attachment_count != 75:
+        fail(f"expected 75 attachments, found {attachment_count}")
+    if sha256(catalog_path) != public_release["publicCatalogSha256"]:
+        fail("public release catalog hash mismatch")
+    for key, path in (
+        ("publicReleaseSha256", release_path),
+        ("publicCatalogSha256", catalog_path),
+        ("publicZipSha256", zip_path),
+        ("privateCatalogSha256", private_catalog_path),
+    ):
+        if private_manifest[key] != sha256(path):
+            fail(f"private manifest {key} mismatch")
+    if private_manifest["taskCount"] != 170 or private_manifest["validatorCount"] != 65:
+        fail("private manifest counts are incomplete")
+    if private_catalog.get("schema") != "cryptobench-v4-evaluator-catalog-v2":
+        fail("private evaluator catalog schema is not v2")
+    if private_catalog.get("evaluatorVersion") != public_release["evaluatorVersion"]:
+        fail("public/private evaluator versions differ")
+    if catalog["dataset"].get("sourceManifestSha256") != sha256(source / "manifest.json"):
+        fail("source manifest hash differs from imported catalog")
+    rules = Counter(task["verification"]["type"] for task in private_tasks)
+    expected_rules = {
+        "numeric": 33, "string": 31, "boolean": 1, "fields": 39,
+        "piecewise": 1, "workspace-validator": 65,
+    }
+    if dict(rules) != expected_rules:
+        fail(f"unexpected rule distribution: {dict(rules)}")
+    deterministic = [task for task in private_tasks
+                     if task["verification"]["type"] != "workspace-validator"]
+    if len(deterministic) != 105 or any(not task["expectedAnswer"] for task in deterministic):
+        fail("deterministic task answer coverage is incomplete")
+    workspace = [task for task in private_tasks
+                 if task["verification"]["type"] == "workspace-validator"]
+    if any(not task.get("validator", {}).get("ref") for task in workspace):
+        fail("workspace validator reference is missing")
+    for task in workspace:
+        validator = source / task["validator"]["ref"]
+        if not validator.is_file() or sha256(validator) != task["validator"]["sha256"]:
+            fail(f"validator hash mismatch: {task['id']}")
+    if any(task["submissionMode"] != "workspace" for task in workspace):
+        fail("workspace task submission mode mismatch")
+    if any(task["submissionMode"] != "final_answer" for task in deterministic):
+        fail("deterministic task submission mode mismatch")
+    validator_contracts = None
+    if args.validator_report:
+        validator_contracts = read_json(args.validator_report.resolve())
+        if validator_contracts.get("status") != "passed":
+            fail("validator contract report is not passing")
+        if validator_contracts.get("validatorCount") != 65 or validator_contracts.get("passedCount") != 65:
+            fail("validator contract coverage is not 65/65")
+    if args.require_validators and validator_contracts is None:
+        fail("--require-validators needs --validator-report")
     result = {
-        'suiteId': manifest['suite_id'],
-        'taskCount': len(tasks),
-        'validatorCount': validator_count,
-        'validatorCoverage': validator_count / len(tasks),
-        'validatorMode': validator_mode,
-        'validatorImplementationCount': implementation_count,
-        'missingValidatorTaskIds': missing,
-        'publicAttachmentCount': public_attachment_count,
-        'emptyPublicAttachmentCount': len(empty_public_attachment_paths),
-        'emptyPublicAttachmentPaths': sorted(empty_public_attachment_paths),
-        'executionReady': validator_count == len(tasks) and not empty_public_attachment_paths,
+        "schema": "cryptobench-v4-release-validation-v1",
+        "suiteId": catalog["dataset"]["suiteId"],
+        "datasetId": catalog["dataset"]["id"],
+        "version": catalog["dataset"]["version"],
+        "releaseRevision": private_catalog["releaseRevision"],
+        "evaluatorVersion": private_catalog["evaluatorVersion"],
+        "taskCount": task_count,
+        "attachmentCount": attachment_count,
+        "publicFileCount": public_release["publicFileCount"],
+        "ruleCounts": dict(sorted(rules.items())),
+        "deterministicCount": len(deterministic),
+        "workspaceValidatorCount": len(workspace),
+        "validatorContracts": (
+            {"required": args.require_validators, "status": validator_contracts["status"],
+             "passedCount": validator_contracts["passedCount"]}
+            if validator_contracts else None
+        ),
+        "technicalReleaseReady": bool(
+            not args.require_validators or (
+                validator_contracts
+                and validator_contracts.get("status") == "passed"
+                and validator_contracts.get("passedCount") == 65
+            )
+        ),
+        "rightsReview": public_release["rightsReview"],
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if args.require_validators and (missing or empty_public_attachment_paths):
-        raise SystemExit(
-            'release gate failed: '
-            f'{len(missing)} task validators missing, '
-            f'{len(empty_public_attachment_paths)} public attachments empty'
-        )
+    return 0
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    raise SystemExit(main())

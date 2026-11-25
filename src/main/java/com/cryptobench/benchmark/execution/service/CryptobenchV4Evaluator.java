@@ -46,7 +46,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
     public String version() { return "4.1.0"; }
 
     @Override
-    public String evaluatorVersion() { return "cryptobench-sc-v4-evaluator-1.0.0"; }
+    public String evaluatorVersion() { return "cryptobench-sc-v4-evaluator-1.0.1"; }
 
     @Override
     public String taskResource() { return "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"; }
@@ -73,7 +73,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
         if ("workspace-validator".equals(type)) {
             long timeout = taskBudgets == null ? 120
                     : taskBudgets.validationTimeoutSeconds(datasetId(), version(), task.id());
-            return validatorRunner.evaluate(task.id(), actual, timeout);
+            return validatorRunner.evaluate(task.id(), response, timeout);
         }
         boolean passed = switch (type) {
             case "numeric" -> numericMatch(rule, actual);

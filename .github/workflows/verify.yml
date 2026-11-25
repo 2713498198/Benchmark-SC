@@ -42,7 +42,19 @@ jobs:
         with:
           distribution: temurin
           java-version: '21.0.13'
-          cache: maven
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: .mvn/repository
+          key: maven-repository-${{ runner.os }}-${{ hashFiles('pom.xml', '.mvn/maven.config') }}
+          restore-keys: maven-repository-${{ runner.os }}-
+
+      - name: Cache Maven Wrapper distribution
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/wrapper/dists
+          key: maven-wrapper-${{ runner.os }}-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
@@ -58,6 +70,9 @@ jobs:
 
       - name: Check frontend JavaScript and Vue templates
         run: npm run check
+
+      - name: Verify Runner task inputs and workspace artifacts
+        run: npm run test:runner-command
 
       - name: Verify report timing, categories, leaderboard and exports
         run: npm run test:report-metrics

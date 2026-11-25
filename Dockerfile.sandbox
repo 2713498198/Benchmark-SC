@@ -19,7 +19,8 @@ LABEL org.opencontainers.image.title="CryptoBench sandbox" \
       org.opencontainers.image.version="1.1.0"
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget \
+    && apt-get install -y --no-install-recommends wget python3 python3-pip \
+    && python3 -m pip install --no-cache-dir --disable-pip-version-check python-sat==1.8.dev24 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker

@@ -193,7 +193,19 @@ esac
 
 if [ -z "${MVNW_USERNAME-}" ] && command -v curl >/dev/null; then
   verbose "Found curl ... using curl"
-  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L --http1.1 --retry 4 --retry-all-errors --retry-delay 2 --connect-timeout 30 -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
+  download_with_curl() {
+    curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L --http1.1 --retry 4 --retry-all-errors --retry-delay 2 --connect-timeout 30 -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$1"
+  }
+  if ! download_with_curl "$distributionUrl"; then
+    case "$distributionUrl" in
+    https://repo.maven.apache.org/maven2/*)
+      fallbackDistributionUrl="https://repo1.maven.org/maven2/${distributionUrl#https://repo.maven.apache.org/maven2/}"
+      verbose "Retrying download from $fallbackDistributionUrl"
+      download_with_curl "$fallbackDistributionUrl" || die "curl: Failed to fetch $distributionUrl and $fallbackDistributionUrl"
+      ;;
+    *) die "curl: Failed to fetch $distributionUrl" ;;
+    esac
+  fi
 elif [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
   verbose "Found wget ... using wget"
   wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} --tries=4 --timeout=30 --waitretry=2 "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"

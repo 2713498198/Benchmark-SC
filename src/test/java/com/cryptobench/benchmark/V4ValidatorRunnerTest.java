@@ -17,7 +17,9 @@ class V4ValidatorRunnerTest {
     void reportsUnavailableWhenDisabled() {
         V4ValidatorRunner runner = new V4ValidatorRunner(new V4ScoringProperties("", "python3", 0, ""), mapper);
         assertThat(runner.available()).isFalse();
-        ObjectNode result = runner.evaluate("001", mapper.createObjectNode());
+        ObjectNode response = mapper.createObjectNode();
+        response.putObject("artifact").put("answer", "answer");
+        ObjectNode result = runner.evaluate("001", response);
         assertThat(result.path("passed").asBoolean()).isFalse();
         assertThat(result.path("reason").asText()).contains("未启用");
     }
@@ -42,11 +44,52 @@ class V4ValidatorRunnerTest {
 
             V4ValidatorRunner runner = new V4ValidatorRunner(
                     new V4ScoringProperties(suite.toString(), python, 60, ""), mapper);
-            ObjectNode artifact = mapper.createObjectNode();
-            artifact.put("answer", "final answer");
-            ObjectNode result = runner.evaluate("001_TEST", artifact);
+            ObjectNode response = mapper.createObjectNode();
+            response.putObject("artifact").put("answer", "final answer");
+            ObjectNode result = runner.evaluate("001_TEST", response);
             assertThat(result.path("passed").asBoolean()).isTrue();
             assertThat(result.path("score").asDouble()).isEqualTo(1.0);
+        } finally {
+            deleteRecursively(suite);
+        }
+    }
+
+    @Test
+    void writesArtifactFilesAndEvidenceIntoValidatorWorkspace() throws Exception {
+        String python = resolvePython();
+        if (python == null) return;
+
+        Path suite = Files.createTempDirectory("cryptobench-v4-suite-");
+        try {
+            Files.createDirectories(suite.resolve("scripts"));
+            Files.writeString(suite.resolve("scripts").resolve("run_task_validator.py"), """
+                    import json, sys
+                    from pathlib import Path
+                    args = sys.argv[1:]
+                    run_dir = Path(args[args.index('--run-dir') + 1])
+                    out = Path(args[args.index('--out') + 1])
+                    passed = (
+                        (run_dir / 'workspace' / 'code' / 'solve.py').read_text(encoding='utf-8') == "print('ok')\\n"
+                        and (run_dir / 'logs' / 'agent_stdout.txt').read_text(encoding='utf-8').strip() == 'executed solver'
+                    )
+                    report = {'status': 'passed' if passed else 'failed', 'final_score': 1.0 if passed else 0.0}
+                    out.write_text(json.dumps(report), encoding='utf-8')
+                    """);
+
+            V4ValidatorRunner runner = new V4ValidatorRunner(
+                    new V4ScoringProperties(suite.toString(), python, 60, ""), mapper);
+            ObjectNode response = mapper.createObjectNode();
+            ObjectNode artifact = response.putObject("artifact");
+            artifact.put("answer", "done");
+            artifact.putArray("files").addObject()
+                    .put("path", "code/solve.py")
+                    .put("content", "print('ok')\n");
+            response.putArray("evidence").addObject()
+                    .put("type", "command")
+                    .put("content", "executed solver");
+
+            ObjectNode result = runner.evaluate("001_TEST", response);
+            assertThat(result.path("passed").asBoolean()).isTrue();
         } finally {
             deleteRecursively(suite);
         }
