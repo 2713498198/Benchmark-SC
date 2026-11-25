@@ -13,10 +13,9 @@ const java=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin',process.p
 const logPath=path.join(temporary,'server.log'),log=createWriteStream(logPath);
 const flags=['-jar',jar,'--server.address=127.0.0.1','--server.port='+port,'--spring.profiles.active=local',
  '--spring.datasource.url=jdbc:h2:file:'+path.join(temporary,'db').replaceAll('\\','/')+';MODE=MySQL;DATABASE_TO_LOWER=TRUE',
- '--spring.datasource.username=sa','--spring.datasource.password=','--benchmark.legacy-import-enabled=false','--benchmark.demo-enabled=false','--benchmark.secure-cookie=false',
+ '--spring.datasource.username=sa','--spring.datasource.password=','--benchmark.legacy-import-enabled=false','--benchmark.secure-cookie=false',
  '--benchmark.docker.enabled=false','--benchmark.gateway.enabled=false','--benchmark.mail.mode=outbox','--benchmark.mail.outbox='+outbox,
- '--benchmark.mail.base-url='+base,'--benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=','--benchmark.mail.poll-ms=100',
- '--benchmark.admin.bootstrap.email=testadmin@example.test','--benchmark.admin.bootstrap.name=Browser Test Admin','--benchmark.admin.bootstrap.password=fixture-admin-2026'];
+ '--benchmark.mail.key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=','--benchmark.mail.poll-ms=100'];
 const backend=spawn(java,flags,{windowsHide:true,stdio:['ignore','pipe','pipe']});backend.stdout.pipe(log);backend.stderr.pipe(log);
 let backendError;backend.on('error',error=>backendError=error);
 let testProcess;
@@ -24,7 +23,7 @@ try{
  const deadline=Date.now()+90_000;let healthy=false;
  while(Date.now()<deadline){if(backendError)throw backendError;if(backend.exitCode!==null)throw Error('Isolated backend exited: '+backend.exitCode);try{healthy=(await fetch(base+'/actuator/health')).ok;}catch{}if(healthy)break;await new Promise(resolve=>setTimeout(resolve,500));}
  assert.ok(healthy,'Isolated backend did not become healthy');
- testProcess=spawn(process.execPath,['tests/workflow-integration-browser.mjs'],{windowsHide:true,stdio:'inherit',env:{...process.env,TEST_ISOLATED:'1',TEST_URL:base,TEST_ADMIN_EMAIL:'testadmin@example.test',TEST_ADMIN_PASSWORD:'fixture-admin-2026',TEST_MAIL_OUTBOX:outbox}});
+ testProcess=spawn(process.execPath,['tests/workflow-integration-browser.mjs'],{windowsHide:true,stdio:'inherit',env:{...process.env,TEST_ISOLATED:'1',TEST_URL:base,TEST_MAIL_OUTBOX:outbox}});
  const code=await new Promise((resolve,reject)=>{testProcess.once('error',reject);testProcess.once('exit',resolve);});
  assert.equal(code,0,'Real browser workflow failed');console.log('Isolated workflow server log: '+logPath);
 }catch(error){console.error('Isolated server diagnostics: '+logPath);throw error;}

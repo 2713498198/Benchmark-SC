@@ -56,13 +56,9 @@ assert.equal(deleteConnection.response.status,404,'B must not delete A connectio
 const researcherDataset=await b.request('/api/datasets/custom',{method:'POST',body:{id:`private-${suffix}`,version:'1.0.0',tasks:[{id:'task-1'}]}});
 assert.equal(researcherDataset.response.status,403,'researchers must not publish custom datasets');
 
-const admin=new Client();
-await admin.json('/api/auth/demo',{method:'POST',body:{role:'admin'}});
-const dataset=await admin.json('/api/datasets/custom',{method:'POST',body:{schema:'cryptobench-custom-dataset-v1',id:`admin-${suffix}`,version:'1.0.0',name:'Admin dataset',type:'分组密码',algorithm:'Teaching SPN',description:'Isolated public task fixture',tasks:[{id:'task-1',question:'Return the number of rounds.',input:{rounds:4},verification:{type:'exact-json-v1',expected:4}}]}});
-assert.equal(dataset.published,true,'admin publication must be public');
 const anonymous=new Client();
-const publicBootstrap=await anonymous.json('/api/bootstrap');
-assert.equal(publicBootstrap.customDatasets.some(x=>x.id===dataset.id),true,'published datasets must be publicly readable');
+const demoAttempt=await anonymous.request('/api/auth/demo',{method:'POST',body:{role:'admin'}});
+assert.equal(demoAttempt.response.status,404,'demo login route must not exist');
 const databaseFile=await anonymous.request('/data/runtime/db.json');
 assert.ok(databaseFile.response.status>=400,'runtime database must not be exposed as a static asset');
 

@@ -19,9 +19,7 @@ export async function composeTest(sandbox = false) {
   await writeFile(envFile, ''); // Never load the developer's .env credentials or opt-in settings.
   const port = await availablePort();
   const env = {...process.env, COMPOSE_PROFILES: '', COMPOSE_ENV_FILES: '',
-    HOST_PORT: String(port), CRYPTOBENCH_DATA_DIR: dataDir,
-    CRYPTOBENCH_COMPOSE_DEMO_ENABLED: '', CRYPTOBENCH_BOOTSTRAP_ADMIN_EMAIL: '',
-    CRYPTOBENCH_BOOTSTRAP_ADMIN_NAME: '', CRYPTOBENCH_BOOTSTRAP_ADMIN_PASSWORD: ''};
+    HOST_PORT: String(port), CRYPTOBENCH_DATA_DIR: dataDir};
 
   function docker(args, {allowFailure = false} = {}) {
     return new Promise((resolve, reject) => {
@@ -89,9 +87,8 @@ export function apiClient(base, cookies = new Map()) {
   return {api, cookies};
 }
 
-export async function assertDemoPolicy(client, enabled) {
-  assert.equal((await client.api('/api/bootstrap')).demoEnabled, enabled);
-  if (!enabled) {
-    for (const role of ['researcher', 'admin']) await client.api('/api/auth/demo', {role}, 403);
-  }
+export async function assertDemoRemoved(client) {
+  const bootstrap = await client.api('/api/bootstrap');
+  assert.equal('demoEnabled' in bootstrap, false, 'bootstrap must not expose the removed demo flag');
+  await client.api('/api/auth/demo', {role: 'admin'}, 404);
 }

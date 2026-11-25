@@ -91,7 +91,6 @@ class PricingLifecycleIntegrationTest {
         String version = version();
         service.create(actor, version, List.of(price("precise", "999999999999.99999999", "0.00000001")));
         assertThat(repository.prices(version).getFirst().inputPerMillionTokens()).isEqualByComparingTo("999999999999.99999999");
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_admin_audits WHERE actor_user_id=? AND action='create_pricing'", Integer.class, actor.id())).isEqualTo(1);
     }
 
     @Test
@@ -109,7 +108,6 @@ class PricingLifecycleIntegrationTest {
         }
         assertThat(repository.state(false).revision()).isEqualTo(revision + 1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_price_tables WHERE status='active'", Integer.class)).isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_admin_audits WHERE actor_user_id=? AND action='activate_pricing'", Integer.class, actor.id())).isEqualTo(1);
     }
 
     @Test

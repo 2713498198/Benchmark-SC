@@ -11,7 +11,7 @@ import org.mybatis.spring.annotation.MapperScan;
  * 排除默认用户服务自动配置，由项目自己的账号、会话过滤器完成认证。
  */
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
-@MapperScan("com.cryptobench.benchmark.persistence")
+@MapperScan({"com.cryptobench.benchmark.persistence", "com.cryptobench.benchmark.auth.mapper"})
 // 扫描配置属性，将 YAML 中的 benchmark 配置绑定为 BenchmarkProperties。
 @ConfigurationPropertiesScan
 public class CryptoBenchApplication {

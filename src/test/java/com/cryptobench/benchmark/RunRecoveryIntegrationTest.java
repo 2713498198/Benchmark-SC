@@ -1,7 +1,7 @@
 package com.cryptobench.benchmark;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.UserAccountService;
 import com.cryptobench.benchmark.common.ApiException;
 import com.cryptobench.benchmark.dataset.service.DatasetService;
 import com.cryptobench.benchmark.execution.repository.RunRepository;
@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.*;
 class RunRecoveryIntegrationTest {
     @Autowired RunService runs;
     @Autowired RunRepository repository;
-    @Autowired UserRepository users;
+    @Autowired UserAccountService users;
     @Autowired DatasetService datasets;
     @Autowired PricingService prices;
     @Autowired ReportService reports;

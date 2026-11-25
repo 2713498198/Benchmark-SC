@@ -5,14 +5,18 @@ import com.cryptobench.benchmark.execution.service.TaskBudgetService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TaskBudgetServiceTest {
-    @TempDir
     Path temporary;
+
+    @BeforeEach
+    void prepare() throws Exception {
+        temporary = Files.createTempDirectory(Path.of("target"), "task-budget-");
+    }
 
     @Test
     void keepsShortBudgetForIntegrationDatasets() {

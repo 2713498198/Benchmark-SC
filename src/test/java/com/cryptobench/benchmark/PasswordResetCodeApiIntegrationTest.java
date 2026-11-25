@@ -84,25 +84,16 @@ class PasswordResetCodeApiIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_password_reset_challenges",Integer.class)).isEqualTo(before);
     }
 
-    @Test void resettingDisabledAccountDoesNotRestoreItsLoginPermission()throws Exception{
-        Account account=account("example.com");jdbc.update("UPDATE benchmark_users SET account_status='disabled' WHERE id=?",account.id());
-        Client client=new Client();Challenge challenge=request(client,account.email());verify(client,challenge);
-        assertStatus(client.post("/api/auth/reset/complete",completeBody(challenge.id(),"new-password8")),200);
-        assertThat(jdbc.queryForObject("SELECT account_status FROM benchmark_users WHERE id=?",String.class,account.id())).isEqualTo("disabled");
-        login(new Client(),account.email(),"new-password8",403);
-    }
-
-    @Test void usesUniformResponsesForKnownUnknownAndDisabledAccountsWithoutLeakingSecrets()throws Exception{
-        Account active=account("qq.com"),disabled=account("163.com");jdbc.update("UPDATE benchmark_users SET account_status='disabled' WHERE id=?",disabled.id());
+    @Test void usesUniformResponsesForKnownAndUnknownAccountsWithoutLeakingSecrets()throws Exception{
+        Account active=account("qq.com");
         List<JsonNode> responses=new ArrayList<>();
-        for(String email:List.of(active.email(),UUID.randomUUID()+"@outlook.com",disabled.email())){
+        for(String email:List.of(active.email(),UUID.randomUUID()+"@outlook.com")){
             MvcResult response=new Client().post("/api/auth/forgot",Map.of("email",email));assertStatus(response,200);JsonNode body=json(response);responses.add(body);
             assertThat(body.path("ok").asBoolean()).isTrue();assertThat(body.path("expiresInSeconds").asInt()).isEqualTo(600);assertThat(body.path("retryAfterSeconds").asInt()).isEqualTo(60);
             assertThat(body.path("challengeId").asText()).hasSizeGreaterThanOrEqualTo(32);
             assertThat(body.toString()).doesNotContain(email,"code_digest","token","resetUrl");
         }
         Set<String> expectedFields=fields(responses.getFirst());for(JsonNode body:responses)assertThat(fields(body)).isEqualTo(expectedFields);
-        assertThat(jdbc.queryForObject("SELECT account_status FROM benchmark_users WHERE id=?",String.class,disabled.id())).isEqualTo("disabled");
         Challenge visible=challengeFromResponse(responses.getFirst());String rawGrant;
         Client verified=new Client();verify(verified,visible);rawGrant=verified.cookies.get("cb_reset_grant").getValue();
         String storedGrant=jdbc.queryForObject("SELECT token_hash FROM benchmark_password_reset_grants WHERE challenge_id=?",String.class,visible.id());

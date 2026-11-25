@@ -30,7 +30,7 @@
 1. [pom.xml](../pom.xml)：确认 Java 版本、Spring Boot 版本，以及 Web、Validation、Security、JDBC、Flyway、H2、MySQL 等依赖的用途。
 2. [CryptoBenchApplication.java](../src/main/java/com/cryptobench/benchmark/CryptoBenchApplication.java)：理解 `main()` 启动 Spring、`@SpringBootApplication` 负责自动配置和组件扫描、`@ConfigurationPropertiesScan` 扫描配置属性。这里排除了默认用户服务的自动配置，项目使用自己的账号与会话逻辑。
 3. [application.yml](../src/main/resources/application.yml)：找默认 profile、监听地址、端口和业务开关。默认使用 `local`，地址为 `127.0.0.1:4173`。
-4. [application-local.yml](../src/main/resources/application-local.yml) 和 [application-prod.yml](../src/main/resources/application-prod.yml)：比较 H2 / MySQL、体验账号和 Cookie 配置。
+4. [application-local.yml](../src/main/resources/application-local.yml) 和 [application-prod.yml](../src/main/resources/application-prod.yml)：比较 H2 / MySQL 和 Cookie 配置。
 5. [start.cmd](../start.cmd)、[IDEA 运行配置](../.run/CryptoBench.run.xml)、[Maven 配置](../.mvn/maven.config)：理解启动时的工作目录、JDK/Maven 查找方式与依赖缓存位置。
 
 建议：入口类只需读懂职责，不必停留太久。实际业务逻辑在 Controller 和 Service 中。正常启动网站无需 Node.js；[package.json](../package.json) 主要服务于前端依赖同步和测试。
@@ -84,11 +84,11 @@ S/index.html
 先看 [SecurityConfiguration.java](../src/main/java/com/cryptobench/benchmark/config/SecurityConfiguration.java) 中的接口访问规则，再按两条线阅读：
 
 ```text
-注册 / 登录：AuthController → AuthService → UserRepository / PasswordService
+注册 / 登录：AuthController → AuthService → UserAccountService / PasswordService
 后续请求：SessionAuthenticationFilter → SessionService → SessionRepository
 ```
 
-重点文件都在 `J/auth/` 下：`controller/AuthController.java`、`service/AuthService.java`、`service/SessionService.java`、`security/SessionAuthenticationFilter.java`。最后补读 `service/PasswordService.java` 和 `repository/`。
+重点文件都在 `J/auth/` 下：`controller/AuthController.java`、`service/AuthService.java`、`service/SessionService.java`、`security/SessionAuthenticationFilter.java`。用户与会话 CRUD 采用 MyBatis-Plus 的 `BaseMapper → IService → ServiceImpl` 分层；最后补读 `service/PasswordService.java`、`mapper/UserAccountMapper.java` 和 `service/impl/UserAccountServiceImpl.java`。
 
 需要弄清楚的几个问题：
 
@@ -152,7 +152,7 @@ S/index.html
 | 文件 | 用途 |
 | --- | --- |
 | `src/test/java/com/cryptobench/benchmark/BenchmarkApiIntegrationTest.java` | 主要业务样例：注册、会话、用户隔离、报告状态、管理员发布、CSRF 与请求体大小 |
-| `src/test/java/com/cryptobench/benchmark/ProductionSecurityIntegrationTest.java` | 生产配置关闭管理员体验登录 |
+| `src/test/java/com/cryptobench/benchmark/ProductionSecurityIntegrationTest.java` | 生产配置验证已删除的体验登录接口返回 404 |
 | `src/test/java/com/cryptobench/benchmark/auth/service/PasswordServiceTest.java` | 新密码哈希和旧版 scrypt 验证 |
 | `tests/leaderboard-model.mjs`、`tests/leaderboard-chart-model.mjs` | 榜单和图表计算规则 |
 | `tests/auth-isolation.mjs`、`tests/spring-boot-browser.mjs` | 从浏览器验证用户流程及数据隔离 |

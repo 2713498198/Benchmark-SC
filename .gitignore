@@ -12,6 +12,7 @@ out/
 .env.*
 !.env.example
 !.env.prod.example
+.vscode/local.env
 
 # Logs
 *.log

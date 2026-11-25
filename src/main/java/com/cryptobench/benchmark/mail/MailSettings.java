@@ -11,7 +11,6 @@ public class MailSettings {
     public MailSettings(MailProperties properties, Environment environment) { this.properties = properties; this.environment = environment; }
     public String deliveryUrl() { return fallback(properties.getDeliveryUrl(), "benchmark.password-reset.delivery-url", ""); }
     public String outbox() { return fallback(properties.getOutbox(), "benchmark.password-reset.outbox", ""); }
-    public String baseUrl() { return fallback(properties.getBaseUrl(), "benchmark.password-reset.base-url", "http://127.0.0.1:4173").replaceAll("/+$", ""); }
     public String mode() {
         String requested = properties.getMode() == null ? "auto" : properties.getMode().trim().toLowerCase(java.util.Locale.ROOT);
         if (!"auto".equals(requested)) return requested;
@@ -20,12 +19,19 @@ public class MailSettings {
         return "disabled";
     }
     public String configurationError() {
-        if (!validHttp(baseUrl())) return "invalid_base_url";
         return switch (mode()) {
             case "disabled" -> "delivery_disabled";
             case "http" -> validHttp(deliveryUrl()) ? null : "invalid_gateway_url";
-            case "smtp" -> properties.getSmtpHost().isBlank() || properties.getFrom().isBlank()
-                    || properties.getSmtpPort() < 1 || properties.getSmtpPort() > 65535 ? "smtp_not_configured" : null;
+            case "smtp" -> {
+                String security = properties.getSecurity() == null
+                        ? "" : properties.getSecurity().trim().toLowerCase(java.util.Locale.ROOT);
+                if (!security.isBlank() && !java.util.Set.of("ssl", "tls", "starttls", "none").contains(security)) {
+                    yield "invalid_smtp_security";
+                }
+                yield properties.getSmtpHost().isBlank() || properties.getFrom().isBlank()
+                        || properties.getSmtpPort() < 1 || properties.getSmtpPort() > 65535
+                        ? "smtp_not_configured" : null;
+            }
             case "outbox" -> outbox().isBlank() ? "outbox_not_configured" : null;
             default -> "invalid_delivery_mode";
         };

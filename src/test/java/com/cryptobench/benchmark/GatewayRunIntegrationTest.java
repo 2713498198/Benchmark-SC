@@ -1,7 +1,7 @@
 package com.cryptobench.benchmark;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.UserAccountService;
 import com.cryptobench.benchmark.dataset.service.DatasetService;
 import com.cryptobench.benchmark.execution.repository.RunRepository;
 import com.cryptobench.benchmark.execution.service.AgentHttpClient;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.*;
 /** Exercises real run persistence/scoring/accounting, with no Docker engine or paid provider calls. */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:gateway-run-test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-        "benchmark.demo-enabled=false", "benchmark.mail.worker-enabled=false", "benchmark.mail.mode=disabled",
+        "benchmark.mail.worker-enabled=false", "benchmark.mail.mode=disabled",
         "benchmark.gateway.enabled=true",
         "benchmark.gateway.providers-json=[{\"id\":\"fixture\",\"name\":\"Test provider\",\"baseUrl\":\"https://provider.example.test/v1\",\"models\":[\"provider-model\"],\"priceModelIds\":{\"provider-model\":\"priced-model\"}}]"
 })
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
 class GatewayRunIntegrationTest {
     @Autowired RunService runs;
     @Autowired RunRepository repository;
-    @Autowired UserRepository users;
+    @Autowired UserAccountService users;
     @Autowired DatasetService datasets;
     @Autowired PricingService prices;
     @Autowired ReportService reports;

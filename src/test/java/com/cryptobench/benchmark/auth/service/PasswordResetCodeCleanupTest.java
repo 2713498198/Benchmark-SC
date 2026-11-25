@@ -2,7 +2,7 @@ package com.cryptobench.benchmark.auth.service;
 
 import com.cryptobench.benchmark.auth.repository.PasswordResetCodeRepository;
 import com.cryptobench.benchmark.auth.repository.SessionRepository;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.UserAccountService;
 import com.cryptobench.benchmark.config.PasswordResetCodeProperties;
 import com.cryptobench.benchmark.mail.MailCipher;
 import java.util.UUID;
@@ -25,7 +25,7 @@ class PasswordResetCodeCleanupTest {
         var notifier = mock(PasswordResetNotifier.class);
         when(notifier.ready()).thenReturn(true);
         var properties = new PasswordResetCodeProperties(); properties.setResendSeconds(7200);
-        var service = new PasswordResetCodeService(repository, mock(UserRepository.class),
+        var service = new PasswordResetCodeService(repository, mock(UserAccountService.class),
                 mock(SessionRepository.class), mock(PasswordService.class), notifier, mock(MailCipher.class), properties);
         long now = System.currentTimeMillis();
         repository.event("send_email", "retained", now - 5_400_000L);

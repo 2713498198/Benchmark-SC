@@ -2,7 +2,6 @@ package com.cryptobench.benchmark.auth.service;
 
 import com.cryptobench.benchmark.auth.repository.PasswordResetCodeRepository;
 import com.cryptobench.benchmark.auth.repository.SessionRepository;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
 import com.cryptobench.benchmark.config.PasswordResetCodeProperties;
 import com.cryptobench.benchmark.mail.MailCipher;
 import jakarta.mail.internet.AddressException;
@@ -23,7 +22,7 @@ public class PasswordResetCodeService {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final long HOUR = 3_600_000L, QUARTER_HOUR = 900_000L, FIVE_MINUTES = 300_000L;
     private final PasswordResetCodeRepository repository;
-    private final UserRepository users;
+    private final UserAccountService users;
     private final SessionRepository sessions;
     private final PasswordService passwords;
     private final PasswordResetNotifier notifier;
@@ -31,7 +30,7 @@ public class PasswordResetCodeService {
     private final PasswordResetCodeProperties properties;
 
     public PasswordResetCodeService(PasswordResetCodeRepository repository,
-            UserRepository users, SessionRepository sessions, PasswordService passwords, PasswordResetNotifier notifier,
+            UserAccountService users, SessionRepository sessions, PasswordService passwords, PasswordResetNotifier notifier,
             MailCipher cipher, PasswordResetCodeProperties properties) {
         this.repository = repository; this.users = users; this.sessions = sessions;
         this.passwords = passwords; this.notifier = notifier; this.cipher = cipher; this.properties = properties;

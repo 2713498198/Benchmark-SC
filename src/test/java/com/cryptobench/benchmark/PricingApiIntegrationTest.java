@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PricingApiIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
+    @Autowired JdbcTemplate jdbc;
 
     @Test
     void exposesConfigFallbackAndAllowsOnlyAdminsToPublishVersionedPrices() throws Exception {
@@ -38,8 +40,7 @@ class PricingApiIntegrationTest {
         Client researcher = registeredClient();
         assertThat(researcher.send("GET", "/api/admin/pricing", null).getResponse().getStatus()).isEqualTo(403);
 
-        Client admin = new Client();
-        assertThat(admin.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
+        Client admin = adminClient();
         String version = "test-price-" + UUID.randomUUID();
         JsonNode created = admin.json(admin.send("POST", "/api/admin/pricing", Map.of(
                 "version", version,
@@ -70,13 +71,22 @@ class PricingApiIntegrationTest {
     private Client registeredClient() throws Exception {
         Client client = new Client();
         assertThat(client.send("POST", "/api/auth/register", Map.of(
-                "name", "Price Researcher", "email", UUID.randomUUID() + "@example.com",
+                "name", "Price Researcher", "email", client.email,
                 "password", "test-password")).getResponse().getStatus()).isEqualTo(201);
+        return client;
+    }
+
+    private Client adminClient() throws Exception {
+        Client client = registeredClient();
+        jdbc.update("UPDATE benchmark_users SET user_role='admin' WHERE email=?", client.email);
+        assertThat(client.json(client.send("GET", "/api/auth/me", null)).path("user").path("role").asText())
+                .isEqualTo("admin");
         return client;
     }
 
     private class Client {
         private final Map<String, Cookie> cookies = new HashMap<>();
+        private final String email = UUID.randomUUID() + "@example.com";
 
         MvcResult send(String method, String path, Object body) throws Exception {
             var request = MockMvcRequestBuilders.request(HttpMethod.valueOf(method), path);

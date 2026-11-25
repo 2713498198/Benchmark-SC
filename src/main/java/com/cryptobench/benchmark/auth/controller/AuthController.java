@@ -89,15 +89,6 @@ public class AuthController {
     }
 
     /**
-     * 进入体验账号；是否开放该入口由服务端环境配置决定。
-     */
-    @PostMapping(value = "/demo", consumes = "application/json")
-    public Map<String, Object> demo(@RequestBody Map<String, String> input,
-                                  HttpServletRequest request, HttpServletResponse response) {
-        return signIn(auth.demo(input.get("role")), request, response);
-    }
-
-    /**
      * 撤销数据库中的当前会话，同时让浏览器删除会话 Cookie。
      */
     @PostMapping("/logout")

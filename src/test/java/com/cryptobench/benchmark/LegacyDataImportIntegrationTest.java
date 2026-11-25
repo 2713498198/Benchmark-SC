@@ -1,7 +1,7 @@
 package com.cryptobench.benchmark;
 
 import com.cryptobench.benchmark.auth.dto.LoginRequest;
-import com.cryptobench.benchmark.auth.repository.UserRepository;
+import com.cryptobench.benchmark.auth.service.UserAccountService;
 import com.cryptobench.benchmark.auth.service.AuthService;
 import com.cryptobench.benchmark.config.BenchmarkProperties;
 import com.cryptobench.benchmark.connection.repository.ConnectionRepository;
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class LegacyDataImportIntegrationTest {
     @Autowired ObjectMapper mapper;
-    @Autowired UserRepository users;
+    @Autowired UserAccountService users;
     @Autowired ConnectionRepository connections;
     @Autowired ReportRepository reports;
     @Autowired DatasetRepository datasets;
@@ -57,7 +57,7 @@ class LegacyDataImportIntegrationTest {
                 """;
         Files.writeString(source, fixture);
         // 手动构造启用开关的导入器；此处直接调用，数据库事务由测试类上的 @Transactional 提供。
-        var importer = new LegacyDataImporter(new BenchmarkProperties(false, false, true, source.toString()),
+        var importer = new LegacyDataImporter(new BenchmarkProperties(false, true, source.toString()),
                 mapper, users, connections, reports, datasets);
         importer.run(new DefaultApplicationArguments());
 

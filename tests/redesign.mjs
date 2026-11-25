@@ -43,13 +43,12 @@ async function textContrast(page){return page.evaluate(()=>{
  }
  return {checked,failures};
 });}
-const guest=await client(),owner=await client(),admin=await client();
+const guest=await client(),owner=await client();
 const suffix=randomUUID().slice(0,8),reportId='redesign-'+suffix;
 try{
  await post(owner,'/api/auth/register',{name:'设计验收',email:`design-${suffix}@example.com`,password:randomUUID()});
  await post(owner,'/api/connections',{name:'密码分析 Agent',url:'http://127.0.0.1:9000',model:'research-model'});
  await post(owner,'/api/reports',{id:reportId,kind:'evaluation',datasetId:'mini-spn',version:'1.0.0',budget:'standard',scope:'full',source:'local',agent:'密码分析 Agent',model:'research-model',total:120,passed:96,score:80,time:42.6,cost:null,date:'2026/10/18',demo:true,categories:[{name:'任务验证',total:120,passed:96}]});
- await post(admin,'/api/auth/demo',{role:'admin'});
  const scenarios=[
   [guest,'home','/'],[guest,'datasets','/datasets'],[guest,'dataset-detail','/datasets/mini-spn'],
   [guest,'suite','/datasets/cryptobench-sc-v4',async page=>{await page.locator('nav [data-suite-tab="overview"]').click();}],
@@ -58,13 +57,7 @@ try{
   [guest,'login','/login'],[guest,'register','/register'],[guest,'forgot','/forgot-password'],
   [guest,'docs','/docs?tab=agent'],[guest,'download','/download'],
   [owner,'workspace','/workspace'],[owner,'connections','/workspace?tab=connections'],[owner,'sync','/workspace?tab=sync'],
-  [owner,'report','/report/'+reportId],
-  [admin,'admin','/admin',async page=>{
-   await page.locator('[data-template]').click();
-   const pack=JSON.parse(await page.locator('#dataset-json').inputValue());pack.id='layout-'+suffix;
-   await page.locator('#dataset-json').fill(JSON.stringify(pack,null,2));await page.locator('[data-validate]').click();
-   await page.locator('[data-publish-dataset]').waitFor();
-  }]
+  [owner,'report','/report/'+reportId]
  ];
  for(const width of [1440,1024,768,390,360]){
   for(const [page,name,route,prepare] of scenarios){
@@ -94,6 +87,10 @@ try{
   check(`confirmation fits ${width}px`,await owner.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
  }
  await guest.setViewportSize({width:1440,height:1000});await go(guest,'/');
+ await go(guest,'/login');
+ check('login page has no demo account controls',await guest.locator('[data-demo-user]').count()===0
+   &&!(await guest.locator('#main').innerText()).match(/体验研究者|体验管理员|本地体验账号/));
+ await go(guest,'/');
  check('home has hero and platform sections',await guest.locator('#main > section').count()===2);
  check('home no longer shows the dataset release module',await guest.locator('.release-band').count()===0);
  const homeText=await guest.locator('#main').innerText();

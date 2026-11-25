@@ -1,12 +1,10 @@
 package com.cryptobench.benchmark.pricing.service;
 
 import com.cryptobench.benchmark.auth.model.BenchmarkUser;
-import com.cryptobench.benchmark.auth.repository.AdminAuditRepository;
 import com.cryptobench.benchmark.common.ApiException;
 import com.cryptobench.benchmark.config.PricingProperties;
 import com.cryptobench.benchmark.execution.service.ServerCostCalculator;
 import com.cryptobench.benchmark.pricing.repository.PricingRepository;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -15,8 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,13 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class PricingService {
     private final PricingRepository pricing;
     private final ServerCostCalculator calculator;
-    private final AdminAuditRepository audits;
     public PricingService(PricingRepository pricing, PricingProperties defaults, ServerCostCalculator calculator) {
-        this(pricing, defaults, calculator, null);
-    }
-    @Autowired
-    public PricingService(PricingRepository pricing, PricingProperties defaults, ServerCostCalculator calculator, AdminAuditRepository audits) {
-        this.pricing = pricing; this.calculator = calculator; this.audits = audits;
+        this.pricing = pricing; this.calculator = calculator;
     }
 
     public List<PriceTableView> list() {
@@ -63,7 +54,6 @@ public class PricingService {
         try { pricing.insertTable(cleanVersion, "draft", actor.id(), Instant.now().toString()); }
         catch (DuplicateKeyException exception) { throw conflict("价格表版本已存在"); }
         rows.forEach(p -> pricing.insertPrice(cleanVersion, p.model(), p.inputPerMillionTokens(), p.outputPerMillionTokens(), "USD"));
-        audit(actor, "create_pricing", cleanVersion, rows.size(), null);
         return view(pricing.table(cleanVersion, false).orElseThrow(), pricing.state(false).revision(), true);
     }
 
@@ -89,7 +79,6 @@ public class PricingService {
         if (rows.stream().anyMatch(p -> !"USD".equals(p.currency()))) throw bad("历史非 USD 价格表不能启用；请复制后填写明确的 USD 价格");
         if (!version.equals(state.activeVersion())) {
             pricing.activate(version, Instant.now().toString());
-            audit(actor, "activate_pricing", version, rows.size(), state.activeVersion());
         }
         return active();
     }
@@ -134,12 +123,6 @@ public class PricingService {
         if (value == null || value.signum() < 0 || value.stripTrailingZeros().scale() > 8
                 || value.compareTo(new BigDecimal("999999999999.99999999")) > 0) throw bad("价格必须为非负数，最多 12 位整数和 8 位小数");
         return value.setScale(8);
-    }
-    private void audit(BenchmarkUser actor, String action, String version, int count, String previous) {
-        if (audits == null) return;
-        var metadata = JsonNodeFactory.instance.objectNode().put("version", version).put("modelCount", count);
-        if (previous != null) metadata.put("previousVersion", previous);
-        audits.insert("audit_" + UUID.randomUUID(), actor == null ? null : actor.id(), null, action, metadata.toString(), "success", Instant.now().toString());
     }
     private static void requireAdmin(BenchmarkUser actor) {
         if (actor == null || !"admin".equals(actor.role())) throw new ApiException(HttpStatus.FORBIDDEN, "仅管理员可以管理价格表");

@@ -6,8 +6,7 @@ spring:
     username: sa
     password: ""
 benchmark:
-  # 允许测试构造体验账号；MockMvc 无 HTTPS，因此关闭 Secure Cookie。
-  demo-enabled: true
+  # MockMvc 无 HTTPS，因此关闭 Secure Cookie。
   secure-cookie: false
   # 集成测试从同一地址创建多个账号，放宽限流避免干扰功能断言。
   auth-rate-limit:

@@ -164,11 +164,10 @@ class BenchmarkApiIntegrationTest {
     @Test
     void onlyAdminsCanPublishImmutableDatasetVersions() throws Exception {
         Client researcher = registeredClient();
-        Client admin = new Client();
+        Client admin = adminClient();
         String id = "suite-" + UUID.randomUUID();
         var dataset = CustomDatasetRulesTest.fixture(mapper, id);
         assertThat(researcher.send("POST", "/api/datasets/custom", dataset).getResponse().getStatus()).isEqualTo(403);
-        assertThat(admin.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
         MvcResult published = admin.send("POST", "/api/datasets/custom", dataset);
         assertThat(published.getResponse().getStatus()).isEqualTo(201);
         assertThat(admin.json(published).path("tasks").asInt()).isEqualTo(1);
@@ -179,49 +178,21 @@ class BenchmarkApiIntegrationTest {
     }
 
     @Test
-    void enforcesAdministratorAccountLifecycleAndAuditRules() throws Exception {
-        Client researcher = registeredClient();
-        assertThat(researcher.send("GET", "/api/admin/users", null).getResponse().getStatus()).isEqualTo(403);
-
-        Client admin = new Client();
-        assertThat(admin.send("POST", "/api/auth/demo", Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
-        JsonNode accounts = admin.json(admin.send("GET", "/api/admin/users?size=100", null));
-        assertThat(accounts.path("items").isArray()).isTrue();
-        String researcherId = null;
-        for (JsonNode item : accounts.path("items")) {
-            if (researcherEmail(researcher).equals(item.path("email").asText())) {
-                researcherId = item.path("id").asText();
-                break;
-            }
-        }
-        assertThat(researcherId).isNotBlank();
-
-        String inviteEmail = "invited-" + UUID.randomUUID() + "@example.com";
-        MvcResult invite = admin.send("POST", "/api/admin/invitations",
-                Map.of("email", inviteEmail, "name", "受邀管理员"));
-        assertThat(invite.getResponse().getStatus()).isEqualTo(202);
-        assertThat(invite.getResponse().getContentAsString()).doesNotMatch("[a-f0-9]{64}");
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM benchmark_admin_invitations WHERE email=? AND used_at IS NULL",
-                Integer.class, inviteEmail)).isEqualTo(1);
-        assertThat(admin.send("POST", "/api/admin/invitations",
-                Map.of("email", inviteEmail, "name", "受邀管理员")).getResponse().getStatus()).isEqualTo(409);
-
-        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/role",
-                Map.of("role", "admin")).getResponse().getStatus()).isEqualTo(200);
-        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/status",
-                Map.of("status", "disabled")).getResponse().getStatus()).isEqualTo(200);
-        assertThat(researcher.send("GET", "/api/connections", null).getResponse().getStatus()).isEqualTo(401);
-        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/status",
-                Map.of("status", "active")).getResponse().getStatus()).isEqualTo(200);
-        assertThat(admin.send("PATCH", "/api/admin/users/" + researcherId + "/role",
-                Map.of("role", "researcher")).getResponse().getStatus()).isEqualTo(200);
-        assertThat(admin.send("GET", "/api/admin/audit", null).getResponse().getStatus()).isEqualTo(200);
-        assertThat(admin.send("POST", "/api/admin/users/does-not-exist/sessions/revoke", null)
-                .getResponse().getStatus()).isEqualTo(404);
+    void removedAdministratorAccountRoutesAreUnavailable() throws Exception {
+        Client admin = adminClient();
+        assertThat(admin.send("GET", "/api/admin/users", null).getResponse().getStatus()).isEqualTo(404);
+        assertThat(admin.send("GET", "/api/admin/invitations", null).getResponse().getStatus()).isEqualTo(404);
+        assertThat(admin.send("GET", "/api/admin/audit", null).getResponse().getStatus()).isEqualTo(404);
+        assertThat(new Client().send("POST", "/api/auth/admin-invitations/accept",
+                Map.of("token", "a".repeat(64), "password", "test-password")).getResponse().getStatus()).isEqualTo(404);
     }
 
-    private String researcherEmail(Client client) {
-        return client.email;
+    private Client adminClient() throws Exception {
+        Client client = registeredClient();
+        jdbc.update("UPDATE benchmark_users SET user_role='admin' WHERE email=?", client.email);
+        assertThat(client.json(client.send("GET", "/api/auth/me", null)).path("user").path("role").asText())
+                .isEqualTo("admin");
+        return client;
     }
 
     /**

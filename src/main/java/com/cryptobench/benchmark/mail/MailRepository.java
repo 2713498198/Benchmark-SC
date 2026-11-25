@@ -16,7 +16,7 @@ public class MailRepository {
             new MailCipher.Envelope(r.getString("ciphertext"), r.getString("nonce"), r.getString("key_id")), r.getInt("attempts"),
             r.getLong("next_attempt_at"), r.getLong("expires_at"), r.getString("claim_id"), r.getString("error_code"));
     public MailRepository(MybatisDatabase database) { this.database = database; }
-    /** 低频身份操作在多个实例之间串行执行，包括同一邮箱的首次邀请。 */
+    /** 低频身份操作在多个实例之间串行执行，包括同一邮箱的验证码请求。 */
     public void guard() { database.queryForObject("SELECT id FROM benchmark_mail_guard WHERE id=1 FOR UPDATE", Integer.class); }
     public void insert(String id, String purpose, String reference, String owner, int generation, String transport, MailCipher.Envelope encrypted, long expires, long now) {
         database.update("INSERT INTO benchmark_mail_messages(id,purpose,reference_id,owner_id,generation,transport,state,ciphertext,nonce,key_id,next_attempt_at,expires_at,created_at) VALUES(?,?,?,?,?,?,'queued',?,?,?,?,?,?)",
@@ -36,8 +36,6 @@ public class MailRepository {
     }
     public boolean validReference(Message message, long now) {
         Integer count = switch (message.purpose()) {
-            case "admin_invite" -> database.queryForObject("SELECT COUNT(*) FROM benchmark_admin_invitations WHERE id=? AND generation=? AND used_at IS NULL AND revoked_at IS NULL AND expires_at>?",
-                    Integer.class, message.reference(), message.generation(), now);
             case "password_reset_code" -> database.queryForObject("SELECT COUNT(*) FROM benchmark_password_reset_challenges WHERE id=? AND user_id IS NOT NULL AND status='active' AND expires_at>?",
                     Integer.class, message.reference(), now);
             default -> 0;
@@ -49,9 +47,6 @@ public class MailRepository {
     }
     public void retry(Message message, String error, long next) {
         database.update("UPDATE benchmark_mail_messages SET state='retry_wait',error_code=?,next_attempt_at=?,lease_until=NULL,claim_id=NULL WHERE id=? AND state='dispatching' AND claim_id=?", error, next, message.id(), message.claimId());
-    }
-    public void cancelReference(String purpose, String reference, long now) {
-        database.update("UPDATE benchmark_mail_messages SET state='cancelled',completed_at=?,ciphertext=NULL,nonce=NULL,key_id=NULL,lease_until=NULL,claim_id=NULL WHERE purpose=? AND reference_id=? AND state IN " + OPEN, now, purpose, reference);
     }
     public void cancelOwner(String owner, long now) {
         database.update("UPDATE benchmark_mail_messages SET state='cancelled',completed_at=?,ciphertext=NULL,nonce=NULL,key_id=NULL,lease_until=NULL,claim_id=NULL WHERE purpose='password_reset_code' AND owner_id=? AND state IN " + OPEN, now, owner);
