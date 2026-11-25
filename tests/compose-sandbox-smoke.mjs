@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {access} from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {apiClient, assertDemoPolicy, composeTest, pause} from './compose-test-utils.mjs';
+import {apiClient, assertDemoRemoved, composeTest, pause} from './compose-test-utils.mjs';
 
 // Run on a dedicated engine: the application itself still reaps globally owned resources at startup.
 const test = await composeTest(true);
@@ -61,7 +61,7 @@ async function assertPersisted(user, saved) {
   assert.equal(run.reportId, saved.run.reportId);
   assert.deepEqual(run.progress, saved.run.progress);
   assert.deepEqual(await client.api(`/api/reports/${run.reportId}`), saved.report);
-  await assertDemoPolicy(apiClient(test.base), false);
+  await assertDemoRemoved(apiClient(test.base));
 }
 
 try {
@@ -69,7 +69,7 @@ try {
   started = true;
   await test.compose(['up', '-d', '--build']);
   await test.ready();
-  await assertDemoPolicy(client, false);
+  await assertDemoRemoved(client);
   const info = await test.compose(['exec', '-T', 'cryptobench', 'docker', 'info', '--format', '{{.ServerVersion}}']);
   assert.match(info.stdout, /^\d+\./);
   const user = (await client.api('/api/auth/register', {name: 'Sandbox Researcher', ...credentials}, 201)).user;
