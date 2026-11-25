@@ -37,7 +37,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
     public String version() { return "4.1.0"; }
 
     @Override
-    public String evaluatorVersion() { return "cryptobench-sc-v4-evaluator-1.0.0"; }
+    public String evaluatorVersion() { return "cryptobench-sc-v4-evaluator-1.0.1"; }
 
     @Override
     public String taskResource() { return "/evaluation/cryptobench-sc-v4/4.1.0/tasks.json"; }
@@ -62,7 +62,7 @@ public class CryptobenchV4Evaluator implements BenchmarkEvaluator {
         JsonNode rule = task.verification();
         String type = rule.path("type").asText("");
         if ("workspace-validator".equals(type)) {
-            return validatorRunner.evaluate(task.id(), actual);
+            return validatorRunner.evaluate(task.id(), response);
         }
         boolean passed = switch (type) {
             case "numeric" -> numericMatch(rule, actual);

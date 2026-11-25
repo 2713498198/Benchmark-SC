@@ -7,6 +7,7 @@ scoring depends on a workspace replay are emitted as ``workspace-validator``.
 """
 
 import argparse
+import hashlib
 import json
 import numbers
 from pathlib import Path
@@ -14,7 +15,8 @@ from pathlib import Path
 
 DATASET_ID = "cryptobench-sc-v4"
 VERSION = "4.1.0"
-EVALUATOR_VERSION = "cryptobench-sc-v4-evaluator-1.0.0"
+EVALUATOR_VERSION = "cryptobench-sc-v4-evaluator-1.0.1"
+CATALOG_SCHEMA = "cryptobench-v4-evaluator-catalog-v2"
 OUTPUT = (
     Path(__file__).resolve().parents[1]
     / "src"
@@ -153,6 +155,48 @@ def piecewise_rule(expected):
     return rule, json.dumps(normalized, ensure_ascii=False, sort_keys=True), answer_format
 
 
+def answer_format(rule: dict) -> dict:
+    rule_type = rule["type"]
+    if rule_type == "numeric":
+        return {"kind": "number"}
+    if rule_type == "string":
+        return {"kind": "string"}
+    if rule_type == "boolean":
+        return {"kind": "boolean"}
+    if rule_type == "fields":
+        return {
+            "kind": "object",
+            "fields": {
+                key: ("boolean" if isinstance(value, bool)
+                      else "number" if isinstance(value, numbers.Number)
+                      else "string")
+                for key, value in rule["fields"].items()
+            },
+        }
+    if rule_type == "piecewise":
+        return {
+            "kind": "piecewise_formula",
+            "value": {
+                "cases": [{
+                    "condition": "string",
+                    "y": "string",
+                    "advantage": "string",
+                }],
+            },
+        }
+    if rule_type == "workspace-validator":
+        return {
+            "kind": "workspace",
+            "answerFile": "final_answer.md",
+            "artifactField": "artifact.files",
+        }
+    raise ValueError(f"Unsupported answer format rule: {rule_type}")
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def derive_rule(oracle):
     """Return (rule, expected_string) or (None, None) when not deterministic."""
     schema = oracle.get("schema_version")
@@ -228,30 +272,70 @@ def main():
                     public_files.append(f"tasks/{task_id}/public/attachments/{path.name}")
         oracle = json.loads((task_dir / "hidden" / "oracle.json").read_text(encoding="utf-8"))
         has_validator = (task_dir / "oracle" / "validator.py").is_file()
-        answer_format = {}
         if has_validator:
             rule, expected = {"type": "workspace-validator"}, ""
         else:
             rule, expected = derive_rule(oracle)
             if rule is None:
-                rule, expected, answer_format = fields_rule(oracle)
-            elif rule.get("type") == "piecewise":
-                _, _, answer_format = piecewise_rule(oracle.get("expected") or {})
+                rule, expected, _ = fields_rule(oracle)
         rule_type = rule["type"] if rule else "dynamic"
         counts[rule_type] = counts.get(rule_type, 0) + 1
+        final_rule = rule or {"type": "dynamic"}
+        validator_path = task_dir / "oracle" / "validator.py"
+        validator_ref = (
+            f"tasks/{manifest_task['directory_name']}/oracle/validator.py"
+            if has_validator else None
+        )
+        validator_tests = sorted(
+            path.name
+            for path in (task_dir / "oracle").glob("validator_selftest_*")
+            if path.is_dir()
+        ) if (task_dir / "oracle").is_dir() else []
+        attachments = []
+        for public_file in public_files:
+            relative = public_file.split(f"/public/", 1)[1]
+            path = task_dir / "public" / relative
+            attachments.append({
+                "path": public_file,
+                "bytes": path.stat().st_size,
+                "sha256": sha256(path),
+            })
         tasks.append({
             "id": task_id,
+            "sourceTaskId": manifest_task.get("source_task_id", ""),
+            "questionNumber": manifest_task.get("question_number"),
             "question": question,
             "expectedAnswer": expected or "",
             "publicFiles": public_files,
-            "input": {"answerFormat": answer_format} if answer_format else {},
+            "input": {"answerFormat": answer_format(final_rule)},
             "category": manifest_task.get("task_family", ""),
-            "verification": rule or {"type": "dynamic"},
+            "submissionMode": "workspace" if has_validator else "final_answer",
+            "verification": final_rule,
+            "provenance": {
+                "oraclePath": f"tasks/{manifest_task['directory_name']}/hidden/oracle.json",
+                "oracleSha256": sha256(task_dir / "hidden" / "oracle.json"),
+                "questionSha256": hashlib.sha256(question.encode("utf-8")).hexdigest(),
+                "attachments": attachments,
+            },
+            **({
+                "validator": {
+                    "ref": validator_ref,
+                    "sha256": sha256(validator_path),
+                    "tests": validator_tests,
+                },
+            } if has_validator else {}),
         })
     catalog = {
+        "schema": CATALOG_SCHEMA,
         "datasetId": DATASET_ID,
         "version": VERSION,
         "evaluatorVersion": EVALUATOR_VERSION,
+        "releaseRevision": "2026-11-25",
+        "scoringModel": {
+            "taskResult": "binary_pass_fail",
+            "overallMetric": "passed_tasks/total_tasks",
+            "sourcePolicyCapturedAsProvenance": True,
+        },
         "tasks": tasks,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

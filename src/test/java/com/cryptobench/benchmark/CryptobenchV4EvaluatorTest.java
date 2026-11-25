@@ -5,6 +5,7 @@ import com.cryptobench.benchmark.execution.service.CryptobenchV4Evaluator;
 import com.cryptobench.benchmark.execution.service.V4ValidatorRunner;
 import com.cryptobench.benchmark.config.V4ScoringProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.List;
@@ -97,6 +98,24 @@ class CryptobenchV4EvaluatorTest {
     }
 
     @Test
+    void workspaceValidatorReceivesCompleteArtifact() {
+        CapturingValidatorRunner capturing = new CapturingValidatorRunner(mapper);
+        CryptobenchV4Evaluator workspaceEvaluator = new CryptobenchV4Evaluator(mapper, capturing);
+        TaskDefinition task = task("workspace-validator", "{\"type\":\"workspace-validator\"}");
+        ObjectNode response = mapper.createObjectNode().put("status", "completed");
+        ObjectNode artifact = response.putObject("artifact");
+        artifact.put("answer", "done");
+        artifact.putArray("files").addObject()
+                .put("path", "solve.py")
+                .put("content", "print('ok')");
+        response.putArray("evidence").addObject().put("type", "command").put("content", "ran solver");
+
+        assertThat(workspaceEvaluator.evaluate(task, response).path("passed").asBoolean()).isTrue();
+        assertThat(capturing.response.path("artifact").path("files")).hasSize(1);
+        assertThat(capturing.response.path("evidence")).hasSize(1);
+    }
+
+    @Test
     void fieldsRuleChecksEveryField() {
         TaskDefinition task = task("fields", "{\"type\":\"fields\",\"numericTolerance\":0.01,"
                 + "\"fields\":{\"data_complexity\":\"2^62.58\",\"distinguisher\":\"D03\",\"reachable\":false}}");
@@ -148,5 +167,19 @@ class CryptobenchV4EvaluatorTest {
 
         ((ObjectNode) submitted.get(0)).put("advantage", "nBIL + a");
         assertThat(evaluator.evaluate(task, response).path("passed").asBoolean()).isFalse();
+    }
+
+    private final class CapturingValidatorRunner extends V4ValidatorRunner {
+        private JsonNode response;
+
+        private CapturingValidatorRunner(ObjectMapper mapper) {
+            super(new V4ScoringProperties("configured", "python3", 60), mapper);
+        }
+
+        @Override
+        public ObjectNode evaluate(String taskId, JsonNode response) {
+            this.response = response.deepCopy();
+            return mapper.createObjectNode().put("status", "passed").put("passed", true).put("score", 1);
+        }
     }
 }

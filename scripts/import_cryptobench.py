@@ -12,6 +12,62 @@ DATASET_ID = 'cryptobench-sc-v4'
 FIELDS = ('task_id', 'source_task_id', 'question_number', 'title', 'cipher',
           'difficulty', 'budget_class', 'task_family', 'attack_type', 'is_aggregate_stress')
 ALLOWED_PUBLIC_SUFFIXES = {'.md', '.json', '.txt', '.pdf', '.csv'}
+RELEASE_REVISION = '2026-11-25'
+EVALUATOR_VERSION = 'cryptobench-sc-v4-evaluator-1.0.1'
+DIFFICULTY_MAP = {
+    'easy_medium': 'easy_medium',
+    'medium': 'medium',
+    'medium_hard': 'medium_hard',
+    'medium-hard': 'medium_hard',
+    'medium_to_hard': 'medium_hard',
+    'hard': 'hard',
+    'very_hard': 'very_hard',
+    'very_hard_compute': 'very_hard_compute',
+}
+BUDGET_MAP = {
+    'easy_to_medium': 'easy_to_medium',
+    'medium_to_medium_hard': 'medium_hard',
+    'hard': 'hard',
+    'very_hard': 'very_hard',
+}
+
+
+def cipher_family(value):
+    raw = str(value or '').strip()
+    upper = raw.upper().replace('_', '-').replace(' ', '-')
+    families = (
+        ('GIFT', 'GIFT'), ('SPECK', 'SPECK'), ('SIMON', 'SIMON'),
+        ('PRESENT', 'PRESENT'), ('LBLOCK', 'LBlock'), ('TWINE', 'TWINE'),
+        ('RECTANGLE', 'RECTANGLE'), ('WARP', 'WARP'), ('AES', 'AES'),
+        ('MIDORI', 'MIDORI'), ('SKINNY', 'SKINNY'), ('SPEEDY', 'SPEEDY'),
+        ('SM4', 'SM4'), ('CRAFT', 'CRAFT'), ('LEA', 'LEA'),
+        ('COALA', 'COALA'), ('SERPENT', 'SERPENT'), ('PRIDE', 'PRIDE'),
+    )
+    for marker, family in families:
+        if marker in upper:
+            return family
+    return raw.split()[0] if raw else 'GENERIC'
+
+
+def analysis_family(value):
+    raw = str(value or '').lower()
+    if 'lower_bound' in raw or 'active_sbox_bound' in raw:
+        return 'lower_bound'
+    if 'boomerang' in raw:
+        return 'boomerang'
+    if 'impossible' in raw:
+        return 'impossible_differential'
+    if any(marker in raw for marker in ('related_key', 'key_schedule', 'key_recovery', 'key_space')):
+        return 'key_related'
+    if 'differential_linear' in raw:
+        return 'differential_linear'
+    if 'linear' in raw:
+        return 'linear'
+    if any(marker in raw for marker in ('integral', 'division_property', 'invariant')):
+        return 'integral_algebraic'
+    if 'differential' in raw or 'trail' in raw:
+        return 'differential'
+    return 'modeling_complexity'
 
 
 def load_public_overlay(overlay_root, task_ids, source_files):
@@ -103,6 +159,12 @@ def main():
         if not question.is_file():
             raise ValueError('Missing public question: ' + task_id)
         entry = {k: task[k] for k in FIELDS}
+        entry['difficultyRaw'] = entry['difficulty']
+        entry['difficulty'] = DIFFICULTY_MAP.get(entry['difficulty'], entry['difficulty'])
+        entry['budgetClassRaw'] = entry['budget_class']
+        entry['budget_class'] = BUDGET_MAP.get(entry['budget_class'], entry['budget_class'])
+        entry['cipherFamily'] = cipher_family(entry['cipher'])
+        entry['analysisFamily'] = analysis_family(entry['task_family'])
         entry['question'] = question.read_text(encoding='utf-8-sig')
         entry['files'] = []
         for file in sorted(public.rglob('*')):
@@ -145,15 +207,70 @@ def main():
                    version=version, difficulty='入门 → 高难度', tags=['真实题库', '分组密码分析', '公开任务'],
                    description=f'{len(entries)} 道密码分析任务，覆盖差分、线性、积分、相关密钥与证明任务。支持浏览题干和下载公开附件。',
                    icon='layers', color='blue', published=True, demo=False,
-                   executionReady=args.execution_ready,
+                   executionReady=args.execution_ready, publicationStatus='technical_ready',
                    suiteId=manifest['suite_id'], releaseDate=manifest['created_at'],
+                   releaseRevision=RELEASE_REVISION, evaluatorVersion=EVALUATOR_VERSION,
+                   sourceManifestSha256=hashlib.sha256((source / 'manifest.json').read_bytes()).hexdigest(),
                    sourceUrl='https://gitee.com/xiandianzidaxue/cryptobench-sc', sourceCommit=commit,
                    catalogUrl=f'{public_prefix}/catalog.json', downloadUrl=f'{public_prefix}/public-tasks.zip',
-                   scoring={'modes': ['final_only', 'process_plus_final'], 'finalWeight': 0.65,
-                            'processWeight': 0.35, 'passThreshold': 0.99},
+                   releaseManifestUrl=f'{public_prefix}/release.json',
+                   attributionUrl=f'{public_prefix}/attribution.json',
+                   scoring={'taskResult': 'binary_pass_fail', 'overallMetric': 'passed_tasks/total_tasks',
+                            'partialScoresRetainedAsEvidence': True,
+                            'sourcePolicy': {'modes': ['final_only', 'process_plus_final'],
+                                             'finalWeight': 0.65, 'processWeight': 0.35,
+                                             'passThreshold': 0.99}},
+                   evaluationCoverage={'deterministic': 105, 'workspaceValidator': 65},
+                   rightsReview={'status': 'attribution_recorded',
+                                 'document': 'docs/v4-source-attribution.md',
+                                 'manifest': f'{public_prefix}/attribution.json'},
                    aggregateStressTasks=aggregate_stress_tasks)
-    catalog = {'schema': 'cryptobench-public-catalog-v1', 'dataset': dataset, 'tasks': entries}
+    if not commit:
+        dataset.pop('sourceCommit', None)
+    catalog = {'schema': 'cryptobench-public-catalog-v2', 'dataset': dataset, 'tasks': entries}
     encoded = (json.dumps(catalog, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+    content_manifest = [
+        {'path': key, 'sha256': hashlib.sha256(content).hexdigest(), 'bytes': len(content)}
+        for key, content in sorted(public_files.items())
+    ]
+    public_release = {
+        'schema': 'cryptobench-v4-public-release-v1',
+        'datasetId': dataset_id,
+        'version': version,
+        'releaseRevision': RELEASE_REVISION,
+        'publicationStatus': 'technical_ready',
+        'suiteId': manifest['suite_id'],
+        'sourceReleaseDate': manifest['created_at'],
+        'sourceManifestSha256': dataset['sourceManifestSha256'],
+        'evaluatorVersion': EVALUATOR_VERSION,
+        'taskCount': len(entries),
+        'publicFileCount': len(public_files),
+        'attachmentCount': sum(
+            1 for entry in entries for file in entry['files'] if '/attachments/' in file['url']
+        ),
+        'publicCatalogSha256': hashlib.sha256(encoded).hexdigest(),
+        'publicContentSha256': hashlib.sha256(json.dumps(
+            content_manifest, ensure_ascii=False, sort_keys=True, separators=(',', ':')
+        ).encode('utf-8')).hexdigest(),
+        'evaluationCoverage': dataset['evaluationCoverage'],
+        'rightsReview': dataset['rightsReview'],
+    }
+    release_encoded = (json.dumps(public_release, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+    attribution = {
+        'schema': 'cryptobench-v4-attribution-v1',
+        'datasetId': dataset_id,
+        'version': version,
+        'sourceUrl': dataset['sourceUrl'],
+        'sourceSuiteId': manifest['suite_id'],
+        'sourceReleaseDate': manifest['created_at'],
+        'tasks': [{
+            'taskId': task['task_id'],
+            'sourceTaskId': task.get('source_task_id'),
+            'sourceSuite': task.get('source_suite', ''),
+            'sourcePaperId': task.get('source_paper_id', ''),
+        } for task in tasks],
+    }
+    attribution_encoded = (json.dumps(attribution, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
     target = (args.output_dir.resolve() if args.output_dir else
               SITE / 'data' / dataset_id / (version if version != '4.0.0' else ''))
     target.mkdir(parents=True, exist_ok=True)
@@ -162,10 +279,17 @@ def main():
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(content)
     (target / 'catalog.json').write_bytes(encoded)
+    (target / 'release.json').write_bytes(release_encoded)
+    (target / 'attribution.json').write_bytes(attribution_encoded)
     with ZipFile(target / 'public-tasks.zip', 'w', compression=ZIP_DEFLATED) as archive:
         release_date = manifest.get('created_at', '2026-01-01')
         year, month, day = (int(part) for part in release_date.split('-', 2))
-        for rel, content in {'catalog.json': encoded, **public_files}.items():
+        for rel, content in {
+            'catalog.json': encoded,
+            'release.json': release_encoded,
+            'attribution.json': attribution_encoded,
+            **public_files,
+        }.items():
             info = ZipInfo(rel, date_time=(year, month, day, 0, 0, 0))
             info.compress_type = ZIP_DEFLATED
             archive.writestr(info, content)

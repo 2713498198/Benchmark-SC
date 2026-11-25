@@ -36,16 +36,17 @@ public class V4ValidatorRunner {
     }
 
     public boolean available() {
-        return properties.enabled();
+        return properties.enabled()
+                && Files.isRegularFile(Path.of(properties.suiteRoot(), "scripts", "run_task_validator.py"));
     }
 
-    public ObjectNode evaluate(String taskId, JsonNode artifact) {
+    public ObjectNode evaluate(String taskId, JsonNode response) {
         ObjectNode result = mapper.createObjectNode();
-        if (!properties.enabled()) {
+        if (!available()) {
             result.put("status", "failed");
             result.put("passed", false);
             result.put("score", 0);
-            result.put("reason", "该题需服务端工作区验证器，但评分通道未启用");
+            result.put("reason", "该题需服务端工作区验证器，但评分通道未启用或私有套件不完整");
             return result;
         }
 
@@ -53,9 +54,11 @@ public class V4ValidatorRunner {
         try {
             runDir = Files.createTempDirectory("cryptobench-v4-run-");
             Path workspace = Files.createDirectories(runDir.resolve("workspace"));
+            JsonNode artifact = response == null ? null : response.get("artifact");
             Files.writeString(runDir.resolve("final_answer.md"),
                     artifact == null ? "" : text(artifact.get("answer")), StandardCharsets.UTF_8);
-            writeWorkspaceFiles(workspace, artifact);
+            writeWorkspaceFiles(runDir, workspace, artifact);
+            writeEvidence(runDir, response == null ? null : response.get("evidence"));
 
             Path out = runDir.resolve("validator_report.json");
             List<String> command = new ArrayList<>(List.of(
@@ -116,7 +119,7 @@ public class V4ValidatorRunner {
         return node.toString();
     }
 
-    private static void writeWorkspaceFiles(Path workspace, JsonNode artifact) throws IOException {
+    private static void writeWorkspaceFiles(Path runDir, Path workspace, JsonNode artifact) throws IOException {
         JsonNode files = artifact == null ? null : artifact.get("files");
         if (files == null || !files.isArray()) return;
         for (JsonNode file : files) {
@@ -125,8 +128,49 @@ public class V4ValidatorRunner {
             Path target = workspace.resolve(name).normalize();
             if (!target.startsWith(workspace.normalize())) continue;
             Files.createDirectories(target.getParent());
-            Files.writeString(target, text(file.get("content")), StandardCharsets.UTF_8);
+            String content = text(file.get("content"));
+            Files.writeString(target, content, StandardCharsets.UTF_8);
+            // Some benchmark validators read their original run harness paths.
+            // Mirror log-like artifacts outside workspace without changing the
+            // Agent-provided workspace view.
+            if (isHarnessPath(name)) {
+                Path mirror = runDir.resolve(name).normalize();
+                if (mirror.startsWith(runDir.normalize()) && !mirror.equals(target)) {
+                    Files.createDirectories(mirror.getParent());
+                    Files.writeString(mirror, content, StandardCharsets.UTF_8);
+                }
+            }
         }
+    }
+
+    private static void writeEvidence(Path runDir, JsonNode evidence) throws IOException {
+        if (evidence == null || !evidence.isArray() || evidence.isEmpty()) return;
+        StringBuilder text = new StringBuilder();
+        for (JsonNode item : evidence) {
+            String content = item.isObject() && item.has("content")
+                    ? text(item.get("content"))
+                    : item.toString();
+            if (!content.isBlank()) {
+                if (!text.isEmpty()) text.append('\n');
+                text.append(content);
+            }
+        }
+        if (text.isEmpty()) return;
+        Path logs = Files.createDirectories(runDir.resolve("logs"));
+        Path output = logs.resolve("agent_stdout.txt");
+        if (Files.exists(output) && Files.size(output) > 0) {
+            Files.writeString(output, System.lineSeparator() + text, StandardCharsets.UTF_8,
+                    java.nio.file.StandardOpenOption.APPEND);
+        } else {
+            Files.writeString(output, text, StandardCharsets.UTF_8);
+        }
+    }
+
+    private static boolean isHarnessPath(String name) {
+        String normalized = name.replace('\\', '/');
+        return normalized.startsWith("logs/")
+                || normalized.equals("events.jsonl")
+                || normalized.equals("trajectory.jsonl");
     }
 
     private static void deleteRecursively(Path path) {

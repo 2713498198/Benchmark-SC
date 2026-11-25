@@ -49,6 +49,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class RunService {
     private final RunRepository runs;
     private final TaskCatalogService catalog;
+    private final TaskInputService taskInputs;
     private final AgentHttpClient agent;
     private final ServerCostCalculator costs;
     private final DockerSandboxExecutor docker;
@@ -73,7 +74,8 @@ public class RunService {
             }, new ThreadPoolExecutor.AbortPolicy());
     private final ConcurrentHashMap<String, Future<?>> activeJobs = new ConcurrentHashMap<>();
 
-    public RunService(RunRepository runs, TaskCatalogService catalog, AgentHttpClient agent,
+    public RunService(RunRepository runs, TaskCatalogService catalog, TaskInputService taskInputs,
+                      AgentHttpClient agent,
                       ServerCostCalculator costs, ReportService reports,
                       com.fasterxml.jackson.databind.ObjectMapper mapper, DockerSandboxExecutor docker,
                       PlatformTransactionManager transactionManager,
@@ -81,6 +83,7 @@ public class RunService {
                       RunnerService runnerService, RunQuotaProperties runQuotas) {
         this.runs = runs;
         this.catalog = catalog;
+        this.taskInputs = taskInputs;
         this.agent = agent;
         this.costs = costs;
         this.reports = reports;
@@ -598,6 +601,8 @@ public class RunService {
                         ObjectNode publicTask = request.putObject("task");
                         publicTask.put("question", task.question()); publicTask.set("input", task.input());
                         publicTask.put("category", task.category()); publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
+                        taskInputs.attach(run.datasetId(), run.version(), task, publicTask);
+                        request.put("captureWorkspace", isWorkspaceTask(task));
                         int timeout = "extended".equals(run.budget()) ? 600 : 300;
                         request.put("deadline", Instant.now().plusSeconds(timeout).toString());
                         ObjectNode limits = request.putObject("budget");
@@ -738,10 +743,16 @@ public class RunService {
         ObjectNode publicTask = request.putObject("task"); publicTask.put("question", task.question());
         publicTask.set("input", task.input()); publicTask.put("category", task.category());
         publicTask.set("publicFiles", mapper.valueToTree(task.publicFiles()));
+        taskInputs.attach(run.datasetId(), run.version(), task, publicTask);
+        request.put("captureWorkspace", isWorkspaceTask(task));
         request.put("deadline", Instant.now().plusSeconds(timeout).toString());
         ObjectNode budget = request.putObject("budget"); budget.put("timeoutSeconds", timeout);
         budget.put("maxAgentCalls", "extended".equals(run.budget()) ? 40 : 20);
         return request;
+    }
+
+    private static boolean isWorkspaceTask(TaskDefinition task) {
+        return "workspace-validator".equals(task.verification().path("type").asText());
     }
 
     private void finishRunnerRun(String id, long generation, Run run, List<TaskDefinition> tasks,

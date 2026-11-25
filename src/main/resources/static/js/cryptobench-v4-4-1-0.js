@@ -19,20 +19,39 @@ export const cryptobenchV4_4_1_0 = {
   "published": true,
   "demo": false,
   "executionReady": true,
+  "publicationStatus": "technical_ready",
   "suiteId": "CBSC-V4-COMPREHENSIVE-BLOCK-CIPHER-170-20260805",
   "releaseDate": "2026-08-05",
+  "releaseRevision": "2026-11-25",
+  "evaluatorVersion": "cryptobench-sc-v4-evaluator-1.0.1",
+  "sourceManifestSha256": "fcdafe32359ee2c7973976736098fd428ba4422111de3d45dc822452b83c3648",
   "sourceUrl": "https://gitee.com/xiandianzidaxue/cryptobench-sc",
-  "sourceCommit": null,
   "catalogUrl": "data/cryptobench-sc-v4/4.1.0/catalog.json",
   "downloadUrl": "data/cryptobench-sc-v4/4.1.0/public-tasks.zip",
+  "releaseManifestUrl": "data/cryptobench-sc-v4/4.1.0/release.json",
+  "attributionUrl": "data/cryptobench-sc-v4/4.1.0/attribution.json",
   "scoring": {
-    "modes": [
-      "final_only",
-      "process_plus_final"
-    ],
-    "finalWeight": 0.65,
-    "processWeight": 0.35,
-    "passThreshold": 0.99
+    "taskResult": "binary_pass_fail",
+    "overallMetric": "passed_tasks/total_tasks",
+    "partialScoresRetainedAsEvidence": true,
+    "sourcePolicy": {
+      "modes": [
+        "final_only",
+        "process_plus_final"
+      ],
+      "finalWeight": 0.65,
+      "processWeight": 0.35,
+      "passThreshold": 0.99
+    }
+  },
+  "evaluationCoverage": {
+    "deterministic": 105,
+    "workspaceValidator": 65
+  },
+  "rightsReview": {
+    "status": "attribution_recorded",
+    "document": "docs/v4-source-attribution.md",
+    "manifest": "data/cryptobench-sc-v4/4.1.0/attribution.json"
   },
   "aggregateStressTasks": 3
 };

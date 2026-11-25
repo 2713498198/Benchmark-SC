@@ -205,6 +205,10 @@ python -B -X utf8 scripts/import_cryptobench.py '<题库源目录>'
 
 本项目已实现服务端运行调度、真实 Agent 接入、Mini-SPN 服务端验证、Docker 沙箱执行来源、可信报告和密码找回流程。运行记录支持排队、运行、完成、失败、超时、取消、日志和重试；客户端提交的成绩不会覆盖服务端验证结果。CryptoBench-SC V4.1 已开放执行（`executionReady: true`）：105 道题使用确定性声明式规则（numeric/string/boolean/fields/piecewise）评分，65 道题经服务端工作区验证器评分。工作区验证器需要按 [V4 部署说明](docs/v4-deployment.md) 配置服务端私有套件（`CRYPTOBENCH_V4_SUITE_ROOT`）后才生效，未配置时这 65 道题按未通过处理，不会生成伪造分数。私有目录与公开目录的一致性校验见 `python scripts/validate-v4-release.py` 和 `node scripts/validate-v4-materials.mjs`，校验器不会输出隐藏答案。
 
+公开附件会以 Base64 内容随执行请求下发，HTTP Agent、Runner 和 Docker Agent 不需要访问
+网站文件系统。工作区验证题会回收 `artifact.files` 和 `evidence`；Runner CLI Adapter
+还会自动回收任务工作区中的代码、日志、JSON 和 CSV。
+
 本地 Agent 的协议、接口和 Docker 镜像要求见 [本地 Agent 测试指南](docs/local-agent.md)。用户电脑上的 Agent 接入网站请使用 [本地 Runner 指南](docs/local-runner.md)。启动确定性 Mock Agent：
 
 ```powershell

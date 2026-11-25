@@ -59,6 +59,9 @@ jobs:
       - name: Check frontend JavaScript and Vue templates
         run: npm run check
 
+      - name: Verify Runner task inputs and workspace artifacts
+        run: npm run test:runner-command
+
       - name: Verify report timing, categories, leaderboard and exports
         run: npm run test:report-metrics
 

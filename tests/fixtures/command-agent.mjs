@@ -1,4 +1,6 @@
 import process from 'node:process';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
 
 const modeFlag = process.argv.indexOf('--mode');
 const mode = modeFlag >= 0 ? process.argv[modeFlag + 1] : 'jsonl';
@@ -26,6 +28,18 @@ if (mode === 'jsonl') {
   process.exitCode = 7;
 } else if (mode === 'hang') {
   setInterval(() => {}, 1000);
+} else if (mode === 'workspace') {
+  const workspace = process.env.CRYPTOBENCH_WORKSPACE;
+  if (!workspace) throw new Error('missing workspace');
+  const attachment = JSON.parse(await readFile(join(workspace, 'attachments', 'input.json'), 'utf8'));
+  await mkdir(join(workspace, 'code'), {recursive: true});
+  await mkdir(join(workspace, 'logs'), {recursive: true});
+  await writeFile(join(workspace, 'code', 'solve.py'), 'print("ok")\n', 'utf8');
+  await writeFile(join(workspace, 'logs', 'agent_stdout.txt'), 'fixture execution\n', 'utf8');
+  console.log(JSON.stringify({
+    type: 'item.completed',
+    item: {type: 'agent_message', text: `attachment_value=${attachment.value} prompt_contains_base64=${input.includes('eyJ2YWx1ZSI6NDJ9')}`}
+  }));
 } else {
   throw new Error(`unknown fixture mode: ${mode}`);
 }

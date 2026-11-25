@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {mkdtemp,readFile,writeFile} from 'node:fs/promises';
 import http from 'node:http';
 import {tmpdir} from 'node:os';
@@ -66,6 +67,33 @@ const isolated = await runCommand({
   output: 'text'
 }, request);
 assert.equal(isolated.meta.isolatedWorkingDirectory, true);
+
+const attachment = Buffer.from('{"value":42}', 'utf8');
+const workspace = await runCommand({
+  ...base,
+  args: [fixture, '--mode', 'workspace'],
+  output: 'jsonl'
+}, {
+  ...request,
+  captureWorkspace: true,
+  task: {
+    ...request.task,
+    files: [{
+      path: 'attachments/input.json',
+      encoding: 'base64',
+      bytes: attachment.length,
+      sha256: createHash('sha256').update(attachment).digest('hex'),
+      content: attachment.toString('base64')
+    }]
+  }
+});
+assert.match(workspace.artifact.answer, /attachment_value=42/);
+assert.match(workspace.artifact.answer, /prompt_contains_base64=false/);
+assert.equal(workspace.meta.isolatedWorkingDirectory, true);
+assert.equal(workspace.meta.deliveredInputFiles, 1);
+assert.ok(workspace.artifact.files.some(file => file.path === 'code/solve.py' && file.content.includes('print')));
+assert.ok(workspace.artifact.files.some(file => file.path === 'logs/agent_stdout.txt' && file.content.includes('fixture execution')));
+assert.ok(!workspace.artifact.files.some(file => file.path.startsWith('attachments/')));
 
 if (process.platform === 'win32') {
   const wrapper = await validateCommandProfile({
@@ -178,6 +206,7 @@ try {
   const directSaved = JSON.parse(await readFile(directConfigPath, 'utf8'));
   assert.deepEqual(directSaved.agent.args, [fixture, '--mode', 'jsonl']);
 } finally {
+  server.closeAllConnections?.();
   await new Promise(resolve => server.close(resolve));
 }
 
