@@ -38,16 +38,20 @@ const profile = await validateCommandProfile({
 });
 assert.equal(profile.adapter, 'command');
 
+const structuredProgress = [];
 const structured = await runCommand({
   ...base,
   args: [fixture, '--mode', 'jsonl'],
   env: {AGENT_API_TOKEN: 'fixture-secret-value'}
-}, request);
+}, request, {onProgress:message => structuredProgress.push(message)});
 assert.equal(structured.status, 'completed');
 assert.match(structured.artifact.answer, /active_sbox_bound=4/);
 assert.match(structured.artifact.answer, /input=ok/);
 assert.doesNotMatch(JSON.stringify(structured), /fixture-secret-value/);
 assert.match(JSON.stringify(structured), /\[redacted\]/);
+assert.ok(structuredProgress.some(message => message.includes('Agent：active_sbox_bound=4')));
+assert.ok(structuredProgress.some(message => message.includes('[redacted]')));
+assert.ok(!structuredProgress.some(message => message.includes('fixture-secret-value')));
 assert.equal(structured.usage.inputTokens, 120);
 assert.equal(structured.usage.outputTokens, 30);
 assert.equal(structured.usage.totalTokens, 150);
@@ -59,6 +63,50 @@ const text = await runCommand({
   output: 'text'
 }, request);
 assert.match(text.artifact.answer, /received-task/);
+
+const numeric = await runCommand({
+  ...base,
+  args: [fixture, '--mode', 'jsonl-number'],
+  output: 'jsonl'
+}, {
+  ...request,
+  task: {question: '4 轮 AES 最小活跃 S-box 数', input: {answerFormat: {kind: 'number'}}}
+});
+assert.equal(numeric.artifact.answer, 25);
+assert.match(JSON.stringify(numeric.evidence), /最终答案/);
+
+const objectAnswer = await runCommand({
+  ...base,
+  args: [fixture, '--mode', 'jsonl-object'],
+  output: 'jsonl'
+}, {
+  ...request,
+  task: {question: '返回结构化结果', input: {answerFormat: {kind: 'object'}}}
+});
+assert.deepEqual(objectAnswer.artifact.answer, {rounds: 4, verified: true});
+
+const liveProgress = [];
+const liveStarted = Date.now();
+let firstProgressDelay = null;
+const live = await runCommand({
+  ...base,
+  args: [fixture, '--mode', 'jsonl-live'],
+  output: 'jsonl'
+}, {
+  ...request,
+  task: {question: '实时进度测试', input: {answerFormat: {kind: 'number'}}}
+}, {
+  onProgress:message => {
+    liveProgress.push(message);
+    firstProgressDelay ??= Date.now() - liveStarted;
+  }
+});
+assert.equal(live.artifact.answer, 25);
+assert.ok(firstProgressDelay < Date.now() - liveStarted);
+assert.ok(liveProgress.some(message => message.includes('Agent 开始分析当前任务')));
+assert.ok(liveProgress.some(message => message.includes('执行命令：python solve.py')));
+assert.ok(liveProgress.some(message => message.includes('命令完成 · exit 0')));
+assert.ok(liveProgress.some(message => message.includes('命令输出摘要：active_sbox_bound=25')));
 
 const isolated = await runCommand({
   ...base,

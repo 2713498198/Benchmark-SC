@@ -4,6 +4,32 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+
+function Import-CryptoBenchEnvironment([string]$ProjectRoot) {
+    $localEnvPath = Join-Path $ProjectRoot '.vscode/local.env'
+    if (-not (Test-Path -LiteralPath $localEnvPath -PathType Leaf)) { return }
+
+    foreach ($line in Get-Content -LiteralPath $localEnvPath -Encoding UTF8) {
+        $entry = $line.Trim().TrimStart([char]0xFEFF)
+        if (-not $entry -or $entry.StartsWith('#') -or -not $entry.Contains('=')) { continue }
+
+        $name, $value = $entry.Split('=', 2)
+        $name = $name.Trim()
+        $value = $value.Trim()
+        if (-not $name) { continue }
+        if (($value.StartsWith('"') -and $value.EndsWith('"')) -or
+            ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+
+        # Explicit process variables take precedence over the local development file.
+        if ([string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($name, 'Process'))) {
+            [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+        }
+    }
+}
+
+Import-CryptoBenchEnvironment $root
 . (Join-Path $PSScriptRoot 'java-env.ps1')
 . (Join-Path $PSScriptRoot 'local-mail.ps1')
 try {

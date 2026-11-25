@@ -10,8 +10,13 @@ export default {
   setup(){
     const app=useApp(),{state,route}=app;
     const path=computed(()=>route.value.split('?')[0]);
-    const tab=computed(()=>new URLSearchParams(route.value.split('?')[1]).get('tab')||'runs');
+    const query=computed(()=>new URLSearchParams(route.value.split('?').slice(1).join('?')));
+    const tab=computed(()=>query.value.get('tab')||'runs');
     const isRecovery=computed(()=>path.value==='/forgot-password');
+    const returnTo=computed(()=>{
+      const target=query.value.get('redirect')||'';
+      return target.startsWith('/')&&!target.startsWith('//')?target:'';
+    });
     const auth=ref({name:'',email:'',password:''});
     const adminTab=ref('datasets');
     const allData=computed(()=>[...datasets,...state.customDatasets.filter(d=>d.published)]);
@@ -30,7 +35,7 @@ export default {
         const register=path.value==='/register';
         await app.api(register?'/api/auth/register':'/api/auth/login',{method:'POST',body:auth.value});
         const boot=await app.api('/api/bootstrap');
-        await finishAuth(boot,boot.user?.role==='admin'?'/admin':'/workspace',register?'账号已创建':'登录成功');
+        await finishAuth(boot,returnTo.value||(boot.user?.role==='admin'?'/admin':'/workspace'),register?'账号已创建':'登录成功');
       }catch(error){
         app.toast(error.message);
       }
@@ -47,6 +52,10 @@ export default {
     }
 
     function addConnection(){app.confirm('添加 Agent 连接','','connection');}
+    function authHref(mode){
+      const target=returnTo.value;
+      return '/'+mode+(target?'?redirect='+encodeURIComponent(target):'');
+    }
     function editConnection(connection){
       Object.assign(app.connection,{id:connection.id,name:connection.name,url:connection.url,model:connection.model});
       app.confirm('编辑 Agent 连接','','connection-edit');
@@ -87,7 +96,7 @@ export default {
     });
 
     return {
-      state,route,path,tab,isRecovery,auth,datasetName,submit,logout,
+      state,route,path,tab,isRecovery,returnTo,auth,datasetName,submit,logout,authHref,
       addConnection,editConnection,checkSavedConnection,removeConnection,adminTab
     };
   },
@@ -99,7 +108,7 @@ export default {
 <div v-else-if="path==='/login'||path==='/register'" class="container page auth-page">
   <div class="login-layout"><div class="login-form">
     <h1>{{path==='/register'?'创建账号':'欢迎回来'}}</h1>
-    <p>{{path==='/register'?'创建账号，保存你的实验记录。':'登录，继续你的实验。'}}</p>
+    <p>{{path==='/register'?'创建账号，保存你的实验记录。':returnTo?'请先登录，登录后将返回刚才的测评页面。':'登录，继续你的实验。'}}</p>
     <form id="auth-form" class="stack" @submit.prevent="submit">
       <div v-if="path==='/register'" class="field">
         <label>研究者昵称</label>
@@ -116,8 +125,8 @@ export default {
       <button class="btn primary wide" type="submit">{{path==='/register'?'注册并进入':'登录'}}</button>
     </form>
     <div class="login-links">
-      <a class="text-link" :href="path==='/login'?'#/register':'#/login'">{{path==='/login'?'创建账号':'返回登录'}}</a>
-      <a href="#/forgot-password">忘记密码？</a>
+      <a class="text-link" :href="'#'+authHref(path==='/login'?'register':'login')">{{path==='/login'?'创建账号':'返回登录'}}</a>
+      <a :href="'#'+authHref('forgot-password')">忘记密码？</a>
     </div>
   </div></div>
 </div>

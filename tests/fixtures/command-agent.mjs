@@ -23,6 +23,45 @@ if (mode === 'jsonl') {
   }));
 } else if (mode === 'text') {
   console.log(`active_sbox_bound=4\n${input.includes('mini-spn-001') ? 'received-task' : 'missing-task'}`);
+} else if (mode === 'jsonl-number') {
+  console.log(JSON.stringify({
+    type: 'item.completed',
+    item: {
+      type: 'agent_message',
+      text: '已完成轨迹分析并验算。\n\n最终答案：**25**。\n\n关键证据保存在 aes4_witness.json。'
+    }
+  }));
+  console.log(JSON.stringify({type: 'turn.completed', usage: {input_tokens: 20, output_tokens: 10}}));
+} else if (mode === 'jsonl-object') {
+  console.log(JSON.stringify({
+    type: 'item.completed',
+    item: {
+      type: 'agent_message',
+      text: '分析完成。\n\n```json\n{"answer":{"rounds":4,"verified":true}}\n```'
+    }
+  }));
+} else if (mode === 'jsonl-live') {
+  console.log(JSON.stringify({type: 'turn.started'}));
+  await new Promise(resolve => setTimeout(resolve, 150));
+  console.log(JSON.stringify({
+    type: 'item.started',
+    item: {type: 'command_execution', command: 'python solve.py', status: 'in_progress'}
+  }));
+  await new Promise(resolve => setTimeout(resolve, 150));
+  console.log(JSON.stringify({
+    type: 'item.completed',
+    item: {
+      type: 'command_execution',
+      command: 'python solve.py',
+      status: 'completed',
+      exit_code: 0,
+      aggregated_output: 'active_sbox_bound=25'
+    }
+  }));
+  console.log(JSON.stringify({
+    type: 'item.completed',
+    item: {type: 'agent_message', text: '最终答案：25'}
+  }));
 } else if (mode === 'fail') {
   console.error(`failed with ${process.env.AGENT_API_TOKEN || 'unknown-secret'}`);
   process.exitCode = 7;

@@ -4,6 +4,7 @@ import {access,mkdir,mkdtemp,readFile,readdir,realpath,rm,writeFile} from 'node:
 import {constants as fsConstants} from 'node:fs';
 import {basename,dirname,delimiter,extname,isAbsolute,join,relative,resolve,sep} from 'node:path';
 import {tmpdir} from 'node:os';
+import {StringDecoder} from 'node:string_decoder';
 
 const DEFAULT_TIMEOUT_SECONDS = 300;
 const DEFAULT_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
@@ -12,6 +13,7 @@ const MAX_EVIDENCE_TEXT = 8000;
 const MAX_EVIDENCE_BYTES = 512 * 1024;
 const MAX_ARTIFACT_FILE_BYTES = 1_500_000;
 const MAX_ARTIFACT_BYTES = 4_000_000;
+const MAX_PROGRESS_TEXT = 900;
 const ARTIFACT_SUFFIXES = new Set([
   '.md', '.txt', '.json', '.jsonl', '.csv', '.log', '.py', '.sage',
   '.c', '.cpp', '.h', '.rs', '.java', '.mzn', '.sh'
@@ -24,7 +26,7 @@ const EXCLUDED_WORKSPACE_PARTS = new Set([
  * Execute an installed Agent CLI and normalize its output for the Runner API.
  * The website never provides an executable, shell command, or working directory.
  */
-export async function runCommand(profile, request) {
+export async function runCommand(profile, request, runtime = {}) {
   const config = normalizeProfile(profile, request);
   const hasTaskFiles = Array.isArray(request?.task?.files) && request.task.files.length > 0;
   const captureWorkspace = Boolean(request?.captureWorkspace) || hasTaskFiles;
@@ -33,15 +35,25 @@ export async function runCommand(profile, request) {
   const started = Date.now();
   try {
     if (hasTaskFiles) await materializeTaskInputs(request, workingDirectory);
-    const prompt = renderPrompt(config.promptTemplate, request, config, workingDirectory);
+    const prompt = [
+      renderPrompt(config.promptTemplate, request, config, workingDirectory),
+      answerFormatInstruction(request)
+    ].filter(Boolean).join('\n\n');
     const args = config.args.map(argument => renderTemplate(argument, {prompt, request, profile: config, workspace: workingDirectory}));
-    const result = await spawnAgent({...config, cwd: workingDirectory}, args, prompt, request);
-    const parsed = parseOutput(result.stdout, config.output);
     const secrets = [...secretValues({...process.env, ...config.env}), ...argumentSecretValues(args)];
+    const onProgress = typeof runtime?.onProgress === 'function'
+      ? message => {
+          try {
+            runtime.onProgress(truncateForProgress(redact(String(message || ''), secrets)));
+          } catch {}
+        }
+      : null;
+    const result = await spawnAgent({...config, cwd: workingDirectory}, args, prompt, request, onProgress, secrets);
+    const parsed = parseOutput(result.stdout, config.output);
     const evidence = normalizeEvidence(parsed.events, result.stderr, config);
     const usage = normalizeUsage(parsed.usage, Date.now() - started);
     const captured = captureWorkspace ? await collectWorkspaceArtifacts(workingDirectory) : [];
-    const artifact = mergeArtifactFiles(parsed.artifact, captured);
+    const artifact = mergeArtifactFiles(normalizeAnswerArtifact(parsed.artifact, request), captured);
 
     return redact({
       status: 'completed',
@@ -181,16 +193,20 @@ async function resolveExecutable(command, cwd) {
   return '';
 }
 
-function spawnAgent(config, args, prompt, request) {
+function spawnAgent(config, args, prompt, request, onProgress, secrets) {
   return new Promise((resolvePromise, rejectPromise) => {
     let settled = false;
     let stdout = '';
     let stderr = '';
+    let stdoutBuffer = '';
+    let stderrBuffer = '';
     let stdoutBytes = 0;
     let stderrBytes = 0;
     let timedOut = false;
     let outputExceeded = false;
     let stopping = false;
+    const stdoutDecoder = new StringDecoder('utf8');
+    const stderrDecoder = new StringDecoder('utf8');
     const executable = config.shellMode === 'cmd' ? String(process.env.ComSpec || 'cmd.exe') : config.command;
     const processArgs = config.shellMode === 'cmd'
       ? ['/d', '/s', '/c', config.command, ...args]
@@ -234,6 +250,14 @@ function spawnAgent(config, args, prompt, request) {
       finish(adapterError('agent_spawn_failed', `无法启动 Agent CLI：${error.message}`));
     });
     child.once('close', (code, signal) => {
+      const stdoutTail = stdoutDecoder.end();
+      const stderrTail = stderrDecoder.end();
+      stdout += stdoutTail;
+      stderr += stderrTail;
+      stdoutBuffer += stdoutTail;
+      stderrBuffer += stderrTail;
+      emitCompleteLines(stdoutBuffer, config.output, onProgress, true);
+      emitCompleteLines(stderrBuffer, 'stderr', onProgress, true);
       if (timedOut) {
         finish(adapterError('agent_timeout', `Agent CLI 超过 ${config.timeoutMs}ms 未完成`));
         return;
@@ -243,8 +267,7 @@ function spawnAgent(config, args, prompt, request) {
         return;
       }
       if (code !== 0) {
-        const secrets = [...secretValues({...process.env, ...config.env}), ...argumentSecretValues(args)];
-        const detail = redact({text: stderr.trim().slice(-2000)}, secrets).text;
+        const detail = redact(stderr.trim().slice(-2000), secrets);
         finish(adapterError('agent_exit_failed', `Agent CLI 退出码 ${code}${signal ? `（${signal}）` : ''}${detail ? `：${detail}` : ''}`));
         return;
       }
@@ -254,18 +277,124 @@ function spawnAgent(config, args, prompt, request) {
     child.stdout?.on('data', chunk => {
       stdoutBytes += chunk.length;
       if (stdoutBytes > config.maxOutputBytes) return stop('output_limit');
-      stdout += chunk;
+      const text = stdoutDecoder.write(chunk);
+      stdout += text;
+      stdoutBuffer += text;
+      const consumed = emitCompleteLines(stdoutBuffer, config.output, onProgress);
+      stdoutBuffer = stdoutBuffer.slice(consumed);
     });
     child.stderr?.on('data', chunk => {
       stderrBytes += chunk.length;
       if (stderrBytes > config.maxOutputBytes) return stop('output_limit');
-      stderr += chunk;
+      const text = stderrDecoder.write(chunk);
+      stderr += text;
+      stderrBuffer += text;
+      const consumed = emitCompleteLines(stderrBuffer, 'stderr', onProgress);
+      stderrBuffer = stderrBuffer.slice(consumed);
     });
 
     if (config.stdin === 'prompt') child.stdin.end(prompt);
     else if (config.stdin === 'json') child.stdin.end(JSON.stringify(request));
     else child.stdin?.end();
   });
+}
+
+function emitCompleteLines(buffer, outputFormat, onProgress, flush = false) {
+  if (!onProgress) {
+    const finalNewline = buffer.lastIndexOf('\n');
+    return finalNewline < 0 ? 0 : finalNewline + 1;
+  }
+  let start = 0;
+  for (;;) {
+    const end = buffer.indexOf('\n', start);
+    if (end < 0) break;
+    const line = buffer.slice(start, end).replace(/\r$/, '').trim();
+    if (line) emitOutputProgress(line, outputFormat, onProgress);
+    start = end + 1;
+  }
+  if (flush && buffer.slice(start).trim()) {
+    emitOutputProgress(buffer.slice(start).replace(/\r$/, '').trim(), outputFormat, onProgress);
+  }
+  return start;
+}
+
+function emitOutputProgress(line, outputFormat, onProgress) {
+  if (outputFormat === 'stderr') {
+    onProgress(`CLI 警告/错误：${truncateForProgress(line, 500)}`);
+    return;
+  }
+  if (!['json', 'jsonl', 'auto'].includes(outputFormat)) {
+    onProgress(`Agent 输出：${truncateForProgress(line)}`);
+    return;
+  }
+  let event;
+  try {
+    event = JSON.parse(line);
+  } catch {
+    onProgress(`Agent 输出：${truncateForProgress(line)}`);
+    return;
+  }
+  const eventType = String(event?.type || '');
+  if (eventType === 'thread.started') {
+    onProgress('Agent 会话已建立');
+    return;
+  }
+  if (eventType === 'turn.started') {
+    onProgress('Agent 开始分析当前任务');
+    return;
+  }
+  if (eventType === 'turn.completed') {
+    const input = event?.usage?.input_tokens ?? event?.usage?.inputTokens;
+    const output = event?.usage?.output_tokens ?? event?.usage?.outputTokens;
+    const usage = input != null || output != null ? ` · Token ${input ?? '?'} 入 / ${output ?? '?'} 出` : '';
+    onProgress(`本轮模型调用完成${usage}`);
+    return;
+  }
+  if (eventType === 'error') {
+    onProgress(`Agent 错误：${truncateForProgress(event.message || event.error || line)}`);
+    return;
+  }
+
+  const item = event?.item && typeof event.item === 'object' ? event.item : null;
+  if (!item) return;
+  const itemType = String(item.type || '');
+  const completed = eventType === 'item.completed';
+  if (itemType === 'agent_message') {
+    onProgress(`Agent：${truncateForProgress(item.text || item.content || item.message || '')}`);
+  } else if (itemType === 'reasoning') {
+    onProgress(`分析：${truncateForProgress(item.text || item.content || item.message || '')}`);
+  } else if (itemType === 'command_execution') {
+    const command = truncateForProgress(item.command || item.cmd || '', 500);
+    if (!completed) {
+      onProgress(`执行命令：${command}`);
+      return;
+    }
+    const exitCode = item.exit_code ?? item.exitCode;
+    const status = item.status || (exitCode === 0 ? 'completed' : 'failed');
+    const label = status === 'failed' || (exitCode != null && Number(exitCode) !== 0) ? '命令失败' : '命令完成';
+    const exit = exitCode == null ? '' : ` · exit ${exitCode}`;
+    onProgress(`${label}${exit}：${command}`);
+    const output = String(item.aggregated_output || item.output || '').trim();
+    if (output) onProgress(`命令输出摘要：${tailForProgress(output, 700)}`);
+  } else if (itemType === 'file_change' || itemType === 'patch_apply') {
+    const changes = Array.isArray(item.changes) ? item.changes : [];
+    const paths = changes.map(change => change.path || change.file || change.file_path).filter(Boolean);
+    onProgress(`${completed ? '文件修改完成' : '正在修改文件'}${paths.length ? '：' + truncateForProgress(paths.join('，'), 500) : ''}`);
+  } else if (itemType === 'mcp_tool_call') {
+    onProgress(`${completed ? '工具调用完成' : '正在调用工具'}：${truncateForProgress(item.name || item.tool || item.server || 'MCP', 300)}`);
+  } else if (itemType === 'error') {
+    onProgress(`Agent 提示：${truncateForProgress(item.message || item.content || line, 600)}`);
+  }
+}
+
+function truncateForProgress(value, limit = MAX_PROGRESS_TEXT) {
+  const compact = String(value || '').replace(/\s+/g, ' ').trim();
+  return compact.length > limit ? compact.slice(0, limit) + '…' : compact;
+}
+
+function tailForProgress(value, limit = MAX_PROGRESS_TEXT) {
+  const compact = String(value || '').replace(/\s+/g, ' ').trim();
+  return compact.length > limit ? '…' + compact.slice(-limit) : compact;
 }
 
 function terminateChild(child) {
@@ -386,6 +515,112 @@ function extractAnswer(value) {
   };
   events.forEach(visit);
   return answers.at(-1) || '';
+}
+
+/**
+ * CLI agents commonly explain their work in Markdown. The website evaluates
+ * artifact.answer as a typed value, so convert a clearly labelled final answer
+ * to the type requested by the public task metadata.
+ */
+function normalizeAnswerArtifact(artifact, request) {
+  if (!artifact || typeof artifact !== 'object' || Array.isArray(artifact)) return artifact;
+  if (typeof artifact.answer !== 'string' || !artifact.answer.trim()) return artifact;
+  const answerFormat = request?.task?.input?.answerFormat;
+  const kind = String(answerFormat?.kind || '').toLowerCase();
+  if (!kind || kind === 'workspace') return artifact;
+  const normalized = coerceFinalAnswer(artifact.answer, answerFormat);
+  return normalized.found ? {...artifact, answer: normalized.value} : artifact;
+}
+
+function coerceFinalAnswer(text, answerFormat) {
+  const kind = String(answerFormat?.kind || '').toLowerCase();
+  const structured = structuredAnswerCandidate(text);
+  if (structured.found && structured.value !== undefined) {
+    const value = structured.value;
+    if (kind === 'number' && typeof value === 'number' && Number.isFinite(value)) return {found: true, value};
+    if (kind === 'boolean' && typeof value === 'boolean') return {found: true, value};
+    if (kind === 'string' && typeof value === 'string') return {found: true, value};
+    if (['object', 'piecewise_formula'].includes(kind) && value && typeof value === 'object') {
+      return {found: true, value};
+    }
+  }
+
+  const labelled = labelledFinalAnswer(text);
+  if (kind === 'number') {
+    const match = labelled?.match(/^[\s*_`]*(-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\b/);
+    if (match && Number.isFinite(Number(match[1]))) return {found: true, value: Number(match[1])};
+    const scalar = cleanScalarAnswer(text);
+    if (/^-?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(scalar)) {
+      return {found: true, value: Number(scalar)};
+    }
+  }
+  if (kind === 'boolean') {
+    const match = labelled?.match(/^[\s*_`]*(true|false|yes|no|是|否|正确|错误)\b/i);
+    if (match) return {found: true, value: ['true', 'yes', '是', '正确'].includes(match[1].toLowerCase())};
+  }
+  if (kind === 'string' && labelled) {
+    const value = cleanScalarAnswer(labelled.split(/\r?\n/, 1)[0]);
+    if (value) return {found: true, value};
+  }
+  return {found: false, value: undefined};
+}
+
+function structuredAnswerCandidate(text) {
+  const candidates = [String(text || '').trim()];
+  for (const match of String(text || '').matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)) {
+    candidates.push(match[1].trim());
+  }
+  for (const candidate of candidates.reverse()) {
+    if (!candidate) continue;
+    try {
+      const parsed = JSON.parse(candidate);
+      return {
+        found: true,
+        value: parsed && typeof parsed === 'object' && !Array.isArray(parsed) && 'answer' in parsed
+          ? parsed.answer
+          : parsed
+      };
+    } catch {}
+  }
+  return {found: false, value: undefined};
+}
+
+function labelledFinalAnswer(text) {
+  const pattern = /(?:^|\n)\s*(?:#+\s*)?(?:\*{0,2})?(?:最终答案|最终结果|答案|final answer)(?:\*{0,2})?\s*(?:是|为)?\s*[:：]?\s*/gim;
+  let match;
+  let last = null;
+  while ((match = pattern.exec(String(text || '')))) last = match;
+  if (!last) return null;
+  return String(text).slice(last.index + last[0].length).trim();
+}
+
+function cleanScalarAnswer(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^[\s*_`"'“”‘’]+|[\s*_`"'“”‘’]+$/g, '')
+    .replace(/[。；;，,]\s*$/, '')
+    .trim();
+}
+
+function answerFormatInstruction(request) {
+  const format = request?.task?.input?.answerFormat;
+  const kind = String(format?.kind || '').toLowerCase();
+  if (!kind) return '';
+  let sample;
+  if (kind === 'number') sample = 0;
+  else if (kind === 'boolean') sample = true;
+  else if (kind === 'string') sample = 'final answer';
+  else if (kind === 'object' && format?.fields && typeof format.fields === 'object') {
+    sample = Object.fromEntries(Object.keys(format.fields).map(key => [key, format.fields[key] === 'number' ? 0 : 'value']));
+  } else sample = {};
+  return [
+    '提交格式要求（必须遵守）：',
+    '在说明和证据之后，使用一个 JSON 代码块提交机器可读答案。',
+    '不要给数字加引号；不要把解释文字放进 answer 字段。',
+    '```json',
+    JSON.stringify({answer: sample}, null, 2),
+    '```'
+  ].join('\n');
 }
 
 function extractUsage(events) {

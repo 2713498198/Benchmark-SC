@@ -25,7 +25,7 @@ try{
   await go('/');
   assert.match(await page.locator('h1').innerText(),/CryptoBench/);
   await page.screenshot({path:output+'/home-desktop.png',fullPage:true});
-  for(const route of ['/datasets','/tools','/leaderboard','/arena','/evaluate','/download','/docs'])await go(route);
+  for(const route of ['/datasets','/tools','/leaderboard','/download','/docs'])await go(route);
   await go('/download');
   assert.equal(await page.locator('[data-download-tab]').count(),0);
   assert.match(await page.locator('#main').innerText(),/Spring Boot/);
@@ -85,6 +85,9 @@ try{
   assert.equal((await anonymous.request.get(base+'/api/reports/'+reportId)).status(),200);
   assert.equal((await anonymous.request.get(base+'/api/connections')).status(),401);
   await anonymous.close();
+  await page.goto(base+'/#/runner');
+  await page.waitForFunction(()=>document.querySelector('#main')?.dataset.route?.startsWith('/login'));
+  assert.ok(await page.locator('#auth-form').isVisible());
   await page.setViewportSize({width:390,height:844});
   for(const route of ['/','/datasets','/leaderboard','/arena','/evaluate','/login','/docs','/download']){
     await go(route);

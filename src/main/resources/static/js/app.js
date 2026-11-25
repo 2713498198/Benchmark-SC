@@ -9,34 +9,44 @@ import CommunityPage from './vue/CommunityPage.js';
 import LeaderboardPage from './vue/LeaderboardPage.js';
 import {createRunState} from './run-state.js';
 
-const state=reactive({user:null,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null,runLogs:[],runNetworkError:'',bootstrapError:''});
+const state=reactive({user:null,authReady:false,reports:[],connections:[],customDatasets:[],publicReports:[],activeRun:null,runLogs:[],runNetworkError:'',bootstrapError:''});
 const labels={'/':'首页','/datasets':'测评集','/tools':'测评工具','/leaderboard':'测评榜单','/arena':'PK 竞技','/runner':'本地 Runner'};
 function parseRoute(){try{const route=decodeURI(location.hash.slice(1)||'/');return route.startsWith('/')?route:'/'+route;}catch{return '/404';}}
+function isProtectedRoute(path){return /^\/(runner|evaluate|arena|workspace|admin)(\/|\?|$)/.test(path);}
+function loginRoute(path){return '/login?redirect='+encodeURIComponent(path);}
+function redirectToLogin(path=parseRoute()){if(!isProtectedRoute(path))return false;const target=loginRoute(path);if(parseRoute()!==target)location.hash=target;return true;}
 async function api(path,options={}){
  const init={credentials:'same-origin',...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}};
  if(!['GET','HEAD','OPTIONS'].includes((init.method||'GET').toUpperCase())){
   const response=await fetch('/api/auth/csrf',{credentials:'same-origin',cache:'no-store'});
-  if(!response.ok)throw Error('无法获取请求验证令牌，请刷新页面后重试');
+  if(!response.ok){if(response.status===401)redirectToLogin();throw Error('无法获取请求验证令牌，请刷新页面后重试');}
   const csrf=await response.json();init.headers[csrf.headerName]=csrf.token;
  }
  if(init.body&&typeof init.body!=='string')init.body=JSON.stringify(init.body);
  const response=await fetch(path,init);let body;try{body=await response.json();}catch{}
- if(!response.ok){const error=Error(body?.error||body?.message||'请求失败');error.status=response.status;error.code=body?.code;error.details=body;throw error;}return body;
+ if(!response.ok){if(response.status===401)redirectToLogin();const error=Error(body?.error||body?.message||'请求失败');error.status=response.status;error.code=body?.code;error.details=body;throw error;}return body;
 }
 function save(){try{localStorage.setItem('cryptobench.v1',JSON.stringify({reports:state.reports,connections:state.connections,customDatasets:state.customDatasets}));}catch{}}
 let bootstrapEpoch=0;
-function applyBootstrap(boot){bootstrapEpoch++;if(state.user?.id!==boot.user?.id){state.activeRun=null;state.runLogs=[];state.runNetworkError='';}state.user=boot.user||null;state.reports=(boot.reports||[]).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));state.connections=boot.connections||[];state.customDatasets=boot.customDatasets||[];state.publicReports=boot.publicReports||[];state.bootstrapError='';save();}
-async function hydrate(){const epoch=++bootstrapEpoch;try{const boot=await api('/api/bootstrap');if(epoch!==bootstrapEpoch)return false;applyBootstrap(boot);return true;}catch(error){if(epoch===bootstrapEpoch)state.bootstrapError=error.message;return false;}}
+function applyBootstrap(boot){bootstrapEpoch++;if(state.user?.id!==boot.user?.id){state.activeRun=null;state.runLogs=[];state.runNetworkError='';}state.user=boot.user||null;state.authReady=true;state.reports=(boot.reports||[]).sort((a,b)=>Date.parse(b.createdAt||0)-Date.parse(a.createdAt||0));state.connections=boot.connections||[];state.customDatasets=boot.customDatasets||[];state.publicReports=boot.publicReports||[];state.bootstrapError='';save();}
+async function hydrate(){const epoch=++bootstrapEpoch;try{const boot=await api('/api/bootstrap');if(epoch!==bootstrapEpoch)return false;applyBootstrap(boot);return true;}catch(error){if(epoch===bootstrapEpoch){state.bootstrapError=error.message;state.authReady=true;}return false;}}
 function navigate(path){location.hash=path;}
 
 const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,RunnerPage,CommunityPage,LeaderboardPage},setup(){
  const route=ref(parseRoute()),toastMessage=ref(''),menuOpen=ref(false),dialog=ref(null),modal=reactive({kind:'',title:'',message:'',action:null,entries:[]}),connection=reactive({id:'',name:'',url:'',model:''});let toastTimer;
  const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(r==='/runner')return RunnerPage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
+ const authPending=computed(()=>!state.authReady&&isProtectedRoute(route.value));
  const active=computed(()=>route.value.split('?')[0]);
  function toast(message){toastMessage.value=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastMessage.value='',3700);}
  function closeModal(){modal.kind='';modal.action=null;if(dialog.value?.open)dialog.value.close();}
  function confirm(title,message,kind,action){if(kind==='connection')Object.assign(connection,{id:'',name:'',url:'',model:''});Object.assign(modal,{kind,title,message,action});}
  watch(()=>modal.kind,async kind=>{await nextTick();if(kind&&!dialog.value?.open)dialog.value?.showModal();else if(!kind&&dialog.value?.open)dialog.value.close();});
+ watch([route,()=>state.authReady,()=>state.user?.id],()=>{
+  if(!state.authReady||state.user||!isProtectedRoute(route.value))return;
+  const target=loginRoute(route.value);
+  route.value=target;
+  if(location.hash.slice(1)!==target)location.hash=target;
+ },{immediate:true});
  const runState=createRunState({state,api,onReport:report=>{state.reports=[report,...state.reports.filter(r=>r.id!==report.id)];save();}});
  watch(()=>state.user?.id,()=>runState.reset(),{flush:'sync'});
  document.addEventListener('visibilitychange',runState.visibility);
@@ -45,12 +55,12 @@ const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,RunnerPage,Commu
  async function saveConnection(){if(!/^https?:\/\//i.test(connection.url)){toast('服务地址必须使用 http 或 https');return;}try{const body={name:connection.name,url:connection.url,model:connection.model};const c=connection.id?await api('/api/connections/'+encodeURIComponent(connection.id),{method:'PATCH',body}):await api('/api/connections',{method:'POST',body});if(connection.id)state.connections=state.connections.map(item=>item.id===c.id?c:item);else state.connections.push(c);save();closeModal();}catch(err){toast(err.message);}}
  async function runConfirm(){const action=modal.action;if(action)await action();closeModal();}
  function skip(event){event.preventDefault();const main=document.querySelector('#main');main.focus({preventScroll:true});main.scrollIntoView({behavior:'instant'});}
- return {state,route,page,active,labels,toastMessage,menuOpen,dialog,modal,connection,closeModal,saveConnection,runConfirm,skip,save,hydrate};
+ return {state,route,page,active,authPending,labels,toastMessage,menuOpen,dialog,modal,connection,closeModal,saveConnection,runConfirm,skip,save,hydrate};
 },template:`
 <div class="app-shell"><a class="skip-link" href="#main" @click="skip">跳转到主要内容</a>
  <div v-if="state.bootstrapError" class="callout" role="alert">无法更新账号与项目数据：{{state.bootstrapError}}<button class="btn small" @click="hydrate">重试加载</button></div>
  <header id="header" class="topbar"><div class="topbar-inner"><a class="brand" href="#/"><img src="assets/logo.svg" alt=""><span>CryptoBench</span></a><nav class="nav" :class="{open:menuOpen}" aria-label="主导航"><a v-for="(label,path) in labels" :key="path" :href="'#'+path" :class="{active:path==='/'?active==='/':active.startsWith(path)}" :aria-current="(path==='/'?active==='/':active.startsWith(path))?'page':null">{{label}}</a></nav><div class="nav-end"><a class="btn small" :class="{primary:!state.user}" :href="state.user?'#/workspace':'#/login'"><SvgIcon name="user" :size="14"/> {{state.user?'工作台':'登录'}}</a><button class="icon-button menu-toggle" aria-label="打开导航菜单" :aria-expanded="String(menuOpen)" @click="menuOpen=!menuOpen"><SvgIcon name="menu" :size="18"/></button></div></div></header>
- <main id="main" tabindex="-1" :data-route="route"><component v-if="page" :is="page" :key="route.split('?')[0]"/><div v-else class="container page"><div class="card empty"><SvgIcon name="search" :size="32"/><h1>页面未找到</h1><p>这个地址暂时不存在。</p><a class="btn primary" href="#/">返回首页</a></div></div></main>
+ <main id="main" tabindex="-1" :data-route="route"><div v-if="authPending" class="container page"><div class="card empty" role="status"><SvgIcon name="user" :size="32"/><h1>正在检查登录状态</h1><p>请稍候，正在确认你的账号。</p></div></div><component v-else-if="page" :is="page" :key="route.split('?')[0]"/><div v-else class="container page"><div class="card empty"><SvgIcon name="search" :size="32"/><h1>页面未找到</h1><p>这个地址暂时不存在。</p><a class="btn primary" href="#/">返回首页</a></div></div></main>
  <footer id="footer"><div class="footer"><div class="container"><div class="footer-top"><div class="brand"><img src="assets/logo.svg" alt=""><span>CryptoBench</span></div><div class="footer-links"><a href="#/docs">接入文档</a><a href="#/download">本地部署</a><a href="#/docs?tab=methodology">测评方法</a><a href="#/docs?tab=about">关于平台</a></div></div><div class="footer-bottom"><span>© 2026 CryptoBench</span></div></div></div></footer>
  <div id="toast" role="status" aria-live="polite" :class="{show:!!toastMessage}">{{toastMessage}}</div>
  <dialog id="modal" ref="dialog" @close="closeModal" @click.self="closeModal"><div class="dialog-head"><h2>{{modal.title}}</h2><button class="icon-button" data-close-modal aria-label="关闭" @click="closeModal"><SvgIcon name="close" :size="18"/></button></div>

@@ -100,18 +100,23 @@ async function executeJob(client,config,job){
  const taskLabel=request.taskId||job.jobId;
  const budget=Number(request.budget?.timeoutSeconds);
  console.log(`任务开始：${taskLabel} · ${profile.name||profile.model||'Local Agent'}${Number.isFinite(budget)&&budget>0?` · 预算 ${budget} 秒`:''}`);
+ const progressTimer=setInterval(()=>{
+  console.log(`任务进行中：${taskLabel} · 已运行 ${Math.round((Date.now()-started)/1000)} 秒`);
+ },15000);
  try{
   let endpoint=profile.endpoint;
   const commandAdapter=profile.adapter==='command'||profile.mode==='command';
   if(!commandAdapter&&(profile.mode==='docker'||config.sandbox?.enabled)){sandbox=await startSandbox(profile.image||config.sandbox.image);endpoint=sandbox.endpoint;}
-  const response=await analyze({...profile,endpoint},request);
+  const response=await analyze({...profile,endpoint},request,{
+   onProgress:message=>console.log(`任务进度：${taskLabel} · ${message}`)
+  });
   await client.result(job.jobId,{status:'completed',response,elapsedMs:Date.now()-started});
   console.log(`任务完成：${taskLabel} · ${Math.round((Date.now()-started)/1000)} 秒`);
  }catch(error){
   const status=error.code==='agent_timeout'?'timeout':'failed';
   try{await client.result(job.jobId,{status,errorCode:error.code||'runner_error',errorMessage:String(error.message||error).slice(0,500),elapsedMs:Date.now()-started});}catch(uploadError){console.error('任务结果上传失败：',uploadError.message);}
   console.error(`任务失败：${taskLabel} · ${error.code||status} · ${error.message||error}`);
- }finally{await stopSandbox(sandbox);}
+ }finally{clearInterval(progressTimer);await stopSandbox(sandbox);}
 }
 
 // Keep profile selection deterministic so a run cannot silently switch Agent implementations.
