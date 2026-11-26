@@ -27,8 +27,12 @@ LABEL org.opencontainers.image.title="CryptoBench" \
 # and remove the package index so the application image stays self-contained.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends wget python3 python3-pip \
-    && python3 -m pip install --no-cache-dir --disable-pip-version-check python-sat==1.9.dev25 \
     && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-v4-judge.txt /tmp/requirements-v4-judge.txt
+RUN python3 -m pip install --no-cache-dir --disable-pip-version-check \
+    -r /tmp/requirements-v4-judge.txt \
+    && rm -f /tmp/requirements-v4-judge.txt
 
 COPY --from=build /workspace/target/cryptobench-1.1.0.jar /app/cryptobench.jar
 COPY --from=build /workspace/runner-package /opt/cryptobench/runner-package

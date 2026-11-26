@@ -123,7 +123,13 @@ V4.2 已导入 170 道公开题目和 75 个公开附件，`executionReady: true
 - `npm run test:docker-ui`：通过；在构建 `cryptobench-mock-agent:local` 与 `cryptobench-agent-proxy:local` 后，确认 Docker 引擎可用时前端入口启用，镜像不可用时安全禁用。
 - `npm test`：通过，完整浏览器场景和移动端检查通过；测试使用独立内存 H2，避免污染本地持久化数据。
 - `npm run check`：通过，108 个 JavaScript 模块和 11 个 Vue 模板。
-- `mvn --batch-mode verify`：通过，35 项测试通过。
+- `mvn --batch-mode verify`：通过，136 项执行，0 失败、0 错误、3 项按环境跳过。
+- `npm.cmd run check:v4-readiness`：判题依赖、571 个私有 judge 文件、第 165 题、
+  7 个代表性专用验证器和 170 题公开合同通过。
+- 对外发布审批：发布方已确认拥有 V4.2 题库及附件的公开再分发和网站展示授权；
+  审批依据保存在私有目录 `private/v4-publish-approval.json`。
+- `npm.cmd run check:v4-publish`：通过，`technicalReady=true`、
+  `publicationReady=true`。
 - `ServerCostCalculatorTest`：通过，验证版本化自定义模型价格和未知模型费用为空。
 - `PricingApiIntegrationTest`：通过，验证游客价格快照、研究者 403、管理员创建/启用多模型价格表和非法价格拒绝。
 - `ExecutionApiIntegrationTest`：通过，验证重启恢复会重新排队未取消运行、清理进行中任务结果并保留取消终态。

@@ -175,6 +175,8 @@ def main() -> int:
                 if args.node_archive
                 else ROOT / "target" / "runner-cache" / NODE_ARCHIVE
             )
+            if not args.node_archive and archive.is_file() and sha256(archive).lower() != NODE_SHA256:
+                archive.unlink()
             if not archive.is_file():
                 download_node(archive)
             node_from_archive(archive, staging_root)

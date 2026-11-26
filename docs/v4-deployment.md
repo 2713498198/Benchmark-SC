@@ -30,6 +30,41 @@ benchmark:
 `CRYPTOBENCH_V4_SUITE_ROOT` 设为该目录。运行时镜像安装了 Python 3 和
 `python-sat==1.9.dev25`；第 165 题使用该版本中的 CaDiCaL 后端。
 
+从源码直接启动 Windows 版本时，先安装隔离的判题依赖：
+
+```powershell
+.\setup-v4-judge.cmd
+```
+
+`start.cmd` 会自动使用 `.tools/v4-judge-venv` 中的 Python。显式设置
+`CRYPTOBENCH_V4_PYTHON` 时以显式值为准。依赖锁定在
+`requirements-v4-judge.txt`，Docker 构建使用同一文件。
+
+## 对外发布门禁
+
+技术就绪检查：
+
+```powershell
+npm.cmd run check:v4-readiness
+```
+
+该命令检查 `python-sat`/CaDiCaL、571 个私有 judge 文件、第 165 题可执行、
+共享 judge、7 个代表性专用验证器，以及 170 题公开发布合同。检查同时确认
+170 题来源映射齐全，并核对 148–151 的论文来源与私有权利说明。
+
+对外发布还必须取得权利人的书面或可审计确认。`private/v4-suite/RIGHTS.md`
+明确说明上游未提供统一开放许可，因此署名记录本身不能替代发布授权。复制
+`docs/v4-publish-approval.example.json` 到
+`private/v4-publish-approval.json`，由权利人填写审批人、权利范围、依据和日期，
+然后运行：
+
+```powershell
+npm.cmd run check:v4-publish
+```
+
+只有检查返回 `publicationReady: true` 后才能切换对外发布状态。审批文件属于私有
+材料，不能放入静态资源目录或公开下载包。
+
 ## agent 工作区产物回传
 
 `workspace-validator` 题目需要 agent 在响应里回传工作区文件，验证器才能读到代码、日志和
