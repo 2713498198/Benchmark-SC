@@ -33,7 +33,8 @@ export async function composeTest(sandbox = false) {
         if (settled) return;
         settled = true;
         const result = {code, stdout: stdout.trim(), stderr: (error || stderr).trim()};
-        if (code !== 0 && !allowFailure) reject(new Error(result.stderr || result.stdout || `docker exited ${code}`));
+        const details = [result.stderr, result.stdout].filter(Boolean).join('\n');
+        if (code !== 0 && !allowFailure) reject(new Error(details || `docker exited ${code}`));
         else resolve(result);
       }
     });
