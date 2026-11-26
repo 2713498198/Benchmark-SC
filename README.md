@@ -214,6 +214,10 @@ Codex、DeepSeek Harness 等不提供 HTTP 服务的本地 Agent 可通过 Runne
 
 V4 维护者包解压到私有目录后，`scripts/import-v4-release.py` 会校验 public 与 judge 的 SHA-256 对应关系、170 个任务 ID、隐藏 Oracle、路由和验证器，并生成 `4.2.0` 公开目录、私有评分目录和 `private/v4-suite`。私有目录必须位于静态资源目录之外；校验输出不包含隐藏答案。
 
+对外发布前运行 `npm.cmd run check:v4-readiness` 检查判题依赖、私有套件、代表性验证器和公开合同。`npm.cmd run check:v4-publish` 还会要求
+`private/v4-publish-approval.json` 中记录权利人的发布授权；署名记录本身不构成授权，
+具体步骤见 [V4 部署说明](docs/v4-deployment.md#对外发布门禁)。
+
 登录平台后，在“开始测评”中使用 `http://127.0.0.1:8000`，点击“检查本地 Agent”，再创建 Mini-SPN 测评。服务端会轮询运行状态和日志，并在完成后生成带 `runId`、验证器版本和可信状态的私有报告。公开榜单接口 `GET /api/reports/public` 只返回已公开报告，不会返回其他用户的私有记录。
 
 Docker 执行使用 `source: "docker"` 和 Agent 镜像名。平台为每次运行创建 internal Agent network，并使用平台自有的 `cryptobench-agent-proxy:local` 代理镜像把请求限制在宿主机 `127.0.0.1`；Agent 容器本身没有发布端口或直接外网连接。启用可选模型网关后，Agent 可经受控 API 调用允许的供应商和模型。平台同时限制 CPU、内存、进程数、文件系统和 Linux capabilities，并在结束、失败或取消后清理本次 Agent、代理、网关容器和网络。Docker 不可用或镜像无法启动时运行直接失败，不会回退到浏览器模拟结果。

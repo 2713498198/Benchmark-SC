@@ -30,6 +30,13 @@ function Import-CryptoBenchEnvironment([string]$ProjectRoot) {
 }
 
 Import-CryptoBenchEnvironment $root
+
+$v4Python = Join-Path $root ".tools/v4-judge-venv/Scripts/python.exe"
+if ([string]::IsNullOrEmpty($env:CRYPTOBENCH_V4_PYTHON) -and
+    (Test-Path -LiteralPath $v4Python -PathType Leaf)) {
+    $env:CRYPTOBENCH_V4_PYTHON = $v4Python
+}
+
 . (Join-Path $PSScriptRoot 'java-env.ps1')
 . (Join-Path $PSScriptRoot 'local-mail.ps1')
 try {

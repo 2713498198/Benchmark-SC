@@ -382,6 +382,73 @@ TASK_HINTS = {
 }
 
 
+PRIDE_SBOX = (0, 4, 8, 15, 1, 5, 14, 9, 2, 7, 10, 12, 11, 13, 6, 3)
+PRIDE_MATRICES = {
+    "A": ((0, 0, 0, 0), (0, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 1)),
+    "B": ((0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)),
+}
+
+
+def write_pride_candidate_audit(path: Path) -> None:
+    """Regenerate PRIDE evidence from the public equation without the private replay."""
+    inverse = tuple(PRIDE_SBOX.index(value) for value in range(16))
+    rows = ["matrix,key_hex,alpha_hex,beta_hex,count,good_x_mask_hex"]
+    for matrix_name, matrix in PRIDE_MATRICES.items():
+        def xor_linear(value: int) -> int:
+            return sum(
+                (sum(coefficient * ((value >> bit) & 1)
+                     for bit, coefficient in enumerate(row)) & 1) << index
+                for index, row in enumerate(matrix)
+            )
+
+        for key in range(16):
+            for alpha in (1, 8):
+                for beta in (1, 8):
+                    constant = PRIDE_SBOX[inverse[key] ^ alpha]
+                    good = []
+                    for value in range(16):
+                        left = xor_linear(
+                            PRIDE_SBOX[inverse[value ^ key] ^ alpha] ^ constant
+                        )
+                        right = (
+                            inverse[PRIDE_SBOX[xor_linear(value)] ^ beta]
+                            ^ inverse[PRIDE_SBOX[0] ^ beta]
+                        )
+                        if left == right:
+                            good.append(value)
+                    mask = sum(1 << value for value in good)
+                    rows.append(
+                        f"{matrix_name},{key:x},{alpha:x},{beta:x},{len(good)},{mask:x}"
+                    )
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
+def write_pride_exact_replay(path: Path) -> None:
+    """Create an executable independent replay for the PRIDE fixture."""
+    path.write_text(
+        "#!/usr/bin/env python3\n"
+        "SBOX = (0, 4, 8, 15, 1, 5, 14, 9, 2, 7, 10, 12, 11, 13, 6, 3)\n"
+        "INV = tuple(SBOX.index(value) for value in range(16))\n"
+        "MATRICES = {\n"
+        "    'A': ((0, 0, 0, 0), (0, 1, 0, 0), (0, 0, 0, 0), (0, 0, 0, 1)),\n"
+        "    'B': ((0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)),\n"
+        "}\n"
+        "def lin(matrix, value):\n"
+        "    return sum((sum(row[bit] * ((value >> bit) & 1) for bit in range(4)) & 1) << index\n"
+        "               for index, row in enumerate(matrix))\n"
+        "for name, matrix in MATRICES.items():\n"
+        "    for key in range(16):\n"
+        "        for alpha in (1, 8):\n"
+        "            for beta in (1, 8):\n"
+        "                constant = SBOX[INV[key] ^ alpha]\n"
+        "                good = [x for x in range(16)\n"
+        "                        if lin(matrix, SBOX[INV[x ^ key] ^ alpha] ^ constant)\n"
+        "                        == (INV[SBOX[lin(matrix, x)] ^ beta] ^ INV[SBOX[0] ^ beta])]\n"
+        "                assert good\n",
+        encoding="utf-8",
+    )
+
+
 def hash_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -505,11 +572,16 @@ def write_oracle_backed_fixture(task_dir: Path, run_dir: Path) -> None:
     release_root = task_dir.parents[1]
     for source_name, target_name in hints.get("copy_task_files", []):
         source = (release_root / source_name).resolve()
-        if not source.is_relative_to(release_root.resolve()) or not source.is_file():
-            raise FileNotFoundError(source)
         target = workspace / target_name
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+        if source.is_relative_to(release_root.resolve()) and source.is_file():
+            shutil.copy2(source, target)
+        elif target_name == "candidate_audit.csv":
+            write_pride_candidate_audit(target)
+        elif target_name == "exact_replay.py":
+            write_pride_exact_replay(target)
+        else:
+            raise FileNotFoundError(source)
     logs.joinpath("agent_stdout.txt").write_text(
         json.dumps({
             "item": {
