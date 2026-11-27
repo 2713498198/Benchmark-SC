@@ -6,6 +6,6 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node src/cli.mjs run",
-    "test": "node ../tests/runner-command-adapter.mjs"
+    "test": "node ../tests/runner-command-adapter.mjs && node ../tests/offline-runner.mjs"
   }
 }

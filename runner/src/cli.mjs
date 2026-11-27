@@ -23,7 +23,7 @@ function argumentsMap(values){
 }
 
 const [command='run',...rest]=process.argv.slice(2);const args=argumentsMap(rest);
-if(command==='pair')await pair(args);else if(command==='run')await run(args);else if(command==='status')await status();else if(command==='doctor')await doctor();else if(command==='version')await version();else if(command==='help'||command==='--help'||command==='-h')usage();else{usage();process.exitCode=2;}
+if(command==='pair')await pair(args);else if(command==='run')await run(args);else if(command==='offline'){const {runOffline}=await import('./offline/cli.mjs');try{await runOffline(args);}catch(error){console.error(`离线测评失败：${error.message||error}`);process.exitCode=1;}}else if(command==='status')await status();else if(command==='doctor')await doctor();else if(command==='version')await version();else if(command==='help'||command==='--help'||command==='-h')usage();else{usage();process.exitCode=2;}
 
 // Exchange the browser-generated one-time code for a long-lived local token.
 async function pair(args){
@@ -138,9 +138,10 @@ async function packageVersion(){
 }
 
 function usage(){
- console.log('用法：cryptobench-runner.cmd <pair|run|status|doctor|version> [options]');
+ console.log('用法：cryptobench-runner.cmd <pair|run|offline|status|doctor|version> [options]');
  console.log('  pair    使用网站生成的一次性配对码注册本机 Runner');
  console.log('  run     轮询并执行网站下发的测评任务');
+ console.log('  offline 使用本地题库和 Docker 在完全离线环境执行测评');
  console.log('  status  查看本机 Runner 配置与公开能力');
  console.log('  doctor  检查已保存的本地 Agent 配置');
  console.log('  version 查看 Runner、Node 和平台版本');

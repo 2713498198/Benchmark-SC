@@ -1,0 +1,16 @@
+{
+  "name": "My Docker Crypto Agent",
+  "model": "my-docker-agent",
+  "version": "1.0.0",
+  "adapter": "docker-command",
+  "image": "cryptobench-agent-myagent:4.2.0",
+  "command": "my-agent",
+  "args": [],
+  "stdin": "prompt",
+  "output": "json",
+  "network": "none",
+  "cpus": "2",
+  "memory": "2g",
+  "pidsLimit": "256",
+  "timeoutSeconds": 300
+}
