@@ -212,6 +212,21 @@ npm run agent:mock
 
 Codex、DeepSeek Harness 等不提供 HTTP 服务的本地 Agent 可通过 Runner 内置命令 Adapter 接入。按“本地 Runner”页面的配对流程，将 `--agent-config` 指向本机 CLI 配置即可；示例位于 `runner/examples/`。
 
+### 离线 Docker 测评
+
+下载离线包后可以完全不连接 Benchmark 网站：Runner 从本地题库取题，在固定基础镜像派生的 Docker 沙箱中启动 Agent，并使用本地评测器镜像评分。详细配置、公平性边界和用户自研 Agent 接入方式见 [离线 Docker 测评](docs/offline-docker-evaluation.md)：
+
+```powershell
+.\cryptobench-runner.cmd offline `
+  --tasks .\tasks.json `
+  --public-root .\public `
+  --agent-config .\agent.json `
+  --judge-image cryptobench-offline-judge:4.2.0 `
+  --scope sample
+```
+
+离线模式不会访问网站，也不会把过程或报告上传服务器。完整离线执行要求 `network: none`；需要云端模型 API 时必须显式添加 `--allow-network`，此时仅能称为本地执行、本地评分。
+
 V4 维护者包解压到私有目录后，`scripts/import-v4-release.py` 会校验 public 与 judge 的 SHA-256 对应关系、170 个任务 ID、隐藏 Oracle、路由和验证器，并生成 `4.2.0` 公开目录、私有评分目录和 `private/v4-suite`。私有目录必须位于静态资源目录之外；校验输出不包含隐藏答案。
 
 对外发布前运行 `npm.cmd run check:v4-readiness` 检查判题依赖、私有套件、代表性验证器和公开合同。`npm.cmd run check:v4-publish` 还会要求

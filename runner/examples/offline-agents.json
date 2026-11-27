@@ -1,0 +1,40 @@
+{
+  "agents": [
+    {
+      "name": "Codex local model",
+      "model": "codex-local-model",
+      "version": "pinned-image",
+      "adapter": "docker-command",
+      "image": "cryptobench-agent-codex:4.2.0",
+      "command": "codex",
+      "args": [
+        "--sandbox",
+        "workspace-write",
+        "--ask-for-approval",
+        "never",
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--skip-git-repo-check",
+        "-"
+      ],
+      "stdin": "prompt",
+      "output": "jsonl",
+      "network": "none",
+      "timeoutSeconds": 300
+    },
+    {
+      "name": "My custom agent",
+      "model": "my-docker-agent",
+      "version": "1.0.0",
+      "adapter": "docker-command",
+      "image": "cryptobench-agent-myagent:4.2.0",
+      "command": "my-agent",
+      "args": [],
+      "stdin": "prompt",
+      "output": "json",
+      "network": "none",
+      "timeoutSeconds": 300
+    }
+  ]
+}

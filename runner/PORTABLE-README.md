@@ -48,3 +48,19 @@ HTTP Agent：
 保持该窗口开启，然后回到测评页选择“本地 Runner”。
 
 本机配置默认写入 `%USERPROFILE%\.cryptobench\runner.json`。不要分享该文件，其中包含 Runner Token 和本机 Agent 配置。
+
+## 完全离线 Docker 测评
+
+离线测评不上传任务或报告，并强制使用 Docker 沙箱。解压网站提供的离线包后执行：
+
+```powershell
+.\cryptobench-runner.cmd offline `
+  --tasks .\tasks.json `
+  --public-root .\public `
+  --agent-config .\agent.json `
+  --judge-image cryptobench-offline-judge:4.2.0 `
+  --scope sample `
+  --limit 8
+```
+
+报告保存在 `offline-results/<runId>/`。Docker 环境、Agent 镜像和评测器镜像配置说明见网站下载页的“离线 Docker 测评包”文档。

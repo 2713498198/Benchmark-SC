@@ -35,7 +35,7 @@ function navigate(path){location.hash=path;}
 
 const App={components:{SvgIcon,HomePage,ResourcesPage,ArenaPage,RunnerPage,ReadmePage,CommunityPage,LeaderboardPage},setup(){
  const route=ref(parseRoute()),toastMessage=ref(''),menuOpen=ref(false),dialog=ref(null),modal=reactive({kind:'',title:'',message:'',action:null,entries:[]}),connection=reactive({id:'',name:'',url:'',model:''});let toastTimer;
- const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(r==='/runner')return RunnerPage;if(r==='/readme')return ReadmePage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
+ const page=computed(()=>{const r=route.value;if(r==='/')return HomePage;if(r==='/runner')return RunnerPage;if(r==='/readme'||r.startsWith('/readme?'))return ReadmePage;if(/^\/(datasets|tools|download|docs)(\/|\?|$)/.test(r))return ResourcesPage;if(/^\/(evaluate|arena|report)(\/|\?|$)/.test(r))return ArenaPage;if(r.startsWith('/leaderboard'))return LeaderboardPage;if(/^\/(login|register|forgot-password|workspace|admin)(\/|\?|$)/.test(r))return CommunityPage;return null;});
  const authPending=computed(()=>!state.authReady&&isProtectedRoute(route.value));
  const active=computed(()=>route.value.split('?')[0]);
  function toast(message){toastMessage.value=message;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastMessage.value='',3700);}
